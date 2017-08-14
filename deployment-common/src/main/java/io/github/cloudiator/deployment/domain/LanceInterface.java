@@ -14,16 +14,39 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment;
+package io.github.cloudiator.deployment.domain;
+
+import java.util.Optional;
 
 /**
- * Hello world!
- *
+ * Created by daniel on 13.02.17.
  */
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
-    }
+public interface LanceInterface extends TaskInterface {
+
+  Optional<String> init();
+
+  Optional<String> preInstall();
+
+  Optional<String> install();
+
+  Optional<String> postInstall();
+
+  Optional<String> preStart();
+
+  String start();
+
+  Optional<String> startDetection();
+
+  Optional<String> stopDetection();
+
+  Optional<String> postStart();
+
+  Optional<String> preStop();
+
+  Optional<String> stop();
+
+  Optional<String> postStop();
+
+  Optional<String> shutdown();
+
 }

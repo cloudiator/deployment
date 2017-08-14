@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment;
+package io.github.cloudiator.deployment.domain;
 
-/**
- * Hello world!
- *
- */
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
-    }
+import static com.google.common.base.Preconditions.checkNotNull;
+
+abstract class PortImpl implements Port {
+
+  private final String name;
+
+  PortImpl(String name) {
+    checkNotNull(name,
+        "name is null");
+    this.name = name;
+  }
+
+  @Override
+  public String name() {
+    return name;
+  }
 }

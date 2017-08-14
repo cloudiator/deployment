@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment;
+package io.github.cloudiator.deployment.domain;
 
 /**
- * Hello world!
- *
+ * Created by daniel on 13.02.17.
  */
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
-    }
+public interface Communication {
+
+    PortProvided target();
+
+    PortRequired source();
+
+    boolean isMandatory();
+
 }

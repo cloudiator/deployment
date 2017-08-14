@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment;
+package io.github.cloudiator.deployment.domain;
 
-/**
- * Hello world!
- *
- */
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
-    }
+import static com.google.common.base.Preconditions.checkArgument;
+
+class PortProvidedImpl extends PortImpl implements PortProvided {
+
+  private final int port;
+
+  PortProvidedImpl(String name, int port) {
+    super(name);
+
+    checkArgument(!(port < 0) && !(port > 65535));
+    this.port = port;
+  }
+
+  @Override
+  public int port() {
+    return port;
+  }
 }

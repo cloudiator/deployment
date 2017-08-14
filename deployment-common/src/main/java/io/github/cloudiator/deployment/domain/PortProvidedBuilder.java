@@ -14,16 +14,33 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment;
+package io.github.cloudiator.deployment.domain;
 
-/**
- * Hello world!
- *
- */
-public class App 
-{
-    public static void main( String[] args )
-    {
-        System.out.println( "Hello World!" );
-    }
+public class PortProvidedBuilder {
+
+  private String name;
+  private int port;
+
+  private PortProvidedBuilder() {
+  }
+
+  public static PortProvidedBuilder newBuilder() {
+    return new PortProvidedBuilder();
+  }
+
+  public PortProvidedBuilder name(String name) {
+    this.name = name;
+    return this;
+  }
+
+  public PortProvidedBuilder port(int port) {
+    this.port = port;
+    return this;
+  }
+
+  public PortProvided build() {
+    return new PortProvidedImpl(name, port);
+  }
+
+
 }
