@@ -21,10 +21,9 @@ package io.github.cloudiator.deployment.persistance.entities;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.base.MoreObjects.ToStringHelper;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
@@ -32,37 +31,21 @@ import javax.persistence.OneToMany;
 /**
  * Created by daniel on 12.12.14.
  */
-@Entity public class Job extends Model {
+@Entity public class TaskModel extends Model {
 
-    @Column(unique = true, nullable = false) protected String name;
-    @OneToMany(mappedBy = "application") private List<Task> tasks;
-
-
+    @Column(unique = true, nullable = false) private String name;
+    @OneToMany(mappedBy = "task") private List<PortModel> ports;
 
     /**
      * Empty constructor for hibernate.
      */
-    protected Job() {
+    protected TaskModel() {
     }
 
-    public Job(String name) {
+    public TaskModel(String name) {
         checkNotNull(name);
         checkArgument(!name.isEmpty());
         this.name = name;
-    }
-
-    public List<ApplicationComponent> getApplicationComponents() {
-        return applicationComponents;
-    }
-
-    public void setApplicationComponents(List<ApplicationComponent> applicationComponents) {
-        this.applicationComponents = applicationComponents;
-    }
-
-    public Set<Communication> communications() {
-        return applicationComponents.stream()
-            .flatMap(applicationComponent -> applicationComponent.communications().stream())
-            .collect(Collectors.toSet());
     }
 
     public String getName() {
@@ -73,8 +56,8 @@ import javax.persistence.OneToMany;
         this.name = name;
     }
 
-    @Override public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", getId()).add("name", getName())
-            .toString();
+    @Override
+    protected ToStringHelper stringHelper() {
+     return super.stringHelper().add("name", name).add("ports", Arrays.toString(ports.toArray()));
     }
 }

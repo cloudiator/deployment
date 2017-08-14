@@ -20,10 +20,9 @@ package io.github.cloudiator.deployment.persistance.entities;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Collections;
-import java.util.HashSet;
+import com.google.common.base.MoreObjects.ToStringHelper;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
@@ -31,31 +30,32 @@ import javax.persistence.OneToMany;
 /**
  * Created by daniel on 03.08.15.
  */
-@Entity public class PortProvided extends Port {
+@Entity
+public class PortProvidedModel extends PortModel {
 
-    @Column private Integer port;
-    @OneToMany(mappedBy = "providedPort") List<Communication> providedCommunications;
+  @Column(nullable = false)
+  private Integer port;
+  @OneToMany(mappedBy = "providedPort")
+  List<CommunicationModel> providedCommunications;
 
-    /**
-     * Empty constructor for hibernate.
-     */
-    protected PortProvided() {
-    }
+  /**
+   * Empty constructor for hibernate.
+   */
+  protected PortProvidedModel() {
+  }
 
-    @Override public Set<Communication> getAttachedCommunications() {
-        if (providedCommunications == null) {
-            return Collections.emptySet();
-        }
-        return new HashSet<>(providedCommunications);
-    }
-    
-    public PortProvided(String name, ApplicationComponent applicationComponent, int port) {
-        super(name, applicationComponent);
-        checkNotNull(port);
-        this.port = port;
-    }
+  public PortProvidedModel(String name, TaskModel task, Integer port) {
+    super(name, task);
+    checkNotNull(port, "port is null");
+  }
 
-    public int getPort() {
-        return port;
-    }
+  public int getPort() {
+    return port;
+  }
+
+  @Override
+  protected ToStringHelper stringHelper() {
+    return super.stringHelper().add("port", port)
+        .add("providedCommunications", Arrays.toString(providedCommunications.toArray()));
+  }
 }

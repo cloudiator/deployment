@@ -25,7 +25,7 @@ import javax.persistence.Lob;
 /**
  * Created by daniel on 15.12.14.
  */
-@Entity public class LifecycleTask extends Task {
+@Entity public class LifecycleTaskModel extends TaskModel {
 
     @Nullable @Lob private String init;
     @Nullable @Lob private String preInstall;
@@ -44,10 +44,10 @@ import javax.persistence.Lob;
     /**
      * Empty constructor for hibernate.
      */
-    protected LifecycleTask() {
+    protected LifecycleTaskModel() {
     }
 
-    public LifecycleTask(@Nullable String init, @Nullable String preInstall,
+    public LifecycleTaskModel(@Nullable String init, @Nullable String preInstall,
         @Nullable String install, @Nullable String postInstall, @Nullable String preStart,
         String start, @Nullable String startDetection, @Nullable String stopDetection,
         @Nullable String postStart, @Nullable String preStop, @Nullable String stop,

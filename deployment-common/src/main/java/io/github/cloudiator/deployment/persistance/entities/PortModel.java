@@ -21,7 +21,7 @@ package io.github.cloudiator.deployment.persistance.entities;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Set;
+import com.google.common.base.MoreObjects.ToStringHelper;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
@@ -29,34 +29,40 @@ import javax.persistence.ManyToOne;
 /**
  * Created by daniel on 03.08.15.
  */
-@Entity public abstract class Port extends Model {
+@Entity
+public abstract class PortModel extends Model {
 
-    @Column(updatable = false, unique = true, nullable = false) private String name;
-    @ManyToOne(optional = false) private Task task;
+  @Column(updatable = false, unique = true, nullable = false)
+  private String name;
+  @ManyToOne(optional = false)
+  private TaskModel task;
 
-    /**
-     * Default constructor for hibernate.
-     */
-    protected Port() {
-    }
+  /**
+   * Default constructor for hibernate.
+   */
+  protected PortModel() {
+  }
 
-    public Port(String name, ApplicationComponent applicationComponent) {
+  public PortModel(String name, TaskModel task) {
 
-        checkNotNull(name);
-        checkArgument(!name.isEmpty());
-        checkNotNull(applicationComponent);
+    checkNotNull(name);
+    checkArgument(!name.isEmpty());
+    checkNotNull(task);
 
-        this.name = name;
-        this.applicationComponent = applicationComponent;
-    }
+    this.name = name;
+    this.task = task;
+  }
 
-    public String name() {
-        return name;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public ApplicationComponent getApplicationComponent() {
-        return applicationComponent;
-    }
+  public TaskModel getTask() {
+    return task;
+  }
 
-    public abstract Set<Communication> getAttachedCommunications();
+  @Override
+  protected ToStringHelper stringHelper() {
+    return super.stringHelper().add("name", name).add("task", task);
+  }
 }

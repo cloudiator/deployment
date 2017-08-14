@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.List;
 import javax.persistence.Column;
@@ -31,33 +32,43 @@ import javax.persistence.OneToMany;
 /**
  * Created by daniel on 12.12.14.
  */
-@Entity public abstract class Task extends Model {
+@Entity
+public class JobModel extends Model {
 
-    @Column(unique = true, nullable = false) private String name;
-    @OneToMany(mappedBy = "task") private List<Port> ports;
+  @Column(unique = true, nullable = false)
+  protected String name;
+  @OneToMany(mappedBy = "jobModel")
+  private List<TaskModel> tasks;
+  @OneToMany(mappedBy = "jobModel")
+  private List<CommunicationModel> communications;
 
-    /**
-     * Empty constructor for hibernate.
-     */
-    protected Task() {
-    }
+  /**
+   * Empty constructor for hibernate.
+   */
+  protected JobModel() {
+  }
 
-    public Task(String name) {
-        checkNotNull(name);
-        checkArgument(!name.isEmpty());
-        this.name = name;
-    }
+  public JobModel(String name) {
+    checkNotNull(name);
+    checkArgument(!name.isEmpty());
+    this.name = name;
+  }
 
-    public String getName() {
-        return name;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public List<TaskModel> getTasks() {
+    return ImmutableList.copyOf(tasks);
+  }
 
-    @Override
-    protected ToStringHelper stringHelper() {
-     return super.stringHelper().add("name", name).add("ports", Arrays.toString(ports.toArray()));
-    }
+  public List<CommunicationModel> getCommunications() {
+    return ImmutableList.copyOf(communications);
+  }
+
+  @Override
+  protected ToStringHelper stringHelper() {
+    return super.stringHelper().add("name", name).add("tasks", Arrays.toString(tasks.toArray()))
+        .add("communications", Arrays.toString(communications.toArray()));
+  }
 }
