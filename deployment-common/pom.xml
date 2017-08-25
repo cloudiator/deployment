@@ -46,6 +46,10 @@
             <artifactId>common-domain</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.github.cloudiator.common</groupId>
+            <artifactId>common-persistence</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
         </dependency>

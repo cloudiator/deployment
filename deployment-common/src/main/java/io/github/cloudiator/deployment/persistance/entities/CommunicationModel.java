@@ -18,6 +18,7 @@
 
 package io.github.cloudiator.deployment.persistance.entities;
 
+import de.uniulm.omi.cloudiator.persistance.entities.Model;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;

@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.persistance.entities;
+package io.github.cloudiator.deployment.persistance.config;
 
-import javax.persistence.MappedSuperclass;
+import com.google.inject.AbstractModule;
 
-@MappedSuperclass
-public abstract class TaskInterface extends Model {
+/**
+ * Created by daniel on 02.06.17.
+ */
+public class DomainPersistenceModule extends AbstractModule{
 
+  @Override
+  protected void configure() {
+  }
 }

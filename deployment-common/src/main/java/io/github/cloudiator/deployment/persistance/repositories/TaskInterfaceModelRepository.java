@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.persistance.entities;
+package io.github.cloudiator.deployment.persistance.repositories;
 
-public class LanceInterface extends TaskInterface {
+import de.uniulm.omi.cloudiator.persistance.repositories.ModelRepository;
+import io.github.cloudiator.deployment.persistance.entities.TaskInterfaceModel;
+
+public interface TaskInterfaceModelRepository extends ModelRepository<TaskInterfaceModel> {
 
 }

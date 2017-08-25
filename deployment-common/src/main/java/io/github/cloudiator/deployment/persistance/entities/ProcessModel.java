@@ -21,6 +21,7 @@ package io.github.cloudiator.deployment.persistance.entities;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import de.uniulm.omi.cloudiator.persistance.entities.Model;
 import io.github.cloudiator.deployment.domain.Process;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
