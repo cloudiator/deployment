@@ -67,6 +67,7 @@
   <modules>
     <module>lance</module>
     <module>deployment-common</module>
+    <module>jobagent</module>
     <!-- <module>misc</module> -->
   </modules>
 

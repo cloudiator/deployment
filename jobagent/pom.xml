@@ -25,38 +25,15 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>deployment-common</artifactId>
+  <artifactId>job-agent</artifactId>
 
   <dependencies>
     <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-core</artifactId>
-      <version>5.2.7.Final</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.github.cloudiator.common</groupId>
-      <artifactId>common-domain</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.github.cloudiator.common</groupId>
-      <artifactId>common-messaging</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.github.cloudiator.common</groupId>
-      <artifactId>common-persistence</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.inject</groupId>
-      <artifactId>guice</artifactId>
+      <artifactId>common-all</artifactId>
+      <version>0.3.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
+
 
 </project>

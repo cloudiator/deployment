@@ -33,7 +33,7 @@ public class JobBuilder {
 
   }
 
-  public JobBuilder newBuilder() {
+  public static JobBuilder newBuilder() {
     return new JobBuilder();
   }
 

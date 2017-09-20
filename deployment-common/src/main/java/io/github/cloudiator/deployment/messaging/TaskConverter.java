@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.messaging;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface PortRequired extends Port {
+import de.uniulm.omi.cloudiator.util.TwoWayConverter;
+import io.github.cloudiator.deployment.domain.Task;
+import org.cloudiator.messages.entities.TaskEntities;
 
-  String updateAction();
+public class TaskConverter implements TwoWayConverter<TaskEntities.Task, Task> {
 
-  boolean isMandatory();
+  @Override
+  public TaskEntities.Task applyBack(Task task) {
+    return null;
+  }
 
+  @Override
+  public Task apply(TaskEntities.Task task) {
+    return null;
+  }
 }
