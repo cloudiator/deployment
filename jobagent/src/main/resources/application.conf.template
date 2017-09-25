@@ -1,0 +1,10 @@
+jpa.dialect = org.hibernate.dialect.MySQL5Dialect
+jpa.driver = org.mariadb.jdbc.Driver
+jpa.url = "jdbc:mysql://localhost:3306/job"
+jpa.user =
+jpa.password =
+
+kafka.bootstrapServers =
+kafka.groupId = job
+kafka.responseTimeout = 10000
+
