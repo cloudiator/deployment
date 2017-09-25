@@ -21,10 +21,7 @@ package io.github.cloudiator.deployment.domain;
  */
 public interface Communication {
 
-    PortProvided target();
+    String target();
 
-    PortRequired source();
-
-    boolean isMandatory();
-
+    String source();
 }

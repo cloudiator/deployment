@@ -27,33 +27,33 @@ import javax.persistence.OneToOne;
 /**
  * Created by daniel on 07.01.15.
  */
-@Entity public class CommunicationModel extends Model {
+@Entity
+public class CommunicationModel extends Model {
 
-    @OneToOne(optional = false) @JoinColumn(name = "requiredCommunication") private PortRequiredModel
-        requiredPort;
-    @ManyToOne(optional = false) private PortProvidedModel providedPort;
+  @OneToOne(optional = false)
+  @JoinColumn(name = "requiredCommunication")
+  private String
+      requiredPort;
+  @ManyToOne(optional = false)
+  private String providedPort;
 
-    /**
-     * Empty constructor for hibernate.
-     */
-    protected CommunicationModel() {
+  /**
+   * Empty constructor for hibernate.
+   */
+  protected CommunicationModel() {
 
-    }
+  }
 
-    public CommunicationModel(PortRequiredModel requiredPort, PortProvidedModel providedPort) {
-        this.requiredPort = requiredPort;
-        this.providedPort = providedPort;
-    }
+  public CommunicationModel(String requiredPort, String providedPort) {
+    this.requiredPort = requiredPort;
+    this.providedPort = providedPort;
+  }
 
-    public PortRequiredModel getRequiredPort() {
-        return requiredPort;
-    }
+  public String getRequiredPort() {
+    return requiredPort;
+  }
 
-    public PortProvidedModel getProvidedPort() {
-        return providedPort;
-    }
-
-    public boolean isMandatory() {
-        return requiredPort.getMandatory();
-    }
+  public String getProvidedPort() {
+    return providedPort;
+  }
 }

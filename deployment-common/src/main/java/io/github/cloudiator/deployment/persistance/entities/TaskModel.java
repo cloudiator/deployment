@@ -22,43 +22,70 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import com.google.common.collect.ImmutableList;
 import de.uniulm.omi.cloudiator.persistance.entities.Model;
 import java.util.Arrays;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 /**
  * Created by daniel on 12.12.14.
  */
-@Entity public class TaskModel extends Model {
+@Entity
+public class TaskModel extends Model {
 
-    @Column(unique = true, nullable = false) private String name;
-    @OneToMany(mappedBy = "task") private List<PortModel> ports;
+  @Column(unique = true, nullable = false)
+  private String name;
+  @ManyToOne
+  private JobModel jobModel;
+  @OneToMany(mappedBy = "task")
+  private List<PortModel> ports;
+  @OneToMany(mappedBy = "task")
+  private List<TaskInterfaceModel> interfaces;
 
-    /**
-     * Empty constructor for hibernate.
-     */
-    protected TaskModel() {
-    }
+  /**
+   * Empty constructor for hibernate.
+   */
+  protected TaskModel() {
+  }
 
-    public TaskModel(String name) {
-        checkNotNull(name);
-        checkArgument(!name.isEmpty());
-        this.name = name;
-    }
+  public TaskModel(String name, JobModel job) {
+    checkNotNull(name);
+    checkArgument(!name.isEmpty());
+    checkNotNull(job);
+    this.name = name;
+    this.jobModel = job;
+  }
 
-    public String getName() {
-        return name;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    @Override
-    protected ToStringHelper stringHelper() {
-     return super.stringHelper().add("name", name).add("ports", Arrays.toString(ports.toArray()));
-    }
+  public JobModel getJobModel() {
+    return jobModel;
+  }
+
+  public void setJobModel(JobModel jobModel) {
+    this.jobModel = jobModel;
+  }
+
+  public List<PortModel> getPorts() {
+    return ImmutableList.copyOf(ports);
+  }
+
+  public List<TaskInterfaceModel> getInterfaces() {
+    return ImmutableList.copyOf(interfaces);
+  }
+
+  @Override
+  protected ToStringHelper stringHelper() {
+    return super.stringHelper().add("name", name).add("ports", Arrays.toString(ports.toArray()));
+  }
 }

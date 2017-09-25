@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
 import de.uniulm.omi.cloudiator.persistance.repositories.BaseModelRepositoryJpa;
+import de.uniulm.omi.cloudiator.persistance.util.JpaResultHelper;
 import io.github.cloudiator.deployment.persistance.entities.TaskModel;
 import javax.persistence.EntityManager;
 
@@ -31,5 +32,24 @@ public class TaskModelRepositoryJpa extends BaseModelRepositoryJpa<TaskModel> im
       Provider<EntityManager> entityManager,
       TypeLiteral<TaskModel> type) {
     super(entityManager, type);
+  }
+
+  @Override
+  public TaskModel findByName(String name) {
+
+    String query = String.format("from %s where name=:name", type.getName());
+
+    return (TaskModel) JpaResultHelper
+        .getSingleResultOrNull(em().createQuery(query).setParameter("name", name));
+  }
+
+  @Override
+  public TaskModel findByNameAndUser(String userId, String name) {
+
+    String query = String.format(
+        "from %s task inner join task.jobModel job inner join job.tenant tenant where job.name=:name and tenant.userId=:userId",
+        type.getName());
+    return (TaskModel) JpaResultHelper.getSingleResultOrNull(
+        em().createQuery(query).setParameter("name", name).setParameter("userId", userId));
   }
 }

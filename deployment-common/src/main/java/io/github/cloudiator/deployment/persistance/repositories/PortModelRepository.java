@@ -21,4 +21,8 @@ import io.github.cloudiator.deployment.persistance.entities.PortModel;
 
 public interface PortModelRepository extends ModelRepository<PortModel> {
 
+  PortModel findByName(String name);
+
+  PortModel findByNameAndUser(String name, String user);
+
 }

@@ -20,11 +20,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 class CommunicationImpl implements Communication {
 
-  private final PortProvided portProvided;
-  private final PortRequired portRequired;
+  private final String portProvided;
+  private final String portRequired;
 
-  CommunicationImpl(PortProvided portProvided,
-      PortRequired portRequired) {
+  CommunicationImpl(String portProvided,
+      String portRequired) {
 
     checkNotNull(portProvided, "portProvided is null");
     checkNotNull(portRequired, "portRequired is null");
@@ -34,17 +34,12 @@ class CommunicationImpl implements Communication {
   }
 
   @Override
-  public PortProvided target() {
+  public String target() {
     return portProvided;
   }
 
   @Override
-  public PortRequired source() {
+  public String source() {
     return portRequired;
-  }
-
-  @Override
-  public boolean isMandatory() {
-    return portRequired.isMandatory();
   }
 }

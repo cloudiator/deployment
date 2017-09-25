@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 /**
@@ -38,8 +39,13 @@ public class JobModel extends Model {
 
   @Column(unique = true, nullable = false)
   protected String name;
+
+  @ManyToOne
+  protected TenantModel tenant;
+
   @OneToMany(mappedBy = "jobModel")
   private List<TaskModel> tasks;
+
   @OneToMany(mappedBy = "jobModel")
   private List<CommunicationModel> communications;
 
@@ -49,10 +55,12 @@ public class JobModel extends Model {
   protected JobModel() {
   }
 
-  public JobModel(String name) {
+  public JobModel(String name, TenantModel tenant) {
     checkNotNull(name);
     checkArgument(!name.isEmpty());
+    checkNotNull(tenant);
     this.name = name;
+    this.tenant = tenant;
   }
 
   public String getName() {

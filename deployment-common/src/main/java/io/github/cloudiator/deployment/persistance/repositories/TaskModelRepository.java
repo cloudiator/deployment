@@ -21,4 +21,8 @@ import io.github.cloudiator.deployment.persistance.entities.TaskModel;
 
 public interface TaskModelRepository extends ModelRepository<TaskModel> {
 
+  TaskModel findByName(String name);
+
+  TaskModel findByNameAndUser(String userId, String name);
+
 }

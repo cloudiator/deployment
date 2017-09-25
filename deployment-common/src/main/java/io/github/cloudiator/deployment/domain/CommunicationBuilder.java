@@ -19,8 +19,8 @@ package io.github.cloudiator.deployment.domain;
 public class CommunicationBuilder {
 
 
-  private PortProvided portProvided;
-  private PortRequired portRequired;
+  private String portProvided;
+  private String portRequired;
 
   private CommunicationBuilder() {
   }
@@ -29,12 +29,12 @@ public class CommunicationBuilder {
     return new CommunicationBuilder();
   }
 
-  public CommunicationBuilder portProvided(PortProvided portProvided) {
+  public CommunicationBuilder portProvided(String portProvided) {
     this.portProvided = portProvided;
     return this;
   }
 
-  public CommunicationBuilder portRequired(PortRequired portRequired) {
+  public CommunicationBuilder portRequired(String portRequired) {
     this.portRequired = portRequired;
     return this;
   }
