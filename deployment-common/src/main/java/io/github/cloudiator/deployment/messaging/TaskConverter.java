@@ -18,9 +18,12 @@ package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskBuilder;
 import org.cloudiator.messages.entities.TaskEntities;
 
 public class TaskConverter implements TwoWayConverter<TaskEntities.Task, Task> {
+
+  private static final PortConverter PORT_CONVERTER = new PortConverter();
 
   @Override
   public TaskEntities.Task applyBack(Task task) {
@@ -29,6 +32,11 @@ public class TaskConverter implements TwoWayConverter<TaskEntities.Task, Task> {
 
   @Override
   public Task apply(TaskEntities.Task task) {
-    return null;
+
+    final TaskBuilder taskBuilder = TaskBuilder.newBuilder().name(task.getName());
+
+    task.getPortsList().forEach(port -> taskBuilder.addPort(PORT_CONVERTER.apply(port)));
+
+    return taskBuilder.build();
   }
 }

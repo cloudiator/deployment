@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Communication;
+import io.github.cloudiator.deployment.domain.CommunicationBuilder;
 import org.cloudiator.messages.entities.JobEntities;
 
 public class CommunicationConverter implements
@@ -26,12 +27,13 @@ public class CommunicationConverter implements
   @Override
   public JobEntities.Communication applyBack(Communication communication) {
     return JobEntities.Communication.newBuilder()
-        .setPortProvided(communication.target().name())
-        .setPortRequired(communication.source().name()).build();
+        .setPortProvided(communication.target())
+        .setPortRequired(communication.source()).build();
   }
 
   @Override
   public Communication apply(JobEntities.Communication communication) {
-    return null;
+    return CommunicationBuilder.newBuilder().portProvided(communication.getPortProvided())
+        .portRequired(communication.getPortRequired()).build();
   }
 }
