@@ -6,6 +6,7 @@ install: travis_wait mvn -q install -U -DskipTests=true
 after_success:
 - ci/deploy_snapshot.sh
 - ci/publish-javadoc-to-gh-pages.sh
+- jobagent/ci/publish_docker.sh
 branches:
   except:
   - gh-pages
@@ -13,7 +14,7 @@ addons:
   sonarcloud:
     organization: cloudiator
     token:
-      secure: 
+      secure: "WMfT8PtqSHfp9WyY47sYklgAvPGdDFuyu7rGPJJJQ4Z308bgeuOOhmJa0nuuqu7ix7fWX6nwelMuXNsXRoK5lx4FhJGrAonlDmqwMb+T1BvM6KqWt+xeelqHT7yF11OQ9YSKmRUx5PfDvF4LoXgQd+/GEEOeLePLmpS2FWF18mVEVHzzbbz1B2V9gsRtGFytp3CN3JCDVjhKLtg8uHYofrK9JA6NwA8JvLorSc61AQ7yKyJ0cIENO61M4kvuILgNk5qcgh2tMFU7N0AOdcZpHAyBa0fkM8Sz+lVy21MbUxpW9S7QAMNv1VLNpksIyaju1A/vHFHNy74eADvpanl2XUerYEWyMhofbA39buFgCWMQNr24hsuucKpWcWbtU7m6zKBbMbQ5A6jW8yX5zy666Uzu+2w7mA11TX1cZZ0NSklfyo1VroLufTypPsyisY2RPy1EWXooOeU1j1MdFCmb56eft1rPUJkikLhkHbPxIV9T+yGHo67MoOjxOUsyc6DY6lyhEEtrYI64y4UTJ0TjO7keOZH1XSpIZqcm7gHxGU7WV+uy7bkGEsdyH8RLhQlEocLclRX2SBvEjBjL/zzEJI1cs/xelARb0RJAlB+HNdfGvtQX6BQjUnekzd9vFe9aSDD2twbAxa2JBKGKWaThMHpHGB7YuTKHUKqCQFj87V0="
 env:
   global:
   - COMMIT=${TRAVIS_COMMIT::8}
@@ -24,4 +25,4 @@ env:
   - secure: QFmFd19eBVDP3jLHibZjC/oGZePFgdwRaQqt+2KKBaIIm+ECvZKZ8w1Rpz2v3i1+71Cay1moaH4TU42HYx70gBzKwZQ7bl+7WW5cbDgGdG7Kuq92d/lBrR+JxS4j6uLQQbF/IhIied5+UcGV+UBJ/myOhKifRki7BT741Cw7LLDYqrLB2WrJN3EylbtsJWe7mKbFPdXOnOGd08Kccfjf1WEluXF7HIlr3jJJsfPfbA/NX3XGwTWtGEaHnxk3v8cIC76zBo3en/xVQMBtq9SR6u/KGeG6B81JPaIVWc9TjZDhLWPjqszn/73uG1hpTJZuMBXsGTuJZQrl4RYfs8aXzIoClYXfsWh+COsTYc+cGWceN2eKbLGGVIIpgTRrwT59fLn8exChp+l5ddKtl1ZeuNwl4ncvcJdlG4zNESKZ6jW4vB8dft8eKRE40mJNjz6QqttA+sbiAKE2fosSoB5n3sgLRz++Xmc+TSgyKO1UMn3z5bNEYm4lHAVpgjyCvfHoH6xSNNV4gQhUUMcxsKalvmJCziT5D6DrCNv0qygq+8cwJtptIQbyHiKKnTjD1bl52Wz88WN2uHUoTfcwaby1pZuwyqw7xlyFL6p7k5q6t7OvxpsYYpQIxsqjz9np00iPEPItzxmIV5wYSOr+tqUUdUaQmFe7ufk9i51aJcBEYvY=
 notifications:
   slack:
-    secure: 
+    secure: "UOIXP18zpFXXS6jgqp0hKinv+mvVlncT78We//ybj+XxqWb3wWG3UPU0Mqe5nFcTu57yKvw1ttaluLZhPcxnASWAd1r8Rwy8E1j9GV5EfGmdRRQT1rc5hLL1wv/HS3kmijvfrypqCj+OE07s6t6at2uciu8/WXuCkYML6Y5rGVDiitoIHmdiMif8lKuzeSXRaY/TjCkk6rVX8NTm43kLx//UTUKLABHQdZK5h7rcJsjl7/ZPuf3elNGjEPRhrXPQX+Hs56Y+rVgJUyXOnruPZ3o6CI6WmWJRYJQK5cq5EwUcsD0PqCGzDUBmngdLNGwLJssaWNtk+fE3lYHL/FdR9HC8BGX1JLjWegZYKnw7hhu9S2+glSh7G8nUBZHqQI2FrZg+jHCsh4jSkWKs8v01GlmIqCUE8ex9jaYqSnkCyNmG/XaFiYTd7sibZFVD/IsjjNZClpXZzvGlb9dA8OQHDySfS6h8O9b9J6Tk/vLC1GAfgIGqM71aar/h48ecidA4i3RsBclVkH01betUE3z4/ZViGp9EeUMsE2eJBnTv478vPlbxJ+CkRj6kv6OUhG1Ix0TyMH7+3bhC30EpimbhIlW5g4m/oID+TVVaur6IzDUaw+kdZG9iBfvWN8jirocqf/Tatyim1Flm+Lv4WB+E6z+bn5XL9EvkxC2BNUyGykE="
