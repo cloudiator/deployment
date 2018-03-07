@@ -72,4 +72,4 @@ setDefaults
 buildJpaUrl
 
 # Run the service
-java -Djpa.url=${JPA_URL} -Djpa.user=${JPA_USER} -Djpa.password=${JPA_PASSWORD} -Djpa.dialect=${JPA_DIALECT} -Djpa.driver=${JPA_DRIVER} -Dkafka.groupId=${KAFKA_GROUP_ID} -Dkafka.responseTimeout=${KAFKA_RESPONSE_TIMEOUT} -Dkafka.bootstrapServers=${KAFKA_BOOTSTRAP_SERVERS} -jar discovery-agent.jar
+java -Djpa.url=${JPA_URL} -Djpa.user=${JPA_USER} -Djpa.password=${JPA_PASSWORD} -Djpa.dialect=${JPA_DIALECT} -Djpa.driver=${JPA_DRIVER} -Dkafka.groupId=${KAFKA_GROUP_ID} -Dkafka.responseTimeout=${KAFKA_RESPONSE_TIMEOUT} -Dkafka.bootstrapServers=${KAFKA_BOOTSTRAP_SERVERS} -jar job-agent.jar
