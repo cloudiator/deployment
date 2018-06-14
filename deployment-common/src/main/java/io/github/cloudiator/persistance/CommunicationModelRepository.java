@@ -16,6 +16,6 @@
 
 package io.github.cloudiator.persistance;
 
-public interface CommunicationModelRepository extends ModelRepository<CommunicationModel> {
+interface CommunicationModelRepository extends ModelRepository<CommunicationModel> {
 
 }

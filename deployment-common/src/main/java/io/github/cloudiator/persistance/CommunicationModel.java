@@ -24,7 +24,7 @@ import javax.persistence.OneToOne;
  * Created by daniel on 07.01.15.
  */
 @Entity
-public class CommunicationModel extends Model {
+class CommunicationModel extends Model {
 
   @OneToOne(optional = false)
   private PortRequiredModel

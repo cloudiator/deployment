@@ -16,6 +16,6 @@
 
 package io.github.cloudiator.persistance;
 
-public interface ProcessModelRepository extends ModelRepository<ProcessModel> {
+interface ProcessModelRepository extends ModelRepository<ProcessModel> {
 
 }

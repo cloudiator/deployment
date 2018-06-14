@@ -29,7 +29,7 @@ import javax.persistence.ManyToOne;
  * Created by daniel on 12.12.14.
  */
 @Entity
-public class ProcessModel extends Model {
+class ProcessModel extends Model {
 
   @ManyToOne(optional = false)
   private TaskModel task;

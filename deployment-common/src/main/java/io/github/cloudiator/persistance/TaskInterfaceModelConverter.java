@@ -22,7 +22,7 @@ import io.github.cloudiator.deployment.domain.LanceInterfaceBuilder;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import javax.annotation.Nullable;
 
-public class TaskInterfaceModelConverter implements
+class TaskInterfaceModelConverter implements
     OneWayConverter<TaskInterfaceModel, TaskInterface> {
 
   @Nullable

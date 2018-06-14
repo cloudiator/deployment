@@ -27,7 +27,7 @@ import javax.persistence.Entity;
  * Created by daniel on 30.05.17.
  */
 @Entity
-public class TenantModel extends Model {
+class TenantModel extends Model {
 
   @Column(nullable = false)
   private String userId;

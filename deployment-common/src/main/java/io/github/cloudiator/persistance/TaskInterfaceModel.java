@@ -20,7 +20,7 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class TaskInterfaceModel extends Model {
+class TaskInterfaceModel extends Model {
 
   @ManyToOne
   private TaskModel taskModel;

@@ -28,7 +28,7 @@ import javax.persistence.Query;
 /**
  * Created by daniel on 31.05.17.
  */
-public class TenantModelRepositoryJpa extends BaseModelRepositoryJpa<TenantModel> implements
+class TenantModelRepositoryJpa extends BaseModelRepositoryJpa<TenantModel> implements
     TenantModelRepository {
 
   @Inject

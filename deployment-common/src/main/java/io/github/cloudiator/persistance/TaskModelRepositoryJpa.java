@@ -22,7 +22,7 @@ import com.google.inject.TypeLiteral;
 import io.github.cloudiator.util.JpaResultHelper;
 import javax.persistence.EntityManager;
 
-public class TaskModelRepositoryJpa extends BaseModelRepositoryJpa<TaskModel> implements
+class TaskModelRepositoryJpa extends BaseModelRepositoryJpa<TaskModel> implements
     TaskModelRepository {
 
   @Inject

@@ -23,7 +23,7 @@ import io.github.cloudiator.util.JpaResultHelper;
 import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 
-public class JobModelRepositoryJpa extends BaseModelRepositoryJpa<JobModel> implements
+class JobModelRepositoryJpa extends BaseModelRepositoryJpa<JobModel> implements
     JobModelRepository {
 
   @Inject

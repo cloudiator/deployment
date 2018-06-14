@@ -16,7 +16,7 @@
 
 package io.github.cloudiator.persistance;
 
-public interface PortModelRepository extends ModelRepository<PortModel> {
+interface PortModelRepository extends ModelRepository<PortModel> {
 
   PortModel findByName(String name);
 

@@ -32,7 +32,7 @@ import javax.persistence.OneToMany;
  * Created by daniel on 12.12.14.
  */
 @Entity
-public class JobModel extends Model {
+class JobModel extends Model {
 
   @Column(unique = true, nullable = false)
   protected String name;

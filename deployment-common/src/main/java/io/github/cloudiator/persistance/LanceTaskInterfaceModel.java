@@ -23,7 +23,8 @@ import javax.persistence.Lob;
 /**
  * Created by daniel on 15.12.14.
  */
-@Entity public class LanceTaskInterfaceModel extends TaskInterfaceModel {
+@Entity
+class LanceTaskInterfaceModel extends TaskInterfaceModel {
 
     @Nullable @Lob private String init;
     @Nullable @Lob private String preInstall;

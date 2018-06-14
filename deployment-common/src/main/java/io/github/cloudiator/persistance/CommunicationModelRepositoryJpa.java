@@ -21,7 +21,7 @@ import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
 import javax.persistence.EntityManager;
 
-public class CommunicationModelRepositoryJpa extends
+class CommunicationModelRepositoryJpa extends
     BaseModelRepositoryJpa<CommunicationModel> implements CommunicationModelRepository {
 
   @Inject

@@ -16,7 +16,7 @@
 
 package io.github.cloudiator.persistance;
 
-public interface TaskModelRepository extends ModelRepository<TaskModel> {
+interface TaskModelRepository extends ModelRepository<TaskModel> {
 
   TaskModel findByName(String name);
 

@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Task;
 import javax.annotation.Nullable;
 
-public class TaskDomainRepository {
+class TaskDomainRepository {
 
   private final TaskModelRepository taskModelRepository;
   private static final TaskModelConverter TASK_MODEL_CONVERTER = new TaskModelConverter();

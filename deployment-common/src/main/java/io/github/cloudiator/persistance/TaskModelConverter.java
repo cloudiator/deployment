@@ -22,7 +22,7 @@ import io.github.cloudiator.deployment.domain.TaskBuilder;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
-public class TaskModelConverter implements OneWayConverter<TaskModel, Task> {
+class TaskModelConverter implements OneWayConverter<TaskModel, Task> {
 
   private final TaskInterfaceModelConverter taskInterfaceConverter = new TaskInterfaceModelConverter();
   private final PortModelConverter portConverter = new PortModelConverter();

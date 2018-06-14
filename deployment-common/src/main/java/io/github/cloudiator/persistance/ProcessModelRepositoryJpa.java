@@ -21,7 +21,7 @@ import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
 import javax.persistence.EntityManager;
 
-public class ProcessModelRepositoryJpa extends BaseModelRepositoryJpa<ProcessModel> implements
+class ProcessModelRepositoryJpa extends BaseModelRepositoryJpa<ProcessModel> implements
     ProcessModelRepository {
 
   @Inject

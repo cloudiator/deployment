@@ -27,7 +27,7 @@ import javax.persistence.OneToMany;
  * Created by daniel on 03.08.15.
  */
 @Entity
-public class PortProvidedModel extends PortModel {
+class PortProvidedModel extends PortModel {
 
   @Column(nullable = false)
   private int port;

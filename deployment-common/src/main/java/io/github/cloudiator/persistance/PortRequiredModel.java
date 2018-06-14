@@ -25,7 +25,7 @@ import javax.persistence.OneToOne;
  * Created by daniel on 03.08.15.
  */
 @Entity
-public class PortRequiredModel extends PortModel {
+class PortRequiredModel extends PortModel {
 
   private static boolean DEFAULT_MANDATORY = false;
 

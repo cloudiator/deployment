@@ -22,7 +22,7 @@ import io.github.cloudiator.deployment.domain.PortProvidedBuilder;
 import io.github.cloudiator.deployment.domain.PortRequiredBuilder;
 import javax.annotation.Nullable;
 
-public class PortModelConverter implements OneWayConverter<PortModel, Port> {
+class PortModelConverter implements OneWayConverter<PortModel, Port> {
 
   @Nullable
   @Override

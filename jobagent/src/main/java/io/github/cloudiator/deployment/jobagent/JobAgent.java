@@ -20,6 +20,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.jobagent.messaging.JobAddedSubscriber;
+import io.github.cloudiator.deployment.jobagent.messaging.JobGetSubscriber;
 import io.github.cloudiator.persistance.JpaModule;
 import io.github.cloudiator.util.JpaContext;
 import org.cloudiator.messaging.kafka.KafkaContext;
@@ -38,6 +39,7 @@ public class JobAgent {
   public static void main(String[] args) {
 
     injector.getInstance(JobAddedSubscriber.class).run();
+    injector.getInstance(JobGetSubscriber.class).run();
 
   }
 

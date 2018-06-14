@@ -32,7 +32,7 @@ import javax.persistence.OneToMany;
  * Created by daniel on 12.12.14.
  */
 @Entity
-public class TaskModel extends Model {
+class TaskModel extends Model {
 
   @Column(unique = true, nullable = false)
   private String name;

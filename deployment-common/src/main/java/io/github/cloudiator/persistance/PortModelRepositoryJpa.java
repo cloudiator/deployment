@@ -22,7 +22,7 @@ import com.google.inject.TypeLiteral;
 import io.github.cloudiator.util.JpaResultHelper;
 import javax.persistence.EntityManager;
 
-public class PortModelRepositoryJpa extends BaseModelRepositoryJpa<PortModel> implements
+class PortModelRepositoryJpa extends BaseModelRepositoryJpa<PortModel> implements
     PortModelRepository {
 
   @Inject

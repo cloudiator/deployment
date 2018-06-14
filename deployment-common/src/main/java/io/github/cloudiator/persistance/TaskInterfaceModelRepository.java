@@ -16,6 +16,6 @@
 
 package io.github.cloudiator.persistance;
 
-public interface TaskInterfaceModelRepository extends ModelRepository<TaskInterfaceModel> {
+interface TaskInterfaceModelRepository extends ModelRepository<TaskInterfaceModel> {
 
 }
