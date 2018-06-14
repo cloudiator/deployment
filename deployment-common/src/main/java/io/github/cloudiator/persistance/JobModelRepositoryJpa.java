@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
 import io.github.cloudiator.util.JpaResultHelper;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 
@@ -41,5 +42,16 @@ class JobModelRepositoryJpa extends BaseModelRepositoryJpa<JobModel> implements
 
     return (JobModel) JpaResultHelper
         .getSingleResultOrNull(em().createQuery(query).setParameter("name", name));
+  }
+
+  @Override
+  public List<JobModel> findByUser(String userId) {
+    String query = String.format(
+        "select job from %s as job inner join job.tenant as tenant where tenant.userId = :userId",
+        type.getName());
+
+    //noinspection unchecked
+    return em().createQuery(query).setParameter("userId", userId).getResultList();
+
   }
 }

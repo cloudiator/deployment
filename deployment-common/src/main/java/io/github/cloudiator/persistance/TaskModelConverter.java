@@ -24,8 +24,14 @@ import javax.annotation.Nullable;
 
 class TaskModelConverter implements OneWayConverter<TaskModel, Task> {
 
+  final static TaskModelConverter INSTANCE = new TaskModelConverter();
+
   private final TaskInterfaceModelConverter taskInterfaceConverter = new TaskInterfaceModelConverter();
   private final PortModelConverter portConverter = new PortModelConverter();
+
+  private TaskModelConverter() {
+    
+  }
 
   @Nullable
   @Override

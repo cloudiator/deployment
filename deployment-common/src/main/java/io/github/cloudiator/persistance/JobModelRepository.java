@@ -16,11 +16,14 @@
 
 package io.github.cloudiator.persistance;
 
+import java.util.List;
 import javax.annotation.Nullable;
 
 interface JobModelRepository extends ModelRepository<JobModel> {
 
   @Nullable
   JobModel findByName(String name);
+
+  List<JobModel> findByUser(String userId);
 
 }

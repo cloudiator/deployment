@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
 class TaskDomainRepository {
 
   private final TaskModelRepository taskModelRepository;
-  private static final TaskModelConverter TASK_MODEL_CONVERTER = new TaskModelConverter();
+  private static final TaskModelConverter TASK_MODEL_CONVERTER = TaskModelConverter.INSTANCE;
 
   @Inject
   public TaskDomainRepository(

@@ -35,10 +35,10 @@ import javax.persistence.OneToMany;
 class JobModel extends Model {
 
   @Column(unique = true, nullable = false)
-  protected String name;
+  private String name;
 
   @ManyToOne
-  protected TenantModel tenant;
+  private TenantModel tenant;
 
   @OneToMany(mappedBy = "jobModel")
   private List<TaskModel> tasks;

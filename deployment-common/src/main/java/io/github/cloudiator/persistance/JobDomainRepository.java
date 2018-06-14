@@ -21,6 +21,7 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
@@ -31,6 +32,7 @@ public class JobDomainRepository {
   private final TenantModelRepository tenantModelRepository;
   private final PortDomainRepository portDomainRepository;
   private final CommunicationDomainRepository communicationDomainRepository;
+  private static final JobModelConverter JOB_MODEL_CONVERTER = JobModelConverter.INSTANCE;
 
   @Inject
   public JobDomainRepository(
@@ -61,7 +63,9 @@ public class JobDomainRepository {
   }
 
   public List<Job> findByUserId(String userId) {
-    return null;
+
+    return jobModelRepository.findByUser(userId).stream().map(JOB_MODEL_CONVERTER)
+        .collect(Collectors.toList());
   }
 
   private JobModel createModel(String userId, Job domain) {

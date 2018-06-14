@@ -20,14 +20,23 @@ import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskBuilder;
 import org.cloudiator.messages.entities.TaskEntities;
+import org.cloudiator.messages.entities.TaskEntities.Task.Builder;
 
 public class TaskConverter implements TwoWayConverter<TaskEntities.Task, Task> {
+
+  //todo add interfaces
 
   private static final PortConverter PORT_CONVERTER = new PortConverter();
 
   @Override
   public TaskEntities.Task applyBack(Task task) {
-    return null;
+
+    Builder builder = TaskEntities.Task.newBuilder();
+    builder.setName(task.name());
+
+    task.ports().stream().map(PORT_CONVERTER::applyBack).forEach(builder::addPorts);
+
+    return builder.build();
   }
 
   @Override
