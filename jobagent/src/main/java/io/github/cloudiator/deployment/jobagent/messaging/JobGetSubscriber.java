@@ -16,10 +16,39 @@
 
 package io.github.cloudiator.deployment.jobagent.messaging;
 
+import com.google.inject.Inject;
+import io.github.cloudiator.persistance.JobDomainRepository;
+import org.cloudiator.messages.Job.JobQueryRequest;
+import org.cloudiator.messaging.MessageCallback;
+import org.cloudiator.messaging.services.JobService;
+
 public class JobGetSubscriber implements Runnable {
+
+  private final JobService jobService;
+  private final JobDomainRepository jobDomainRepository;
+
+  @Inject
+  public JobGetSubscriber(JobService jobService,
+      JobDomainRepository jobDomainRepository) {
+    this.jobService = jobService;
+    this.jobDomainRepository = jobDomainRepository;
+  }
 
   @Override
   public void run() {
+    jobService.subscribeToJobQueryRequest(new MessageCallback<JobQueryRequest>() {
+      @Override
+      public void accept(String id, JobQueryRequest content) {
 
+        final String userId = content.getUserId();
+
+
+
+
+
+
+
+      }
+    });
   }
 }

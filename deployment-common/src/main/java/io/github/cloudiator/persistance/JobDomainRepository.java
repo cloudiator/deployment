@@ -20,6 +20,7 @@ import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.Task;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
@@ -57,6 +58,10 @@ public class JobDomainRepository {
 
   public void save(Job domain, String userId) {
     createModel(userId, domain);
+  }
+
+  public List<Job> findByUserId(String userId) {
+    return null;
   }
 
   private JobModel createModel(String userId, Job domain) {
