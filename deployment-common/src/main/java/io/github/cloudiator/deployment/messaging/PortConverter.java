@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.messaging;
 
+import com.google.common.base.Strings;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.PortProvided;
@@ -55,9 +56,16 @@ public class PortConverter implements TwoWayConverter<TaskEntities.Port, Port> {
             .port(portProvided.getPort()).build();
       case PORTREQUIRED:
         final TaskEntities.PortRequired portRequired = port.getPortRequired();
-        return PortRequiredBuilder.newBuilder().name(portRequired.getName())
-            .updateAction(portRequired.getUpdateAction()).isMandatory(portRequired.getIsMandatory())
-            .build();
+
+        final PortRequiredBuilder builder = PortRequiredBuilder.newBuilder()
+            .name(portRequired.getName())
+            .isMandatory(portRequired.getIsMandatory());
+
+        if (!Strings.isNullOrEmpty(portRequired.getUpdateAction())) {
+          builder.updateAction(portRequired.getUpdateAction());
+        }
+        return builder.build();
+
       case PORT_NOT_SET:
         throw new IllegalStateException("Port not set.");
       default:

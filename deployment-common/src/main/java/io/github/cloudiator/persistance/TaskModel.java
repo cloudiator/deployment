@@ -23,6 +23,7 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
@@ -75,6 +76,16 @@ class TaskModel extends Model {
 
   public List<PortModel> getPorts() {
     return ImmutableList.copyOf(ports);
+  }
+
+  public List<PortRequiredModel> getRequiredPorts() {
+    return getPorts().stream().filter(portModel -> portModel instanceof PortRequiredModel).map(
+        portModel -> (PortRequiredModel) portModel).collect(Collectors.toList());
+  }
+
+  public List<PortProvidedModel> getProvidedPorts() {
+    return getPorts().stream().filter(portModel -> portModel instanceof PortProvidedModel).map(
+        portModel -> (PortProvidedModel) portModel).collect(Collectors.toList());
   }
 
   public List<TaskInterfaceModel> getInterfaces() {

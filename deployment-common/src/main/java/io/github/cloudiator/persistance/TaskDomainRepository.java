@@ -17,6 +17,7 @@
 package io.github.cloudiator.persistance;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.Task;
 import javax.annotation.Nullable;
 
@@ -24,11 +25,14 @@ class TaskDomainRepository {
 
   private final TaskModelRepository taskModelRepository;
   private static final TaskModelConverter TASK_MODEL_CONVERTER = TaskModelConverter.INSTANCE;
+  private final PortDomainRepository portDomainRepository;
 
   @Inject
   public TaskDomainRepository(
-      TaskModelRepository taskModelRepository) {
+      TaskModelRepository taskModelRepository,
+      PortDomainRepository portDomainRepository) {
     this.taskModelRepository = taskModelRepository;
+    this.portDomainRepository = portDomainRepository;
   }
 
   @Nullable
@@ -52,7 +56,15 @@ class TaskDomainRepository {
   }
 
   private TaskModel createTaskModel(Task domain, JobModel jobModel) {
-    return new TaskModel(domain.name(), jobModel);
+
+    final TaskModel taskModel = new TaskModel(domain.name(), jobModel);
+    taskModelRepository.save(taskModel);
+
+    for (Port port : domain.ports()) {
+      portDomainRepository.save(port, taskModel);
+    }
+
+    return taskModel;
   }
 
 }

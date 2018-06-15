@@ -16,8 +16,14 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.StreamUtil;
 import io.github.cloudiator.deployment.domain.Communication;
+import java.util.function.Predicate;
+import javax.annotation.Nullable;
 
 public class CommunicationDomainRepository {
 
@@ -42,14 +48,36 @@ public class CommunicationDomainRepository {
     return model;
   }
 
+  @Nullable
+  private PortModel findPortinJobModel(JobModel jobModel, String port) {
+    return jobModel.getTasks().stream().flatMap(taskModel -> taskModel.getPorts().stream()).filter(
+        new Predicate<PortModel>() {
+          @Override
+          public boolean test(PortModel portModel) {
+            return portModel.getName().equals(port);
+          }
+        }).collect(StreamUtil.getOnly()).orElse(null);
+  }
+
   private CommunicationModel createModel(Communication domain, JobModel job) {
 
-    final PortProvidedModel portProvided = portDomainRepository
-        .getPortProvidedModel(domain.source());
-    final PortRequiredModel portRequired = portDomainRepository
-        .getPortRequiredModel(domain.target());
+    final PortModel providedPort = findPortinJobModel(job, domain.portProvided());
+    final PortModel requiredPort = findPortinJobModel(job, domain.portRequired());
 
-    return new CommunicationModel(job, portRequired, portProvided);
+    checkNotNull(providedPort,
+        String.format("No task in job %s provides port %s", job.getName(), domain.portProvided()));
+    checkState(providedPort instanceof PortProvidedModel,
+        String.format("Expected port %s to be of type PortProvidedModel but was %s",
+            providedPort.getName(), providedPort.getClass().getName()));
+
+    checkNotNull(requiredPort,
+        String.format("No task in job %s requires port %s", job.getName(), domain.portRequired()));
+    checkState(requiredPort instanceof PortRequiredModel,
+        String.format("Expected port %s to be of type PortRequiredModel but was %s",
+            requiredPort.getName(), requiredPort.getClass().getName()));
+
+    return new CommunicationModel(job, (PortRequiredModel) requiredPort,
+        (PortProvidedModel) providedPort);
   }
 
 

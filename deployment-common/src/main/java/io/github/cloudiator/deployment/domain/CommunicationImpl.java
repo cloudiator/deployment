@@ -34,12 +34,12 @@ class CommunicationImpl implements Communication {
   }
 
   @Override
-  public String target() {
+  public String portProvided() {
     return portProvided;
   }
 
   @Override
-  public String source() {
+  public String portRequired() {
     return portRequired;
   }
 }

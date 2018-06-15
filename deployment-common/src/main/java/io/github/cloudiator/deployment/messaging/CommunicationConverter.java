@@ -27,8 +27,8 @@ public class CommunicationConverter implements
   @Override
   public JobEntities.Communication applyBack(Communication communication) {
     return JobEntities.Communication.newBuilder()
-        .setPortProvided(communication.target())
-        .setPortRequired(communication.source()).build();
+        .setPortProvided(communication.portProvided())
+        .setPortRequired(communication.portRequired()).build();
   }
 
   @Override

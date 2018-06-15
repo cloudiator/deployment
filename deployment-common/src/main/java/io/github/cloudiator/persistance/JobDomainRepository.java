@@ -18,7 +18,6 @@ package io.github.cloudiator.persistance;
 
 import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,7 +29,7 @@ public class JobDomainRepository {
   private final JobModelRepository jobModelRepository;
   private final TaskDomainRepository taskDomainRepository;
   private final TenantModelRepository tenantModelRepository;
-  private final PortDomainRepository portDomainRepository;
+
   private final CommunicationDomainRepository communicationDomainRepository;
   private static final JobModelConverter JOB_MODEL_CONVERTER = JobModelConverter.INSTANCE;
 
@@ -39,12 +38,10 @@ public class JobDomainRepository {
       JobModelRepository jobModelRepository,
       TaskDomainRepository taskDomainRepository,
       TenantModelRepository tenantModelRepository,
-      PortDomainRepository portDomainRepository,
       CommunicationDomainRepository communicationDomainRepository) {
     this.jobModelRepository = jobModelRepository;
     this.taskDomainRepository = taskDomainRepository;
     this.tenantModelRepository = tenantModelRepository;
-    this.portDomainRepository = portDomainRepository;
     this.communicationDomainRepository = communicationDomainRepository;
   }
 
@@ -81,9 +78,10 @@ public class JobDomainRepository {
     for (Task task : domain.tasks()) {
       final TaskModel taskModel = taskDomainRepository.saveAndGet(task, jobModel);
 
-      for (Port port : task.ports()) {
-        portDomainRepository.save(port, taskModel);
-      }
+      final List<PortRequiredModel> requiredPorts = taskModel.getRequiredPorts();
+      final List<PortProvidedModel> providedPorts = taskModel.getProvidedPorts();
+
+      boolean test = true;
 
     }
 
