@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
 import javax.persistence.Lob;
@@ -26,147 +28,189 @@ import javax.persistence.Lob;
 @Entity
 class LanceTaskInterfaceModel extends TaskInterfaceModel {
 
-    @Nullable @Lob private String init;
-    @Nullable @Lob private String preInstall;
-    @Nullable @Lob private String install;
-    @Nullable @Lob private String postInstall;
-    @Nullable @Lob private String preStart;
-    @Lob private String start;
-    @Nullable @Lob private String startDetection;
-    @Nullable @Lob private String stopDetection;
-    @Nullable @Lob private String postStart;
-    @Nullable @Lob private String preStop;
-    @Nullable @Lob private String stop;
-    @Nullable @Lob private String postStop;
-    @Nullable @Lob private String shutdown;
+  @Nullable
+  @Lob
+  private String init;
+  @Nullable
+  @Lob
+  private String preInstall;
+  @Nullable
+  @Lob
+  private String install;
+  @Nullable
+  @Lob
+  private String postInstall;
+  @Nullable
+  @Lob
+  private String preStart;
+  @Lob
+  private String start;
+  @Nullable
+  @Lob
+  private String startDetection;
+  @Nullable
+  @Lob
+  private String stopDetection;
+  @Nullable
+  @Lob
+  private String postStart;
+  @Nullable
+  @Lob
+  private String preStop;
+  @Nullable
+  @Lob
+  private String stop;
+  @Nullable
+  @Lob
+  private String postStop;
+  @Nullable
+  @Lob
+  private String shutdown;
 
-    /**
-     * Empty constructor for hibernate.
-     */
-    protected LanceTaskInterfaceModel() {
-    }
+  /**
+   * Empty constructor for hibernate.
+   */
+  protected LanceTaskInterfaceModel() {
+  }
 
-    public LanceTaskInterfaceModel(@Nullable String init, @Nullable String preInstall,
-        @Nullable String install, @Nullable String postInstall, @Nullable String preStart,
-        String start, @Nullable String startDetection, @Nullable String stopDetection,
-        @Nullable String postStart, @Nullable String preStop, @Nullable String stop,
-        @Nullable String postStop, @Nullable String shutdown) {
-        this.init = init;
-        this.preInstall = preInstall;
-        this.install = install;
-        this.postInstall = postInstall;
-        this.preStart = preStart;
-        this.start = start;
-        this.startDetection = startDetection;
-        this.stopDetection = stopDetection;
-        this.postStart = postStart;
-        this.preStop = preStop;
-        this.stop = stop;
-        this.postStop = postStop;
-        this.shutdown = shutdown;
-    }
+  public LanceTaskInterfaceModel(TaskModel task, @Nullable String init,
+      @Nullable String preInstall,
+      @Nullable String install, @Nullable String postInstall, @Nullable String preStart,
+      String start, @Nullable String startDetection, @Nullable String stopDetection,
+      @Nullable String postStart, @Nullable String preStop, @Nullable String stop,
+      @Nullable String postStop, @Nullable String shutdown) {
+    super(task);
 
-    @Nullable public String getInit() {
-        return init;
-    }
+    checkNotNull(start, "start is null");
 
-    public void setInit(@Nullable String init) {
-        this.init = init;
-    }
+    this.init = init;
+    this.preInstall = preInstall;
+    this.install = install;
+    this.postInstall = postInstall;
+    this.preStart = preStart;
+    this.start = start;
+    this.startDetection = startDetection;
+    this.stopDetection = stopDetection;
+    this.postStart = postStart;
+    this.preStop = preStop;
+    this.stop = stop;
+    this.postStop = postStop;
+    this.shutdown = shutdown;
+  }
 
-    @Nullable public String getPreInstall() {
-        return preInstall;
-    }
+  @Nullable
+  public String getInit() {
+    return init;
+  }
 
-    public void setPreInstall(@Nullable String preInstall) {
-        this.preInstall = preInstall;
-    }
+  public void setInit(@Nullable String init) {
+    this.init = init;
+  }
 
-    @Nullable public String getInstall() {
-        return install;
-    }
+  @Nullable
+  public String getPreInstall() {
+    return preInstall;
+  }
 
-    public void setInstall(@Nullable String install) {
-        this.install = install;
-    }
+  public void setPreInstall(@Nullable String preInstall) {
+    this.preInstall = preInstall;
+  }
 
-    @Nullable public String getPostInstall() {
-        return postInstall;
-    }
+  @Nullable
+  public String getInstall() {
+    return install;
+  }
 
-    public void setPostInstall(@Nullable String postInstall) {
-        this.postInstall = postInstall;
-    }
+  public void setInstall(@Nullable String install) {
+    this.install = install;
+  }
 
-    @Nullable public String getPreStart() {
-        return preStart;
-    }
+  @Nullable
+  public String getPostInstall() {
+    return postInstall;
+  }
 
-    public void setPreStart(@Nullable String preStart) {
-        this.preStart = preStart;
-    }
+  public void setPostInstall(@Nullable String postInstall) {
+    this.postInstall = postInstall;
+  }
 
-    public String getStart() {
-        return start;
-    }
+  @Nullable
+  public String getPreStart() {
+    return preStart;
+  }
 
-    public void setStart(String start) {
-        this.start = start;
-    }
+  public void setPreStart(@Nullable String preStart) {
+    this.preStart = preStart;
+  }
 
-    @Nullable public String getStartDetection() {
-        return startDetection;
-    }
+  public String getStart() {
+    return start;
+  }
 
-    public void setStartDetection(@Nullable String startDetection) {
-        this.startDetection = startDetection;
-    }
+  public void setStart(String start) {
+    this.start = start;
+  }
 
-    @Nullable public String getStopDetection() {
-        return stopDetection;
-    }
+  @Nullable
+  public String getStartDetection() {
+    return startDetection;
+  }
 
-    public void setStopDetection(@Nullable String stopDetection) {
-        this.stopDetection = stopDetection;
-    }
+  public void setStartDetection(@Nullable String startDetection) {
+    this.startDetection = startDetection;
+  }
 
-    @Nullable public String getPostStart() {
-        return postStart;
-    }
+  @Nullable
+  public String getStopDetection() {
+    return stopDetection;
+  }
 
-    public void setPostStart(@Nullable String postStart) {
-        this.postStart = postStart;
-    }
+  public void setStopDetection(@Nullable String stopDetection) {
+    this.stopDetection = stopDetection;
+  }
 
-    @Nullable public String getPreStop() {
-        return preStop;
-    }
+  @Nullable
+  public String getPostStart() {
+    return postStart;
+  }
 
-    public void setPreStop(@Nullable String preStop) {
-        this.preStop = preStop;
-    }
+  public void setPostStart(@Nullable String postStart) {
+    this.postStart = postStart;
+  }
 
-    @Nullable public String getStop() {
-        return stop;
-    }
+  @Nullable
+  public String getPreStop() {
+    return preStop;
+  }
 
-    public void setStop(@Nullable String stop) {
-        this.stop = stop;
-    }
+  public void setPreStop(@Nullable String preStop) {
+    this.preStop = preStop;
+  }
 
-    @Nullable public String getPostStop() {
-        return postStop;
-    }
+  @Nullable
+  public String getStop() {
+    return stop;
+  }
 
-    public void setPostStop(@Nullable String postStop) {
-        this.postStop = postStop;
-    }
+  public void setStop(@Nullable String stop) {
+    this.stop = stop;
+  }
 
-    @Nullable public String getShutdown() {
-        return shutdown;
-    }
+  @Nullable
+  public String getPostStop() {
+    return postStop;
+  }
 
-    public void setShutdown(@Nullable String shutdown) {
-        this.shutdown = shutdown;
-    }
+  public void setPostStop(@Nullable String postStop) {
+    this.postStop = postStop;
+  }
+
+  @Nullable
+  public String getShutdown() {
+    return shutdown;
+  }
+
+  public void setShutdown(@Nullable String shutdown) {
+    this.shutdown = shutdown;
+  }
 }

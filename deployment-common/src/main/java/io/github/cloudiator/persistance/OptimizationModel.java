@@ -16,21 +16,32 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import org.cloudiator.matchmaking.domain.Objective;
+
 
 @Entity
-class TaskInterfaceModel extends Model {
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+class OptimizationModel extends Model {
 
-  @ManyToOne
-  private TaskModel task;
+  @Column(nullable = false)
+  private Objective objective;
 
-  protected TaskInterfaceModel() {
+  protected OptimizationModel() {
 
   }
 
-  protected TaskInterfaceModel(TaskModel task) {
-    this.task = task;
+  OptimizationModel(Objective objective) {
+    checkNotNull(objective, "objective is null");
+    this.objective = objective;
   }
 
+  public Objective getObjective() {
+    return objective;
+  }
 }

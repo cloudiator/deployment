@@ -28,9 +28,11 @@ class TaskModelConverter implements OneWayConverter<TaskModel, Task> {
 
   private final TaskInterfaceModelConverter taskInterfaceConverter = new TaskInterfaceModelConverter();
   private final PortModelConverter portConverter = new PortModelConverter();
+  private final RequirementModelConverter requirementModelConverter = new RequirementModelConverter();
+  private final OptimizationModelConverter optimizationModelConverter = new OptimizationModelConverter();
 
   private TaskModelConverter() {
-    
+
   }
 
   @Nullable
@@ -43,6 +45,10 @@ class TaskModelConverter implements OneWayConverter<TaskModel, Task> {
     return TaskBuilder.newBuilder().name(taskModel.getName())
         .addPorts(taskModel.getPorts().stream().map(portConverter).collect(Collectors.toList()))
         .addInterfaces(taskModel.getInterfaces().stream().map(taskInterfaceConverter).collect(
-            Collectors.toList())).build();
+            Collectors.toList()))
+        .addRequirements(taskModel.getRequirements().stream().map(requirementModelConverter)
+            .collect(Collectors.toList()))
+        .optimization(optimizationModelConverter.apply(taskModel.getOptimizationModel()))
+        .build();
   }
 }

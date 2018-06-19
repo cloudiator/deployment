@@ -77,12 +77,6 @@ public class JobDomainRepository {
     //create all tasks
     for (Task task : domain.tasks()) {
       final TaskModel taskModel = taskDomainRepository.saveAndGet(task, jobModel);
-
-      final List<PortRequiredModel> requiredPorts = taskModel.getRequiredPorts();
-      final List<PortProvidedModel> providedPorts = taskModel.getProvidedPorts();
-
-      boolean test = true;
-
     }
 
     //create all communications

@@ -16,21 +16,30 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
 
 @Entity
-class TaskInterfaceModel extends Model {
+public class OCLRequirementModel extends RequirementModel {
 
-  @ManyToOne
-  private TaskModel task;
+  @Column(nullable = false)
+  private String oclConstraint;
 
-  protected TaskInterfaceModel() {
+  protected OCLRequirementModel() {
 
   }
 
-  protected TaskInterfaceModel(TaskModel task) {
-    this.task = task;
+  OCLRequirementModel(TaskModel task, String oclConstraint) {
+    super(task);
+    checkNotNull(oclConstraint, "oclConstraint is null");
+    checkArgument(!oclConstraint.isEmpty(), "oclConstraint is empty");
+    this.oclConstraint = oclConstraint;
   }
 
+  public String getOclConstraint() {
+    return oclConstraint;
+  }
 }

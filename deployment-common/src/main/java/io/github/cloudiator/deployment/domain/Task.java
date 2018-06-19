@@ -16,17 +16,24 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import java.util.Optional;
 import java.util.Set;
+import org.cloudiator.matchmaking.domain.Optimization;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 /**
  * Created by daniel on 13.02.17.
  */
 public interface Task {
 
-    String name();
+  String name();
 
-    Set<Port> ports();
+  Set<Port> ports();
 
-    Set<TaskInterface> interfaces();
+  Set<TaskInterface> interfaces();
+
+  Set<Requirement> requirements();
+
+  Optional<Optimization> optimization();
 
 }

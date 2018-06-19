@@ -45,7 +45,9 @@ public class JpaModule extends AbstractModule {
     bind(PortModelRepository.class).to(PortModelRepositoryJpa.class);
     bind(TaskModelRepository.class).to(TaskModelRepositoryJpa.class);
     bind(TenantModelRepository.class).to(TenantModelRepositoryJpa.class);
-
+    bind(TaskInterfaceModelRepository.class).to(TaskInterfaceModelRepositoryJpa.class);
+    bind(OptimizationModelRepository.class).to(OptimizationModelRepositoryJpa.class);
+    bind(RequirementModelRepository.class).to(RequirementModelRepositoryJpa.class);
   }
 
   private JpaPersistModule buildPersistModule() {

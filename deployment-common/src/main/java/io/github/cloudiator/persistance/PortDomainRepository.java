@@ -103,7 +103,7 @@ public class PortDomainRepository {
   private PortRequiredModel createPortRequiredModel(PortRequired portRequired,
       TaskModel taskModel) {
     return new PortRequiredModel(portRequired.name(), taskModel,
-        portRequired.updateAction(), portRequired.isMandatory());
+        portRequired.updateAction().orElse(null), portRequired.isMandatory());
   }
 
   private PortProvidedModel createPortProvidedModel(PortProvided portProvided,

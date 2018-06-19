@@ -16,21 +16,31 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
+import org.cloudiator.matchmaking.domain.Objective;
 
 @Entity
-class TaskInterfaceModel extends Model {
+class OCLOptimizationModel extends OptimizationModel {
 
-  @ManyToOne
-  private TaskModel task;
+  @Column(nullable = false)
+  private String expression;
 
-  protected TaskInterfaceModel() {
+  protected OCLOptimizationModel() {
 
   }
 
-  protected TaskInterfaceModel(TaskModel task) {
-    this.task = task;
+  OCLOptimizationModel(Objective objective, String expression) {
+    super(objective);
+    checkNotNull(expression, "expression is null");
+    checkArgument(!expression.isEmpty(), "expression is empty");
+    this.expression = expression;
   }
 
+  public String getExpression() {
+    return expression;
+  }
 }

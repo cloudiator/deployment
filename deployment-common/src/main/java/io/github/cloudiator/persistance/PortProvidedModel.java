@@ -42,6 +42,7 @@ class PortProvidedModel extends PortModel {
 
   public PortProvidedModel(String name, TaskModel task, int port) {
     super(name, task);
+    this.port = port;
   }
 
   public int getPort() {

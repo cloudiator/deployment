@@ -18,12 +18,16 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
+import javax.annotation.Nullable;
+
 class PortRequiredImpl extends PortImpl implements PortRequired {
 
+  @Nullable
   private final String updateAction;
   private final boolean isMandatory;
 
-  PortRequiredImpl(String name, String updateAction, boolean isMandatory) {
+  PortRequiredImpl(String name, @Nullable String updateAction, boolean isMandatory) {
     super(name);
 
     if (updateAction != null) {
@@ -35,8 +39,8 @@ class PortRequiredImpl extends PortImpl implements PortRequired {
   }
 
   @Override
-  public String updateAction() {
-    return updateAction;
+  public Optional<String> updateAction() {
+    return Optional.ofNullable(updateAction);
   }
 
   @Override

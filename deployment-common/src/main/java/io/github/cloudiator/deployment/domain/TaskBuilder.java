@@ -19,16 +19,21 @@ package io.github.cloudiator.deployment.domain;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import org.cloudiator.matchmaking.domain.Optimization;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 public class TaskBuilder {
 
   private String name;
   private Set<Port> ports;
   private Set<TaskInterface> interfaces;
+  private Set<Requirement> requirements;
+  private Optimization optimization;
 
   private TaskBuilder() {
     ports = new HashSet<>();
     interfaces = new HashSet<>();
+    requirements = new HashSet<>();
   }
 
   public static TaskBuilder newBuilder() {
@@ -60,8 +65,23 @@ public class TaskBuilder {
     return this;
   }
 
+  public TaskBuilder addRequirement(Requirement requirement) {
+    this.requirements.add(requirement);
+    return this;
+  }
+
+  public TaskBuilder addRequirements(Collection<? extends Requirement> requirements) {
+    this.requirements.addAll(requirements);
+    return this;
+  }
+
+  public TaskBuilder optimization(Optimization optimization) {
+    this.optimization = optimization;
+    return this;
+  }
+
   public Task build() {
-    return new TaskImpl(name, ports, interfaces);
+    return new TaskImpl(name, ports, interfaces, requirements, optimization);
   }
 
 }

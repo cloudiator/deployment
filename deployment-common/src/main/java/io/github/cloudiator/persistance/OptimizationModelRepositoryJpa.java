@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.persistance;
 
-import java.util.Optional;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
+import javax.persistence.EntityManager;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface PortRequired extends Port {
+class OptimizationModelRepositoryJpa extends
+    BaseModelRepositoryJpa<OptimizationModel> implements OptimizationModelRepository {
 
-  Optional<String> updateAction();
-
-  boolean isMandatory();
-
+  @Inject
+  protected OptimizationModelRepositoryJpa(
+      Provider<EntityManager> entityManager,
+      TypeLiteral<OptimizationModel> type) {
+    super(entityManager, type);
+  }
 }

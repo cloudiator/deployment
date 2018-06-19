@@ -16,21 +16,30 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import javax.persistence.Entity;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.ManyToOne;
 
 @Entity
-class TaskInterfaceModel extends Model {
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+class RequirementModel extends Model {
 
-  @ManyToOne
+  @ManyToOne(optional = false)
   private TaskModel task;
 
-  protected TaskInterfaceModel() {
+  protected RequirementModel() {
 
   }
 
-  protected TaskInterfaceModel(TaskModel task) {
+  RequirementModel(TaskModel task) {
+    checkNotNull(task, "task is null");
     this.task = task;
   }
 
+  public TaskModel getTaskModel() {
+    return task;
+  }
 }

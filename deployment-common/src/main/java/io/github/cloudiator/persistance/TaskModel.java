@@ -28,6 +28,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 /**
  * Created by daniel on 12.12.14.
@@ -39,10 +41,18 @@ class TaskModel extends Model {
   private String name;
   @ManyToOne
   private JobModel jobModel;
+
+  @OneToOne
+  private OptimizationModel optimizationModel;
+
   @OneToMany(mappedBy = "task")
   private List<PortModel> ports;
-  @OneToMany(mappedBy = "taskModel")
+
+  @OneToMany(mappedBy = "task")
   private List<TaskInterfaceModel> interfaces;
+
+  @OneToMany(mappedBy = "task")
+  private List<RequirementModel> requirements;
 
   /**
    * Empty constructor for hibernate.
@@ -50,12 +60,13 @@ class TaskModel extends Model {
   protected TaskModel() {
   }
 
-  public TaskModel(String name, JobModel job) {
-    checkNotNull(name);
-    checkArgument(!name.isEmpty());
-    checkNotNull(job);
+  public TaskModel(String name, JobModel job, OptimizationModel optimizationModel) {
+    checkNotNull(name, "name is null");
+    checkArgument(!name.isEmpty(), "name is empty");
+    checkNotNull(job, "job is null");
     this.name = name;
     this.jobModel = job;
+    this.optimizationModel = optimizationModel;
   }
 
   public String getName() {
@@ -95,5 +106,13 @@ class TaskModel extends Model {
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("name", name).add("ports", Arrays.toString(ports.toArray()));
+  }
+
+  public OptimizationModel getOptimizationModel() {
+    return optimizationModel;
+  }
+
+  public List<RequirementModel> getRequirements() {
+    return ImmutableList.copyOf(requirements);
   }
 }

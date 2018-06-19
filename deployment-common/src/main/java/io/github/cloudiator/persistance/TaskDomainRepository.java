@@ -19,20 +19,31 @@ package io.github.cloudiator.persistance;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
 import javax.annotation.Nullable;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 class TaskDomainRepository {
 
   private final TaskModelRepository taskModelRepository;
   private static final TaskModelConverter TASK_MODEL_CONVERTER = TaskModelConverter.INSTANCE;
   private final PortDomainRepository portDomainRepository;
+  private final TaskInterfaceDomainRepository taskInterfaceDomainRepository;
+  private final RequirementDomainRepository requirementDomainRepository;
+  private final OptimizationDomainRepository optimizationDomainRepository;
 
   @Inject
   public TaskDomainRepository(
       TaskModelRepository taskModelRepository,
-      PortDomainRepository portDomainRepository) {
+      PortDomainRepository portDomainRepository,
+      TaskInterfaceDomainRepository taskInterfaceDomainRepository,
+      RequirementDomainRepository requirementDomainRepository,
+      OptimizationDomainRepository optimizationDomainRepository) {
     this.taskModelRepository = taskModelRepository;
     this.portDomainRepository = portDomainRepository;
+    this.taskInterfaceDomainRepository = taskInterfaceDomainRepository;
+    this.requirementDomainRepository = requirementDomainRepository;
+    this.optimizationDomainRepository = optimizationDomainRepository;
   }
 
   @Nullable
@@ -57,11 +68,26 @@ class TaskDomainRepository {
 
   private TaskModel createTaskModel(Task domain, JobModel jobModel) {
 
-    final TaskModel taskModel = new TaskModel(domain.name(), jobModel);
+    OptimizationModel optimizationModel = null;
+    if (domain.optimization().isPresent()) {
+      optimizationModel = optimizationDomainRepository
+          .saveAndGet(domain.optimization().get());
+    }
+
+    final TaskModel taskModel = new TaskModel(domain.name(), jobModel, optimizationModel);
     taskModelRepository.save(taskModel);
 
     for (Port port : domain.ports()) {
       portDomainRepository.save(port, taskModel);
+    }
+
+    for (TaskInterface taskInterface : domain.interfaces()) {
+      final TaskInterfaceModel taskInterfaceModel = taskInterfaceDomainRepository
+          .saveAndGet(taskInterface, taskModel);
+    }
+
+    for (Requirement requirement : domain.requirements()) {
+      requirementDomainRepository.saveAndGet(requirement, taskModel);
     }
 
     return taskModel;

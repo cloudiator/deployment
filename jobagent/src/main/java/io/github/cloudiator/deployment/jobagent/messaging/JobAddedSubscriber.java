@@ -18,7 +18,7 @@ package io.github.cloudiator.deployment.jobagent.messaging;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.persist.UnitOfWork;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.persistance.JobDomainRepository;
 import javax.persistence.EntityManager;
@@ -39,21 +39,26 @@ public class JobAddedSubscriber implements Runnable {
   private final MessageInterface messageInterface;
   private final JobDomainRepository jobDomainRepository;
   private final JobConverter jobConverter;
-  private final UnitOfWork unitOfWork;
   private final Provider<EntityManager> entityManager;
 
   @Inject
   public JobAddedSubscriber(JobService jobService,
       MessageInterface messageInterface,
       JobDomainRepository jobDomainRepository,
-      JobConverter jobConverter, UnitOfWork unitOfWork,
+      JobConverter jobConverter,
       Provider<EntityManager> entityManager) {
     this.jobService = jobService;
     this.messageInterface = messageInterface;
     this.jobDomainRepository = jobDomainRepository;
     this.jobConverter = jobConverter;
-    this.unitOfWork = unitOfWork;
     this.entityManager = entityManager;
+  }
+
+
+  @Transactional
+  void persistJob(CreateJobRequest createJobRequest) {
+    jobDomainRepository
+        .save(jobConverter.apply(createJobRequest.getJob()), createJobRequest.getUserId());
   }
 
 
@@ -65,25 +70,17 @@ public class JobAddedSubscriber implements Runnable {
 
         try {
 
-          unitOfWork.begin();
-          entityManager.get().getTransaction().begin();
-
-          jobDomainRepository
-              .save(jobConverter.apply(createJobRequest.getJob()), createJobRequest.getUserId());
+          persistJob(createJobRequest);
 
           final JobCreatedResponse jobCreatedResponse = JobCreatedResponse.newBuilder()
               .setJob(createJobRequest.getJob()).build();
 
-          entityManager.get().getTransaction().commit();
           messageInterface.reply(id, jobCreatedResponse);
 
         } catch (Exception e) {
           LOGGER.error(e.getMessage(), e);
           messageInterface.reply(JobCreatedResponse.class, id,
               Error.newBuilder().setCode(500).setMessage(e.getMessage()).build());
-          entityManager.get().getTransaction().rollback();
-        } finally {
-          unitOfWork.end();
         }
       }
     });

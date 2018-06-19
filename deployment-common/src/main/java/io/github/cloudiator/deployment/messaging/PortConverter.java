@@ -24,6 +24,7 @@ import io.github.cloudiator.deployment.domain.PortProvidedBuilder;
 import io.github.cloudiator.deployment.domain.PortRequired;
 import io.github.cloudiator.deployment.domain.PortRequiredBuilder;
 import org.cloudiator.messages.entities.TaskEntities;
+import org.cloudiator.messages.entities.TaskEntities.PortRequired.Builder;
 
 public class PortConverter implements TwoWayConverter<TaskEntities.Port, Port> {
 
@@ -31,10 +32,15 @@ public class PortConverter implements TwoWayConverter<TaskEntities.Port, Port> {
   public TaskEntities.Port applyBack(Port port) {
 
     if (port instanceof PortRequired) {
-      final TaskEntities.PortRequired portRequired = TaskEntities.PortRequired.newBuilder()
-          .setName(port.name())
-          .setIsMandatory(((PortRequired) port).isMandatory())
-          .setUpdateAction(((PortRequired) port).updateAction()).build();
+
+      final Builder builder = TaskEntities.PortRequired.newBuilder();
+      builder.setName(port.name())
+          .setIsMandatory(((PortRequired) port).isMandatory());
+      if (((PortRequired) port).updateAction().isPresent()) {
+        builder.setUpdateAction(((PortRequired) port).updateAction().get());
+      }
+
+      final TaskEntities.PortRequired portRequired = builder.build();
       return TaskEntities.Port.newBuilder().setPortRequired(portRequired).build();
     } else if (port instanceof PortProvided) {
       final TaskEntities.PortProvided portProvided = TaskEntities.PortProvided.newBuilder()
