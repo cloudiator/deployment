@@ -7,6 +7,7 @@ after_success:
 - ci/deploy_snapshot.sh
 - ci/publish-javadoc-to-gh-pages.sh
 - jobagent/ci/publish_docker.sh
+- scheduler/ci/publish_docker.sh
 branches:
   except:
   - gh-pages
