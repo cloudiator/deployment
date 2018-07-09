@@ -22,6 +22,6 @@ import org.cloudiator.matchmaking.domain.Requirement;
 
 public interface ResourcePool {
 
-  Iterable<Node> allocate(Iterable<? extends Requirement> requirements);
+  Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements);
 
 }

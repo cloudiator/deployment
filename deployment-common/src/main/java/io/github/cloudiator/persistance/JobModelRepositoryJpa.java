@@ -58,12 +58,12 @@ class JobModelRepositoryJpa extends BaseModelRepositoryJpa<JobModel> implements
   @Override
   public JobModel findByNameAndUser(String name, String user) {
     String query = String.format(
-        "select job from %s as job inner join job.tenant as tenant where tenant.userId = :userId and job.name = :user",
+        "select job from %s as job inner join job.tenant as tenant where tenant.userId = :userId and job.name = :name",
         type.getName());
 
     //noinspection unchecked
     return (JobModel) JpaResultHelper
         .getSingleResultOrNull(
-            em().createQuery(query).setParameter("name", name).setParameter("user", user));
+            em().createQuery(query).setParameter("name", name).setParameter("userId", user));
   }
 }

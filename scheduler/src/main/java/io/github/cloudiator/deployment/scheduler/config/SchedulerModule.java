@@ -17,11 +17,13 @@
 package io.github.cloudiator.deployment.scheduler.config;
 
 import com.google.inject.AbstractModule;
+import io.github.cloudiator.deployment.scheduler.OnDemandResourcePool;
+import io.github.cloudiator.deployment.scheduler.ResourcePool;
 
 public class SchedulerModule extends AbstractModule {
 
   @Override
   protected void configure() {
-
+    bind(ResourcePool.class).to(OnDemandResourcePool.class);
   }
 }

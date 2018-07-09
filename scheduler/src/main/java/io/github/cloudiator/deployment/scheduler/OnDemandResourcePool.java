@@ -16,16 +16,19 @@
 
 package io.github.cloudiator.deployment.scheduler;
 
+import com.google.inject.Inject;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.converters.RequirementConverter;
 import org.cloudiator.matchmaking.domain.Requirement;
+import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Node.NodeRequestMessage;
 import org.cloudiator.messages.Node.NodeRequestResponse;
 import org.cloudiator.messages.NodeEntities.NodeRequirements;
-import org.cloudiator.messaging.ResponseException;
+import org.cloudiator.messaging.ResponseCallback;
 import org.cloudiator.messaging.services.NodeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,12 +41,13 @@ public class OnDemandResourcePool implements ResourcePool {
       .getLogger(OnDemandResourcePool.class);
   private static final NodeToNodeMessageConverter nodeConverter = new NodeToNodeMessageConverter();
 
+  @Inject
   public OnDemandResourcePool(NodeService nodeService) {
     this.nodeService = nodeService;
   }
 
   @Override
-  public Iterable<Node> allocate(Iterable<? extends Requirement> requirements) {
+  public Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements) {
 
     final NodeRequirements nodeRequirements = NodeRequirements.newBuilder()
         .addAllRequirements(StreamSupport.stream(requirements.spliterator(), false)
@@ -51,19 +55,26 @@ public class OnDemandResourcePool implements ResourcePool {
                 Collectors.toList())).build();
 
     final NodeRequestMessage requestMessage = NodeRequestMessage.newBuilder().setGroupName("blub")
+        .setUserId(userId)
         .setNodeRequest(nodeRequirements).build();
 
-    try {
-      final NodeRequestResponse nodes = nodeService.createNodes(requestMessage);
+//    try {
+    nodeService.createNodesAsync(requestMessage,
+        new ResponseCallback<NodeRequestResponse>() {
+          @Override
+          public void accept(@Nullable NodeRequestResponse content, @Nullable Error error) {
 
-      return nodes.getNodeGroup().getNodesList().stream().map(nodeConverter::applyBack)
-          .collect(Collectors.toList());
+          }
+        });
 
+    return null;
+    //return nodes.getNodeGroup().getNodesList().stream().map(nodeConverter::applyBack)
+    //    .collect(Collectors.toList());
 
-    } catch (ResponseException e) {
-      LOGGER.error("Error while allocating nodes", e);
-      throw new IllegalStateException("Error while allocating nodes", e);
-      //todo handle exception
-    }
+    //} catch (ResponseException e) {
+//      LOGGER.error("Error while allocating nodes", e);
+//      throw new IllegalStateException("Error while allocating nodes", e);
+    //todo handle exception
+//    }
   }
 }

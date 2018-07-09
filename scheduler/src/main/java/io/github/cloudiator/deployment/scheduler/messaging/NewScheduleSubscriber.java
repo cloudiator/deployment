@@ -27,6 +27,8 @@ import org.cloudiator.messages.Process.ScheduleCreatedResponse;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NewScheduleSubscriber implements Runnable {
 
@@ -34,6 +36,8 @@ public class NewScheduleSubscriber implements Runnable {
   private final ResourcePool resourcePool;
   private final JobMessageRepository jobMessageRepository;
   private final MessageInterface messageInterface;
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(NewScheduleSubscriber.class);
 
   @Inject
   public NewScheduleSubscriber(ProcessService processService,
@@ -52,20 +56,25 @@ public class NewScheduleSubscriber implements Runnable {
       @Override
       public void accept(String id, CreateScheduleRequest content) {
 
-        final String jobId = content.getSchedule().getJob();
-        final String userId = content.getUserId();
+        try {
 
-        //retrieve the job
-        Job job = jobMessageRepository.getById(userId, jobId);
-        if (job == null) {
-          messageInterface.reply(ScheduleCreatedResponse.class, id,
-              Error.newBuilder().setCode(404).setMessage("Could not find job with id " + jobId)
-                  .build());
-          return;
-        }
+          final String jobId = content.getSchedule().getJob();
+          final String userId = content.getUserId();
 
-        for (Task task : job.tasks()) {
-          resourcePool.allocate(task.requirements());
+          //retrieve the job
+          Job job = jobMessageRepository.getById(userId, jobId);
+          if (job == null) {
+            messageInterface.reply(ScheduleCreatedResponse.class, id,
+                Error.newBuilder().setCode(404).setMessage("Could not find job with id " + jobId)
+                    .build());
+            return;
+          }
+
+          for (Task task : job.tasks()) {
+            resourcePool.allocate(userId, task.requirements());
+          }
+        } catch (Exception e) {
+          LOGGER.error("Unexpected exception while handling schedule.", e);
         }
 
       }
