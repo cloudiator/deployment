@@ -20,6 +20,7 @@ import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -63,6 +64,11 @@ public class JobDomainRepository {
 
     return jobModelRepository.findByUser(userId).stream().map(JOB_MODEL_CONVERTER)
         .collect(Collectors.toList());
+  }
+
+  public Optional<Job> findByUserAndId(String userId, String jobId) {
+    final JobModel byNameAndUser = jobModelRepository.findByNameAndUser(jobId, userId);
+    return Optional.ofNullable(JOB_MODEL_CONVERTER.apply(byNameAndUser));
   }
 
   private JobModel createModel(String userId, Job domain) {

@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.persistance;
+package io.github.cloudiator.deployment.scheduler;
 
-import java.util.List;
-import javax.annotation.Nullable;
+import io.github.cloudiator.domain.Node;
+import org.cloudiator.matchmaking.domain.Requirement;
 
-interface JobModelRepository extends ModelRepository<JobModel> {
 
-  @Nullable
-  JobModel findByName(String name);
+public interface ResourcePool {
 
-  List<JobModel> findByUser(String userId);
-
-  @Nullable
-  JobModel findByNameAndUser(String name, String user);
+  Iterable<Node> allocate(Iterable<? extends Requirement> requirements);
 
 }

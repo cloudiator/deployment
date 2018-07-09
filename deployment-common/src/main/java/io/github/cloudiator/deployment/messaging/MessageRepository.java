@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.persistance;
+package io.github.cloudiator.deployment.messaging;
 
 import java.util.List;
 import javax.annotation.Nullable;
 
-interface JobModelRepository extends ModelRepository<JobModel> {
+public interface MessageRepository<T> {
 
   @Nullable
-  JobModel findByName(String name);
+  T getById(String userId, String id);
 
-  List<JobModel> findByUser(String userId);
-
-  @Nullable
-  JobModel findByNameAndUser(String name, String user);
-
+  List<T> getAll(String userId);
 }

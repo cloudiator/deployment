@@ -22,11 +22,10 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.persistance.JobDomainRepository;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Optional;
 import org.cloudiator.messages.Job.JobQueryRequest;
 import org.cloudiator.messages.Job.JobQueryResponse;
 import org.cloudiator.messages.Job.JobQueryResponse.Builder;
-import org.cloudiator.messages.entities.JobEntities;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.JobService;
@@ -54,23 +53,40 @@ public class JobGetSubscriber implements Runnable {
       public void accept(String id, JobQueryRequest content) {
 
         final String userId = content.getUserId();
+        final String jobId = content.getJobId();
 
-        Builder responseBuilder = JobQueryResponse.newBuilder();
-        retrieveStoredJobs(userId).stream().map(JOB_CONVERTER::applyBack).forEach(
-            new Consumer<JobEntities.Job>() {
-              @Override
-              public void accept(JobEntities.Job job) {
-                responseBuilder.addJobs(job);
-              }
-            });
-        messageInterface.reply(id, responseBuilder.build());
+        if (jobId == null || jobId.isEmpty()) {
+          messageInterface.reply(id, retrieveMultiple(userId));
+        } else {
+          messageInterface.reply(id, retrieveSingle(userId, jobId));
+        }
       }
     });
+  }
+
+  private JobQueryResponse retrieveSingle(String userId, String jobId) {
+
+    final Optional<Job> optionalJob = retrieveJob(userId, jobId);
+    return optionalJob.map(job -> JobQueryResponse.newBuilder()
+        .addJobs(JOB_CONVERTER.applyBack(job)).build())
+        .orElseGet(() -> JobQueryResponse.newBuilder().build());
+  }
+
+  private JobQueryResponse retrieveMultiple(String userId) {
+    Builder responseBuilder = JobQueryResponse.newBuilder();
+    retrieveStoredJobs(userId).stream().map(JOB_CONVERTER::applyBack).forEach(
+        responseBuilder::addJobs);
+    return responseBuilder.build();
   }
 
   @Transactional
   List<Job> retrieveStoredJobs(String userId) {
     return jobDomainRepository.findByUserId(userId);
+  }
+
+  @Transactional
+  Optional<Job> retrieveJob(String userId, String jobId) {
+    return jobDomainRepository.findByUserAndId(userId, jobId);
   }
 
 }

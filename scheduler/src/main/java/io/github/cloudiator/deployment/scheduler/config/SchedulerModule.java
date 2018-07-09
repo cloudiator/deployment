@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.persistance;
+package io.github.cloudiator.deployment.scheduler.config;
 
-import java.util.List;
-import javax.annotation.Nullable;
+import com.google.inject.AbstractModule;
 
-interface JobModelRepository extends ModelRepository<JobModel> {
+public class SchedulerModule extends AbstractModule {
 
-  @Nullable
-  JobModel findByName(String name);
+  @Override
+  protected void configure() {
 
-  List<JobModel> findByUser(String userId);
-
-  @Nullable
-  JobModel findByNameAndUser(String name, String user);
-
+  }
 }

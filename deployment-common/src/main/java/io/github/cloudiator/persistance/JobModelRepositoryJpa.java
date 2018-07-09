@@ -54,4 +54,16 @@ class JobModelRepositoryJpa extends BaseModelRepositoryJpa<JobModel> implements
     return em().createQuery(query).setParameter("userId", userId).getResultList();
 
   }
+
+  @Override
+  public JobModel findByNameAndUser(String name, String user) {
+    String query = String.format(
+        "select job from %s as job inner join job.tenant as tenant where tenant.userId = :userId and job.name = :user",
+        type.getName());
+
+    //noinspection unchecked
+    return (JobModel) JpaResultHelper
+        .getSingleResultOrNull(
+            em().createQuery(query).setParameter("name", name).setParameter("user", user));
+  }
 }
