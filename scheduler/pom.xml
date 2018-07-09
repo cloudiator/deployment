@@ -64,7 +64,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>io.github.cloudiator.management.encryption.EncryptionAgent</mainClass>
+              <mainClass>io.github.cloudiator.deployment.scheduler.ScheduleAgent</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
