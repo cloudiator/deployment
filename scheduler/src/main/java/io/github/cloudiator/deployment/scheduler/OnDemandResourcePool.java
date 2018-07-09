@@ -19,6 +19,9 @@ package io.github.cloudiator.deployment.scheduler;
 import com.google.inject.Inject;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -58,23 +61,39 @@ public class OnDemandResourcePool implements ResourcePool {
         .setUserId(userId)
         .setNodeRequest(nodeRequirements).build();
 
-//    try {
+    CountDownLatch countDownLatch = new CountDownLatch(1);
+
+    final Set<Node> nodes = new HashSet<>();
+    IllegalStateException illegalStateException = null;
+
     nodeService.createNodesAsync(requestMessage,
         new ResponseCallback<NodeRequestResponse>() {
           @Override
           public void accept(@Nullable NodeRequestResponse content, @Nullable Error error) {
-
+            countDownLatch.countDown();
+            if (content != null) {
+              nodes.addAll(
+                  content.getNodeGroup().getNodesList().stream().map(nodeConverter::applyBack)
+                      .collect(Collectors.toSet()));
+            } else if (error != null) {
+              LOGGER.error(String
+                  .format("Error while allocating nodes. Code: %s, Message: %s", error.getCode(),
+                      error.getMessage()));
+            }
           }
         });
 
-    return null;
-    //return nodes.getNodeGroup().getNodesList().stream().map(nodeConverter::applyBack)
-    //    .collect(Collectors.toList());
+    try {
+      countDownLatch.await();
 
-    //} catch (ResponseException e) {
-//      LOGGER.error("Error while allocating nodes", e);
-//      throw new IllegalStateException("Error while allocating nodes", e);
-    //todo handle exception
-//    }
+      if (nodes.isEmpty()) {
+        throw new IllegalStateException("Failed to allocate nodes.");
+      }
+
+      return nodes;
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(
+          "ResourcePool was interrupted while waiting for node allocation.", e);
+    }
   }
 }
