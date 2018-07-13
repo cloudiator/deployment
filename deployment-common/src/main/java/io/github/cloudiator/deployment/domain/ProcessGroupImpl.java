@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,19 @@
 
 package io.github.cloudiator.deployment.domain;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
+import com.google.common.collect.ImmutableList;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface Process extends Identifiable {
+public class ProcessGroupImpl implements ProcessGroup {
 
-  enum State {
+  private final Iterable<Process> processes;
 
+  public ProcessGroupImpl(
+      Iterable<Process> processes) {
+    this.processes = ImmutableList.copyOf(processes);
   }
 
-  String jobId();
-
-  String taskId();
-
-  State state();
+  @Override
+  public Iterable<Process> processes() {
+    return processes;
+  }
 }

@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler;
+package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
-import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
-import io.github.cloudiator.deployment.scheduler.messaging.ScheduleRequestSubscriber;
 import org.cloudiator.messaging.kafka.KafkaContext;
 import org.cloudiator.messaging.kafka.KafkaMessagingModule;
 import org.cloudiator.messaging.services.MessageServiceModule;
 
-public class ScheduleAgent {
+public class LanceAgent {
 
-  private final static Injector INJECTOR = Guice
-      .createInjector(new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
-          new SchedulerModule());
+  private static final Injector INJECTOR = Guice
+      .createInjector(new MessageServiceModule(), new KafkaMessagingModule(new KafkaContext()));
 
   public static void main(String[] args) {
-    INJECTOR.getInstance(ScheduleRequestSubscriber.class).run();
-    INJECTOR.getInstance(ProcessRequestSubscriber.class).run();
+    INJECTOR.getInstance(CreateLanceProcessSubscriber.class).run();
   }
 
 }

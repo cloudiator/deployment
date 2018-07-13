@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.cloudiator.matchmaking.domain.Optimization;
 import org.cloudiator.matchmaking.domain.Requirement;
 
@@ -35,5 +36,15 @@ public interface Task {
   Set<Requirement> requirements();
 
   Optional<Optimization> optimization();
+
+  default Set<PortProvided> providedPorts() {
+    return this.ports().stream().filter(port -> port instanceof PortProvided)
+        .map(port -> (PortProvided) port).collect(Collectors.toSet());
+  }
+
+  default Set<PortRequired> requiredPorts() {
+    return this.ports().stream().filter(port -> port instanceof PortRequired)
+        .map(port -> (PortRequired) port).collect(Collectors.toSet());
+  }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,13 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import io.github.cloudiator.domain.Node;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface Process extends Identifiable {
+public interface LanceProcess extends Identifiable {
 
-  enum State {
+  Schedule schedule();
 
-  }
+  String task();
 
-  String jobId();
-
-  String taskId();
-
-  State state();
+  Node node();
 }

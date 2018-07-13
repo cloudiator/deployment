@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.scheduler;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
+import com.google.inject.ImplementedBy;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.ProcessGroup;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Task;
 
 /**
- * Created by daniel on 13.02.17.
+ * todo: currently only lance exists,
  */
-public interface Process extends Identifiable {
+@ImplementedBy(LanceProcessSpawnerImpl.class)
+public interface ProcessSpawner {
 
-  enum State {
+  boolean supports(Task task);
 
-  }
+  ProcessGroup spawn(String userId, Schedule schedule, Task task);
 
-  String jobId();
 
-  String taskId();
-
-  State state();
 }

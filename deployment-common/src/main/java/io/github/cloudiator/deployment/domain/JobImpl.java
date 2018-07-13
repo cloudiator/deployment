@@ -20,7 +20,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.util.StreamUtil;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by daniel on 13.02.17.
@@ -64,4 +66,41 @@ class JobImpl implements Job {
   public String name() {
     return name;
   }
+
+  @Override
+  public Task providingTask(Communication communication) {
+    checkArgument(communications.contains(communication),
+        String.format("Job does not contain communication %s.", communication));
+
+    return this.tasks().stream().filter(task -> task.providedPorts().stream().map(Port::name)
+        .collect(Collectors.toSet())
+        .contains(communication.portProvided())).collect(StreamUtil.getOnly())
+        .orElseThrow(() -> new IllegalStateException(
+            String.format(
+                "Communication %s references provided port %s but Job %s contains no task providing this port",
+                communication, communication.portProvided(), this)));
+  }
+
+  @Override
+  public Task requiredTask(Communication communication) {
+    checkArgument(communications.contains(communication),
+        String.format("Job does not contain communication %s.", communication));
+
+    return this.tasks().stream().filter(task -> task.requiredPorts().stream().map(Port::name)
+        .collect(Collectors.toSet())
+        .contains(communication.portRequired())).collect(StreamUtil.getOnly())
+        .orElseThrow(() -> new IllegalStateException(
+            String.format(
+                "Communication %s references required port %s but Job %s contains no task requiring this port",
+                communication, communication.portRequired(), this)));
+  }
+
+  @Override
+  public Set<Communication> attachedCommunications(PortProvided providedPort) {
+
+    return communications.stream().filter(
+        communication -> communication.portProvided().equals(providedPort.name()))
+        .collect(Collectors.toSet());
+  }
+
 }

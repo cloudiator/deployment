@@ -18,34 +18,35 @@ package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
-import io.github.cloudiator.deployment.scheduler.ResourcePool;
 import org.cloudiator.messages.General.Error;
+import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.CreateScheduleRequest;
 import org.cloudiator.messages.Process.ScheduleCreatedResponse;
+import org.cloudiator.messages.entities.ProcessEntities;
+import org.cloudiator.messages.entities.ProcessEntities.ProcessNew;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class NewScheduleSubscriber implements Runnable {
+public class ScheduleRequestSubscriber implements Runnable {
 
   private final ProcessService processService;
-  private final ResourcePool resourcePool;
   private final JobMessageRepository jobMessageRepository;
   private final MessageInterface messageInterface;
   private static final Logger LOGGER = LoggerFactory
-      .getLogger(NewScheduleSubscriber.class);
+      .getLogger(ScheduleRequestSubscriber.class);
 
   @Inject
-  public NewScheduleSubscriber(ProcessService processService,
-      ResourcePool resourcePool,
+  public ScheduleRequestSubscriber(ProcessService processService,
       JobMessageRepository jobMessageRepository,
       MessageInterface messageInterface) {
     this.processService = processService;
-    this.resourcePool = resourcePool;
     this.jobMessageRepository = jobMessageRepository;
     this.messageInterface = messageInterface;
   }
@@ -70,8 +71,20 @@ public class NewScheduleSubscriber implements Runnable {
             return;
           }
 
+          Schedule schedule = ScheduleImpl.of(job);
+
+          //process request for each task
           for (Task task : job.tasks()) {
-            resourcePool.allocate(userId, task.requirements());
+
+            final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
+                ProcessEntities.Schedule.newBuilder().setId(schedule.id())
+                    .setJob(schedule.job().name()).build()).setTask(task.name())
+                .build();
+            final CreateProcessRequest createProcessRequest = CreateProcessRequest.newBuilder()
+                .setUserId(userId).setProcess(newProcess).build();
+
+            processService.createProcess(createProcessRequest);
+
           }
         } catch (Exception e) {
           LOGGER.error("Unexpected exception while handling schedule.", e);

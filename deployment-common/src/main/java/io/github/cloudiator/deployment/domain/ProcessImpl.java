@@ -16,32 +16,29 @@
 
 package io.github.cloudiator.deployment.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
 class ProcessImpl implements Process {
 
   private final String id;
-  private final Task task;
+  private final String jobId;
+  private final String taskName;
   private final Process.State state;
 
-  ProcessImpl(String id, Task task,
+  ProcessImpl(String id, String jobId, String taskName,
       State state) {
-
-    checkNotNull(id, "id is null");
-    checkArgument(!id.isEmpty(), "id is empty");
-    checkNotNull(task, "task is null");
-    checkNotNull(state, "state is null");
-
     this.id = id;
-    this.task = task;
+    this.jobId = jobId;
+    this.taskName = taskName;
     this.state = state;
   }
 
+  @Override
+  public String jobId() {
+    return jobId;
+  }
 
   @Override
-  public Task task() {
-    return task;
+  public String taskId() {
+    return taskName;
   }
 
   @Override

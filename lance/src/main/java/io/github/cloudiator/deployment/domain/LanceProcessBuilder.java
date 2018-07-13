@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,45 @@
 
 package io.github.cloudiator.deployment.domain;
 
-public class ProcessBuilder {
+import io.github.cloudiator.domain.Node;
+
+public class LanceProcessBuilder {
 
   private String id;
-  private String jobId;
-  private String taskName;
-  private Process.State state;
+  private Schedule schedule;
+  private String task;
+  private Node node;
 
-  private ProcessBuilder() {
+  private LanceProcessBuilder() {
   }
 
-  public static ProcessBuilder newBuilder() {
-    return new ProcessBuilder();
+  public static LanceProcessBuilder newBuilder() {
+    return new LanceProcessBuilder();
   }
 
-  public ProcessBuilder id(String id) {
+  public LanceProcessBuilder id(String id) {
     this.id = id;
     return this;
   }
 
-  public ProcessBuilder taskName(String taskName) {
-    this.taskName = taskName;
+  public LanceProcessBuilder schedule(Schedule schedule) {
+    this.schedule = schedule;
     return this;
   }
 
-  public ProcessBuilder jobId(String jobId) {
-    this.jobId = jobId;
+  public LanceProcessBuilder task(String task) {
+    this.task = task;
     return this;
   }
 
-  public ProcessBuilder state(Process.State state) {
-    this.state = state;
+  public LanceProcessBuilder node(Node node) {
+    this.node = node;
     return this;
   }
 
-  public Process build() {
-    return new ProcessImpl(id, jobId, taskName, state);
+  public LanceProcess build() {
+    return new LanceProcessImpl(id, schedule, task, node);
   }
+
 
 }
