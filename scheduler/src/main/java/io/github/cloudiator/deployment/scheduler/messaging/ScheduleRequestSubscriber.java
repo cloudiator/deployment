@@ -22,14 +22,17 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
+import javax.annotation.Nullable;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.CreateScheduleRequest;
+import org.cloudiator.messages.Process.ProcessCreatedResponse;
 import org.cloudiator.messages.Process.ScheduleCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessNew;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
+import org.cloudiator.messaging.ResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,7 +86,14 @@ public class ScheduleRequestSubscriber implements Runnable {
             final CreateProcessRequest createProcessRequest = CreateProcessRequest.newBuilder()
                 .setUserId(userId).setProcess(newProcess).build();
 
-            processService.createProcess(createProcessRequest);
+            processService.createProcessAsync(createProcessRequest,
+                new ResponseCallback<ProcessCreatedResponse>() {
+                  @Override
+                  public void accept(@Nullable ProcessCreatedResponse content,
+                      @Nullable Error error) {
+                    
+                  }
+                });
 
           }
         } catch (Exception e) {

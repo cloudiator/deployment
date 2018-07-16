@@ -70,7 +70,6 @@ public class OnDemandResourcePool implements ResourcePool {
         new ResponseCallback<NodeRequestResponse>() {
           @Override
           public void accept(@Nullable NodeRequestResponse content, @Nullable Error error) {
-            countDownLatch.countDown();
             if (content != null) {
               nodes.addAll(
                   content.getNodeGroup().getNodesList().stream().map(nodeConverter::applyBack)
@@ -80,6 +79,7 @@ public class OnDemandResourcePool implements ResourcePool {
                   .format("Error while allocating nodes. Code: %s, Message: %s", error.getCode(),
                       error.getMessage()));
             }
+            countDownLatch.countDown();
           }
         });
 
