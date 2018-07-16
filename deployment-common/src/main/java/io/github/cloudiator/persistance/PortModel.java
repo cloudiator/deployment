@@ -33,7 +33,7 @@ import javax.persistence.ManyToOne;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class PortModel extends Model {
 
-  @Column(updatable = false, unique = true, nullable = false)
+  @Column(updatable = false, nullable = false)
   private String name;
   @ManyToOne(optional = false)
   private TaskModel task;

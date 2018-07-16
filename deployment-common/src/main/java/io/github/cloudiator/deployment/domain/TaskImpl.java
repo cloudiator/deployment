@@ -19,6 +19,8 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
 import java.util.Set;
@@ -76,5 +78,16 @@ class TaskImpl implements Task {
   @Override
   public Optional<Optimization> optimization() {
     return Optional.ofNullable(optimization);
+  }
+
+  protected MoreObjects.ToStringHelper toStringHelper() {
+    return MoreObjects.toStringHelper(this).add("name", name)
+        .add("ports", Joiner.on(",").join(ports)).add("interfaces", Joiner.on(",").join(interfaces))
+        .add("requirements", Joiner.on(",").join(requirements)).add("optimization", optimization);
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper().toString();
   }
 }

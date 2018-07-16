@@ -139,4 +139,23 @@ class LanceInterfaceImpl implements LanceInterface {
   public Optional<String> shutdown() {
     return Optional.ofNullable(shutdown);
   }
+
+  @Override
+  public String toString() {
+    return "LanceInterfaceImpl{" +
+        "init='" + init + '\'' +
+        ", preInstall='" + preInstall + '\'' +
+        ", install='" + install + '\'' +
+        ", postInstall='" + postInstall + '\'' +
+        ", preStart='" + preStart + '\'' +
+        ", start='" + start + '\'' +
+        ", startDetection='" + startDetection + '\'' +
+        ", stopDetection='" + stopDetection + '\'' +
+        ", postStart='" + postStart + '\'' +
+        ", preStop='" + preStop + '\'' +
+        ", stop='" + stop + '\'' +
+        ", postStop='" + postStop + '\'' +
+        ", shutdown='" + shutdown + '\'' +
+        '}';
+  }
 }

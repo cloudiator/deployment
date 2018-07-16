@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.domain.Named;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
 import java.util.Optional;
@@ -26,16 +27,12 @@ import java.util.Set;
 /**
  * Created by daniel on 13.02.17.
  */
-public interface Job extends Named {
-
-  Set<Task> tasks();
+public interface Job extends JobNew, Identifiable {
 
   default Optional<Task> getTask(String name) {
     checkNotNull(name, "name is null");
     return tasks().stream().filter(task -> task.name().equals(name)).collect(StreamUtil.getOnly());
   }
-
-  Set<Communication> communications();
 
   Task providingTask(Communication communication);
 

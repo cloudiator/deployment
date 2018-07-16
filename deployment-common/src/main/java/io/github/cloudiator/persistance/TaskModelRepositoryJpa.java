@@ -33,21 +33,13 @@ class TaskModelRepositoryJpa extends BaseModelRepositoryJpa<TaskModel> implement
   }
 
   @Override
-  public TaskModel findByName(String name) {
-
-    String query = String.format("from %s where name=:name", type.getName());
-
-    return (TaskModel) JpaResultHelper
-        .getSingleResultOrNull(em().createQuery(query).setParameter("name", name));
-  }
-
-  @Override
-  public TaskModel findByNameAndUser(String userId, String name) {
+  public TaskModel findByTaskJobAndUser(String name, String jobId, String userId) {
 
     String query = String.format(
-        "from %s task inner join task.jobModel job inner join job.tenant tenant where job.name=:name and tenant.userId=:userId",
+        "from %s task inner join task.jobModel job inner join job.tenant tenant where task.name=:name and job.uuid=:jobId and tenant.userId=:userId",
         type.getName());
     return (TaskModel) JpaResultHelper.getSingleResultOrNull(
-        em().createQuery(query).setParameter("name", name).setParameter("userId", userId));
+        em().createQuery(query).setParameter("name", name).setParameter("jobId", jobId)
+            .setParameter("userId", userId));
   }
 }

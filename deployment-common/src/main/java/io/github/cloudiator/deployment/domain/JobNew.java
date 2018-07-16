@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.persistance;
+package io.github.cloudiator.deployment.domain;
 
-interface PortModelRepository extends ModelRepository<PortModel> {
+import de.uniulm.omi.cloudiator.domain.Named;
+import java.util.Set;
+
+public interface JobNew extends Named {
+
+  Set<Task> tasks();
+
+  Set<Communication> communications();
 
 }

@@ -78,7 +78,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
         final LanceProcess lanceProcess = LanceProcess.newBuilder()
             .setSchedule(
                 ProcessEntities.Schedule.newBuilder().setId(schedule.id())
-                    .setJob(schedule.job().name())
+                    .setJob(schedule.job().id())
                     .build())
             .setJob(jobConverter.applyBack(schedule.job()))
             .setNode(nodeToNodeMessageConverter.apply(node)).setTask(task.name()).build();

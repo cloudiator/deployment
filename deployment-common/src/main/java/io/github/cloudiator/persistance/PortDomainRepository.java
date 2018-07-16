@@ -20,62 +20,15 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.PortRequired;
-import javax.annotation.Nullable;
 
 public class PortDomainRepository {
 
   private final PortModelRepository portModelRepository;
-  private static final PortModelConverter PORT_MODEL_CONVERTER = new PortModelConverter();
 
   @Inject
   public PortDomainRepository(
       PortModelRepository portModelRepository) {
     this.portModelRepository = portModelRepository;
-  }
-
-  @Nullable
-  PortModel getPortModel(String name) {
-    return portModelRepository.findByName(name);
-  }
-
-  @Nullable
-  PortRequiredModel getPortRequiredModel(String name) {
-    final PortModel portModel = getPortModel(name);
-    if (portModel instanceof PortRequiredModel) {
-      return (PortRequiredModel) portModel;
-    }
-    return null;
-  }
-
-  @Nullable
-  PortProvidedModel getPortProvidedModel(String name) {
-    final PortModel portModel = getPortModel(name);
-    if (portModel instanceof PortProvidedModel) {
-      return (PortProvidedModel) portModel;
-    }
-    return null;
-  }
-
-  public Port getPort(String name) {
-    return PORT_MODEL_CONVERTER.apply(portModelRepository.findByName(name));
-  }
-
-  @Nullable
-  public PortProvided getPortProvided(String name) {
-    final Port port = getPort(name);
-    if (port instanceof PortProvided) {
-      return (PortProvided) port;
-    }
-    return null;
-  }
-
-  @Nullable
-  public PortRequired getPortRequired(String name) {
-    final Port port = getPort(name);
-    if (port instanceof PortRequired) {
-      return (PortRequired) port;
-    }
-    return null;
   }
 
   void save(Port port, TaskModel task) {

@@ -36,12 +36,12 @@ class JobModelRepositoryJpa extends BaseModelRepositoryJpa<JobModel> implements
 
   @Nullable
   @Override
-  public JobModel findByName(String name) {
+  public JobModel findByUUID(String uuid) {
 
-    String query = String.format("from %s where name=:name", type.getName());
+    String query = String.format("from %s where uuid=:uuid", type.getName());
 
     return (JobModel) JpaResultHelper
-        .getSingleResultOrNull(em().createQuery(query).setParameter("name", name));
+        .getSingleResultOrNull(em().createQuery(query).setParameter("uuid", uuid));
   }
 
   @Override
@@ -56,14 +56,14 @@ class JobModelRepositoryJpa extends BaseModelRepositoryJpa<JobModel> implements
   }
 
   @Override
-  public JobModel findByNameAndUser(String name, String user) {
+  public JobModel findByUUIDAndUser(String uuid, String user) {
     String query = String.format(
-        "select job from %s as job inner join job.tenant as tenant where tenant.userId = :userId and job.name = :name",
+        "select job from %s as job inner join job.tenant as tenant where tenant.userId = :userId and job.uuid = :uuid",
         type.getName());
 
     //noinspection unchecked
     return (JobModel) JpaResultHelper
         .getSingleResultOrNull(
-            em().createQuery(query).setParameter("name", name).setParameter("userId", user));
+            em().createQuery(query).setParameter("uuid", uuid).setParameter("userId", user));
   }
 }

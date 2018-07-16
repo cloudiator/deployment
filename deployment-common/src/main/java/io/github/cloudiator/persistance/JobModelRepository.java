@@ -22,11 +22,11 @@ import javax.annotation.Nullable;
 interface JobModelRepository extends ModelRepository<JobModel> {
 
   @Nullable
-  JobModel findByName(String name);
+  JobModel findByUUID(String uuid);
 
   List<JobModel> findByUser(String userId);
 
   @Nullable
-  JobModel findByNameAndUser(String name, String user);
+  JobModel findByUUIDAndUser(String uuid, String user);
 
 }

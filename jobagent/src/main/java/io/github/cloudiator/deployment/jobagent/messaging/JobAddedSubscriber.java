@@ -19,7 +19,11 @@ package io.github.cloudiator.deployment.jobagent.messaging;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.persist.Transactional;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.JobBuilder;
+import io.github.cloudiator.deployment.domain.JobNew;
 import io.github.cloudiator.deployment.messaging.JobConverter;
+import io.github.cloudiator.deployment.messaging.JobNewConverter;
 import io.github.cloudiator.persistance.JobDomainRepository;
 import javax.persistence.EntityManager;
 import org.cloudiator.messages.General.Error;
@@ -38,27 +42,26 @@ public class JobAddedSubscriber implements Runnable {
   private final JobService jobService;
   private final MessageInterface messageInterface;
   private final JobDomainRepository jobDomainRepository;
-  private final JobConverter jobConverter;
+  private final JobConverter jobConverter = new JobConverter();
+  private final JobNewConverter jobNewConverter = new JobNewConverter();
   private final Provider<EntityManager> entityManager;
 
   @Inject
   public JobAddedSubscriber(JobService jobService,
       MessageInterface messageInterface,
       JobDomainRepository jobDomainRepository,
-      JobConverter jobConverter,
       Provider<EntityManager> entityManager) {
     this.jobService = jobService;
     this.messageInterface = messageInterface;
     this.jobDomainRepository = jobDomainRepository;
-    this.jobConverter = jobConverter;
     this.entityManager = entityManager;
   }
 
 
   @Transactional
-  void persistJob(CreateJobRequest createJobRequest) {
+  void persistJob(Job job, String userId) {
     jobDomainRepository
-        .save(jobConverter.apply(createJobRequest.getJob()), createJobRequest.getUserId());
+        .save(job, userId);
   }
 
 
@@ -70,10 +73,16 @@ public class JobAddedSubscriber implements Runnable {
 
         try {
 
-          persistJob(createJobRequest);
+          JobNew jobNew = jobNewConverter.apply(createJobRequest.getJob());
+
+          Job job = JobBuilder.newBuilder().generateId().name(jobNew.name())
+              .addCommunications(jobNew.communications())
+              .addTasks(jobNew.tasks()).build();
+
+          persistJob(job, createJobRequest.getUserId());
 
           final JobCreatedResponse jobCreatedResponse = JobCreatedResponse.newBuilder()
-              .setJob(createJobRequest.getJob()).build();
+              .setJob(jobConverter.applyBack(job)).build();
 
           messageInterface.reply(id, jobCreatedResponse);
 

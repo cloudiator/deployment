@@ -18,8 +18,6 @@ package io.github.cloudiator.persistance;
 
 interface TaskModelRepository extends ModelRepository<TaskModel> {
 
-  TaskModel findByName(String name);
-
-  TaskModel findByNameAndUser(String userId, String name);
+  TaskModel findByTaskJobAndUser(String name, String jobId, String user);
 
 }

@@ -19,7 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.base.MoreObjects.ToStringHelper;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,23 +27,19 @@ import java.util.stream.Collectors;
 /**
  * Created by daniel on 13.02.17.
  */
-class JobImpl implements Job {
+class JobImpl extends JobNewImpl implements Job {
 
-  private final Set<Task> tasks;
-  private final Set<Communication> communications;
-  private final String name;
+  private final String id;
 
-  JobImpl(String name, Set<Task> tasks,
+
+  JobImpl(String id, String name, Set<Task> tasks,
       Set<Communication> communications) {
+    super(name, tasks, communications);
 
-    checkNotNull(name, "name is null");
-    checkArgument(!name.isEmpty(), "name is empty");
-    checkNotNull(tasks, "tasks is null");
-    checkNotNull(communications, "communications is null");
+    checkNotNull(id, "id is null");
+    checkArgument(!id.isEmpty(), "id is empty");
 
-    this.name = name;
-    this.tasks = ImmutableSet.copyOf(tasks);
-    this.communications = ImmutableSet.copyOf(communications);
+    this.id = id;
     validateCommunication();
   }
 
@@ -52,24 +48,10 @@ class JobImpl implements Job {
     return true;
   }
 
-  @Override
-  public Set<Task> tasks() {
-    return tasks;
-  }
-
-  @Override
-  public Set<Communication> communications() {
-    return communications;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
 
   @Override
   public Task providingTask(Communication communication) {
-    checkArgument(communications.contains(communication),
+    checkArgument(communications().contains(communication),
         String.format("Job does not contain communication %s.", communication));
 
     return this.tasks().stream().filter(task -> task.providedPorts().stream().map(Port::name)
@@ -83,7 +65,7 @@ class JobImpl implements Job {
 
   @Override
   public Task requiredTask(Communication communication) {
-    checkArgument(communications.contains(communication),
+    checkArgument(communications().contains(communication),
         String.format("Job does not contain communication %s.", communication));
 
     return this.tasks().stream().filter(task -> task.requiredPorts().stream().map(Port::name)
@@ -98,9 +80,18 @@ class JobImpl implements Job {
   @Override
   public Set<Communication> attachedCommunications(PortProvided providedPort) {
 
-    return communications.stream().filter(
+    return communications().stream().filter(
         communication -> communication.portProvided().equals(providedPort.name()))
         .collect(Collectors.toSet());
   }
 
+  @Override
+  public String id() {
+    return id;
+  }
+
+  @Override
+  protected ToStringHelper stringHelper() {
+    return super.stringHelper().add("id", id);
+  }
 }

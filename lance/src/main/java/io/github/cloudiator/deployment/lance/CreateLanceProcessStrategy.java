@@ -75,7 +75,7 @@ public class CreateLanceProcessStrategy {
     final LifecycleClient lifecycleClient = getLifecycleClient(
         node.connectTo().ip());
 
-    final ApplicationId applicationId = ApplicationId.fromString(schedule.job().name());
+    final ApplicationId applicationId = ApplicationId.fromString(schedule.job().id());
     final ApplicationInstanceId applicationInstanceId = ApplicationInstanceId
         .fromString(schedule.id());
 
@@ -155,7 +155,7 @@ public class CreateLanceProcessStrategy {
             applicationInstanceId));
 
     for (Task task : job.tasks()) {
-      final ComponentId componentId = ComponentId.fromString(task.name());
+      final ComponentId componentId = ComponentId.fromString(job.id() +"/"+ task.name());
 
       try {
         lifecycleClient

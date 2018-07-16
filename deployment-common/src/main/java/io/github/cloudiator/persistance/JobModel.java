@@ -34,7 +34,10 @@ import javax.persistence.OneToMany;
 @Entity
 class JobModel extends Model {
 
-  @Column(unique = true, nullable = false)
+  @Column(nullable = false, unique = true)
+  private String uuid;
+
+  @Column(nullable = false)
   private String name;
 
   @ManyToOne
@@ -52,10 +55,12 @@ class JobModel extends Model {
   protected JobModel() {
   }
 
-  public JobModel(String name, TenantModel tenant) {
+  public JobModel(String uuid, String name, TenantModel tenant) {
+    checkNotNull(uuid);
     checkNotNull(name);
     checkArgument(!name.isEmpty());
     checkNotNull(tenant);
+    this.uuid = uuid;
     this.name = name;
     this.tenant = tenant;
   }
@@ -74,7 +79,12 @@ class JobModel extends Model {
 
   @Override
   protected ToStringHelper stringHelper() {
-    return super.stringHelper().add("name", name).add("tasks", Arrays.toString(tasks.toArray()))
+    return super.stringHelper().add("uuid", uuid).add("name", name)
+        .add("tasks", Arrays.toString(tasks.toArray()))
         .add("communications", Arrays.toString(communications.toArray()));
+  }
+
+  public String getUuid() {
+    return uuid;
   }
 }

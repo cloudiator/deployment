@@ -96,7 +96,7 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
   public DeployableComponent get() {
 
     final DeployableComponentBuilder builder = DeployableComponentBuilder
-        .createBuilder(task.name(), ComponentId.fromString(task.name()));
+        .createBuilder(task.name(), ComponentId.fromString(job.id() +"/"+ task.name()));
 
     // add all ingoing ports / provided ports
     for (PortProvided provided : task.providedPorts()) {

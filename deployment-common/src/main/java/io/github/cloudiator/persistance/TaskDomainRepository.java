@@ -46,16 +46,6 @@ class TaskDomainRepository {
     this.optimizationDomainRepository = optimizationDomainRepository;
   }
 
-  @Nullable
-  public Task get(String name) {
-    return TASK_MODEL_CONVERTER.apply(getModel(name));
-  }
-
-  @Nullable
-  TaskModel getModel(String name) {
-    return taskModelRepository.findByName(name);
-  }
-
   void save(Task domain, JobModel jobModel) {
     saveAndGet(domain, jobModel);
   }

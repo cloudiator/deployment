@@ -18,6 +18,8 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.MoreObjects.ToStringHelper;
+
 class PortProvidedImpl extends PortImpl implements PortProvided {
 
   private final int port;
@@ -32,5 +34,10 @@ class PortProvidedImpl extends PortImpl implements PortProvided {
   @Override
   public int port() {
     return port;
+  }
+
+  @Override
+  protected ToStringHelper toStringHelper() {
+    return super.toStringHelper().add("port", port);
   }
 }

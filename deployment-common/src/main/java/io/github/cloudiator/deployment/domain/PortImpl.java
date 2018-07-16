@@ -18,6 +18,8 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
+
 abstract class PortImpl implements Port {
 
   private final String name;
@@ -31,5 +33,14 @@ abstract class PortImpl implements Port {
   @Override
   public String name() {
     return name;
+  }
+
+  protected MoreObjects.ToStringHelper toStringHelper() {
+    return MoreObjects.toStringHelper(this).add("name", name);
+  }
+
+  @Override
+  public String toString() {
+    return toStringHelper().toString();
   }
 }

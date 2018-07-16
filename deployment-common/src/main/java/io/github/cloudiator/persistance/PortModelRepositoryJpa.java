@@ -19,7 +19,6 @@ package io.github.cloudiator.persistance;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
-import io.github.cloudiator.util.JpaResultHelper;
 import javax.persistence.EntityManager;
 
 class PortModelRepositoryJpa extends BaseModelRepositoryJpa<PortModel> implements
@@ -32,21 +31,4 @@ class PortModelRepositoryJpa extends BaseModelRepositoryJpa<PortModel> implement
     super(entityManager, type);
   }
 
-  @Override
-  public PortModel findByName(String name) {
-
-    String query = String.format("from %s where name=:name", type.getName());
-
-    return (PortModel) JpaResultHelper
-        .getSingleResultOrNull(em().createQuery(query).setParameter("name", name));
-  }
-
-  @Override
-  public PortModel findByNameAndUser(String name, String user) {
-    String query = String.format(
-        "from %s port inner join port.task task inner join task.jobModel job inner join job.tenant tenant where job.name=:name and tenant.userId=:userId",
-        type.getName());
-    return (PortModel) JpaResultHelper.getSingleResultOrNull(
-        em().createQuery(query).setParameter("name", name).setParameter("userId", user));
-  }
 }

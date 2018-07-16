@@ -37,7 +37,8 @@ import org.cloudiator.matchmaking.domain.Requirement;
 @Entity
 class TaskModel extends Model {
 
-  @Column(unique = true, nullable = false)
+
+  @Column(nullable = false)
   private String name;
   @ManyToOne
   private JobModel jobModel;

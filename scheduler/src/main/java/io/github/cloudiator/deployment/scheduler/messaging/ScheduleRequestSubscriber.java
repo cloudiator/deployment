@@ -81,7 +81,7 @@ public class ScheduleRequestSubscriber implements Runnable {
 
             final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
                 ProcessEntities.Schedule.newBuilder().setId(schedule.id())
-                    .setJob(schedule.job().name()).build()).setTask(task.name())
+                    .setJob(schedule.job().id()).build()).setTask(task.name())
                 .build();
             final CreateProcessRequest createProcessRequest = CreateProcessRequest.newBuilder()
                 .setUserId(userId).setProcess(newProcess).build();
@@ -91,7 +91,7 @@ public class ScheduleRequestSubscriber implements Runnable {
                   @Override
                   public void accept(@Nullable ProcessCreatedResponse content,
                       @Nullable Error error) {
-                    
+
                   }
                 });
 

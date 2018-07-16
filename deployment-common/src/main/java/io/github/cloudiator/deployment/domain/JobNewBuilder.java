@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,64 +19,52 @@ package io.github.cloudiator.deployment.domain;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Created by daniel on 13.02.17.
  */
-public class JobBuilder {
+public class JobNewBuilder {
 
-  private String id;
   private String name;
   private Set<Task> tasks = new HashSet<>();
   private Set<Communication> communications = new HashSet<>();
 
-  private JobBuilder() {
+  private JobNewBuilder() {
 
   }
 
-  public static JobBuilder newBuilder() {
-    return new JobBuilder();
+  public static JobNewBuilder newBuilder() {
+    return new JobNewBuilder();
   }
 
-  public JobBuilder generateId() {
-    this.id = UUID.randomUUID().toString();
-    return this;
-  }
-
-  public JobBuilder id(String id) {
-    this.id = id;
-    return this;
-  }
-
-  public JobBuilder name(String name) {
+  public JobNewBuilder name(String name) {
     this.name = name;
     return this;
   }
 
-  public JobBuilder addTask(Task task) {
+  public JobNewBuilder addTask(Task task) {
     this.tasks.add(task);
     return this;
   }
 
-  public JobBuilder addTasks(
+  public JobNewBuilder addTasks(
       Collection<? extends Task> tasks) {
     this.tasks.addAll(tasks);
     return this;
   }
 
-  public JobBuilder addCommunication(Communication communication) {
+  public JobNewBuilder addCommunication(Communication communication) {
     this.communications.add(communication);
     return this;
   }
 
-  public JobBuilder addCommunications(Set<? extends Communication> communications) {
+  public JobNewBuilder addCommunications(Set<? extends Communication> communications) {
     this.communications.addAll(communications);
     return this;
   }
 
-  public Job build() {
-    return new JobImpl(id, name, tasks, communications);
+  public JobNew build() {
+    return new JobNewImpl(name, tasks, communications);
   }
 
 

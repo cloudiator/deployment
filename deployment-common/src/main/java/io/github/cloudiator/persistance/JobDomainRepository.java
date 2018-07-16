@@ -22,7 +22,6 @@ import io.github.cloudiator.deployment.domain.Task;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 public class JobDomainRepository {
@@ -46,11 +45,6 @@ public class JobDomainRepository {
     this.communicationDomainRepository = communicationDomainRepository;
   }
 
-  @Nullable
-  JobModel getJobModelByName(String name) {
-    return jobModelRepository.findByName(name);
-  }
-
 
   private TenantModel getOrCreateTenantModel(String userId) {
     return tenantModelRepository.createOrGet(userId);
@@ -67,7 +61,7 @@ public class JobDomainRepository {
   }
 
   public Optional<Job> findByUserAndId(String userId, String jobId) {
-    final JobModel byNameAndUser = jobModelRepository.findByNameAndUser(jobId, userId);
+    final JobModel byNameAndUser = jobModelRepository.findByUUIDAndUser(jobId, userId);
     return Optional.ofNullable(JOB_MODEL_CONVERTER.apply(byNameAndUser));
   }
 
@@ -77,7 +71,7 @@ public class JobDomainRepository {
     final TenantModel tenantModel = getOrCreateTenantModel(userId);
 
     //create the job
-    JobModel jobModel = new JobModel(domain.name(), tenantModel);
+    JobModel jobModel = new JobModel(domain.id(), domain.name(), tenantModel);
     jobModelRepository.save(jobModel);
 
     //create all tasks
