@@ -160,8 +160,9 @@ public class CreateLanceProcessStrategy {
       lifecycleClient.waitForDeployment(componentInstanceId);
 
       LOGGER.debug(String
-          .format("Client deployed the instance with component instance id %s successfully",
-              componentInstanceId));
+          .format(
+              "Client deployed the process of task %s with component instance id %s successfully",
+              task, componentInstanceId));
 
       return LanceProcessBuilder.newBuilder().id(componentInstanceId.toString()).node(node)
           .schedule(schedule).task(task.name()).build();

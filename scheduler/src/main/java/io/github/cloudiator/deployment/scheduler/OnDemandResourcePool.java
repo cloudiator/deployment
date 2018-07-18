@@ -50,12 +50,13 @@ public class OnDemandResourcePool implements ResourcePool {
   }
 
   @Override
-  public Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements) {
+  public Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements, @Nullable String name) {
 
     final NodeRequirements nodeRequirements = NodeRequirements.newBuilder()
         .addAllRequirements(StreamSupport.stream(requirements.spliterator(), false)
             .map(REQUIREMENT_CONVERTER::applyBack).collect(
                 Collectors.toList())).build();
+
 
     final NodeRequestMessage requestMessage = NodeRequestMessage.newBuilder().setGroupName("blub")
         .setUserId(userId)

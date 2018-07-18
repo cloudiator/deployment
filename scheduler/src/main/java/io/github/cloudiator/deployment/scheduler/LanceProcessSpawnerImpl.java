@@ -71,7 +71,8 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
     try {
 
       //allocate the required resources from the resource pool
-      final Iterable<Node> allocatedNodes = resourcePool.allocate(userId, task.requirements());
+      final Iterable<Node> allocatedNodes = resourcePool
+          .allocate(userId, task.requirements(), task.name());
 
       List<Process> processList = new LinkedList<>();
       for (Node node : allocatedNodes) {

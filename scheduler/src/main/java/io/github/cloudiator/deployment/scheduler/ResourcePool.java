@@ -17,11 +17,12 @@
 package io.github.cloudiator.deployment.scheduler;
 
 import io.github.cloudiator.domain.Node;
+import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.domain.Requirement;
 
 
 public interface ResourcePool {
 
-  Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements);
+  Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements, @Nullable String name);
 
 }
