@@ -31,12 +31,18 @@ public class LanceInterfaceBuilder {
   private String stop;
   private String postStop;
   private String shutdown;
+  private LanceContainerType containerType;
 
   private LanceInterfaceBuilder() {
   }
 
   public static LanceInterfaceBuilder newBuilder() {
     return new LanceInterfaceBuilder();
+  }
+
+  public LanceInterfaceBuilder containerType(LanceContainerType lanceContainerType) {
+    this.containerType = lanceContainerType;
+    return this;
   }
 
   public LanceInterfaceBuilder init(String init) {
@@ -105,7 +111,8 @@ public class LanceInterfaceBuilder {
   }
 
   public LanceInterface build() {
-    return new LanceInterfaceImpl(init, preInstall, install, postInstall, preStart, start,
+    return new LanceInterfaceImpl(containerType, init, preInstall, install, postInstall, preStart,
+        start,
         startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown);
   }
 

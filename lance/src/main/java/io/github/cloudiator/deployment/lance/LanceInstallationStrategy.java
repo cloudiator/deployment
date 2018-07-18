@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.concurrent.CountDownLatch;
@@ -25,6 +26,7 @@ import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Installation.InstallationRequest;
 import org.cloudiator.messages.Installation.InstallationResponse;
 import org.cloudiator.messages.InstallationEntities.Installation;
+import org.cloudiator.messages.InstallationEntities.Installation.Builder;
 import org.cloudiator.messages.InstallationEntities.Tool;
 import org.cloudiator.messaging.ResponseCallback;
 import org.cloudiator.messaging.services.InstallationRequestService;
@@ -40,13 +42,17 @@ public class LanceInstallationStrategy {
     this.installationRequestService = installationRequestService;
   }
 
-  public void execute(String userId, Node node) {
+  public void execute(String userId, Node node, ContainerType containerType) {
 
-    final Installation installation = Installation.newBuilder()
+    final Builder builder = Installation.newBuilder()
         .setNode(nodeToNodeMessageConverter.apply(node))
-        .addTool(Tool.LANCE).build();
+        .addTool(Tool.LANCE);
+    if (ContainerType.DOCKER.equals(containerType) || ContainerType.DOCKER_REMOTE
+        .equals(containerType)) {
+      builder.addTool(Tool.DOCKER);
+    }
     final InstallationRequest installationRequest = InstallationRequest.newBuilder()
-        .setUserId(userId).setInstallation(installation).build();
+        .setUserId(userId).setInstallation(builder.build()).build();
 
     CountDownLatch countDownLatch = new CountDownLatch(1);
     installationRequestService.createInstallationRequestAsync(installationRequest,

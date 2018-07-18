@@ -32,7 +32,6 @@ public class CreateLanceProcessSubscriber implements Runnable {
   private final ProcessService processService;
   private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
   private final JobConverter jobConverter = new JobConverter();
-  private final LanceInstallationStrategy lanceInstallationStrategy;
   private final CreateLanceProcessStrategy createLanceProcessStrategy;
 
   @Inject
@@ -41,7 +40,6 @@ public class CreateLanceProcessSubscriber implements Runnable {
       LanceInstallationStrategy lanceInstallationStrategy,
       CreateLanceProcessStrategy createLanceProcessStrategy) {
     this.processService = processService;
-    this.lanceInstallationStrategy = lanceInstallationStrategy;
     this.createLanceProcessStrategy = createLanceProcessStrategy;
   }
 
@@ -58,9 +56,7 @@ public class CreateLanceProcessSubscriber implements Runnable {
             final Schedule schedule = new ScheduleImpl(content.getLance().getSchedule().getId(),
                 job);
 
-            lanceInstallationStrategy.execute(userId, node);
-
-            createLanceProcessStrategy.execute(schedule, job.getTask(task).orElseThrow(
+            createLanceProcessStrategy.execute(userId, schedule, job.getTask(task).orElseThrow(
                 () -> new IllegalStateException(
                     String.format("Job %s does not contain task %s", job, task))), node);
 

@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 
 class LanceInterfaceImpl implements LanceInterface {
 
+  private final LanceContainerType lanceContainerType;
   @Nullable
   private final String init;
   @Nullable
@@ -49,13 +50,18 @@ class LanceInterfaceImpl implements LanceInterface {
   @Nullable
   private final String shutdown;
 
-  LanceInterfaceImpl(@Nullable String init, @Nullable String preInstall,
+  LanceInterfaceImpl(LanceContainerType containerType, @Nullable String init,
+      @Nullable String preInstall,
       @Nullable String install,
       @Nullable String postInstall, @Nullable String preStart, String start,
       @Nullable String startDetection,
       @Nullable String stopDetection, @Nullable String postStart, @Nullable String preStop,
       @Nullable String stop,
       @Nullable String postStop, @Nullable String shutdown) {
+
+    checkNotNull(containerType, "containerType is null");
+    this.lanceContainerType = containerType;
+
     this.init = init;
     this.preInstall = preInstall;
     this.install = install;
@@ -72,6 +78,11 @@ class LanceInterfaceImpl implements LanceInterface {
     this.stop = stop;
     this.postStop = postStop;
     this.shutdown = shutdown;
+  }
+
+  @Override
+  public LanceContainerType containerType() {
+    return lanceContainerType;
   }
 
   @Override

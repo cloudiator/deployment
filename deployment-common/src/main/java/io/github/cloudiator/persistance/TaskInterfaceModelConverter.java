@@ -42,13 +42,20 @@ class TaskInterfaceModelConverter implements
   }
 
   private LanceInterface lanceInterface(LanceTaskInterfaceModel lanceTaskInterfaceModel) {
-    return LanceInterfaceBuilder.newBuilder().init(lanceTaskInterfaceModel.getInit())
-        .install(lanceTaskInterfaceModel.getInstall()).postInstall(lanceTaskInterfaceModel.getPostInstall())
-        .postStart(lanceTaskInterfaceModel.getPostStart()).postStop(lanceTaskInterfaceModel.getPostStop())
-        .preInstall(lanceTaskInterfaceModel.getPreInstall()).preStart(lanceTaskInterfaceModel.getPreStart())
-        .preStop(lanceTaskInterfaceModel.getPreStop()).shutdown(lanceTaskInterfaceModel.getShutdown())
+    return LanceInterfaceBuilder.newBuilder()
+        .containerType(lanceTaskInterfaceModel.getLanceContainerType())
+        .init(lanceTaskInterfaceModel.getInit())
+        .install(lanceTaskInterfaceModel.getInstall())
+        .postInstall(lanceTaskInterfaceModel.getPostInstall())
+        .postStart(lanceTaskInterfaceModel.getPostStart())
+        .postStop(lanceTaskInterfaceModel.getPostStop())
+        .preInstall(lanceTaskInterfaceModel.getPreInstall())
+        .preStart(lanceTaskInterfaceModel.getPreStart())
+        .preStop(lanceTaskInterfaceModel.getPreStop())
+        .shutdown(lanceTaskInterfaceModel.getShutdown())
         .start(lanceTaskInterfaceModel.getStart())
-        .startDetection(lanceTaskInterfaceModel.getStartDetection()).stop(lanceTaskInterfaceModel.getStop())
+        .startDetection(lanceTaskInterfaceModel.getStartDetection())
+        .stop(lanceTaskInterfaceModel.getStop())
         .stopDetection(lanceTaskInterfaceModel.getStopDetection()).build();
   }
 }

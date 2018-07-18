@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import de.uniulm.omi.cloudiator.util.StreamUtil;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +33,15 @@ public interface Task {
   Set<Port> ports();
 
   Set<TaskInterface> interfaces();
+
+  default <T extends TaskInterface> T interfaceOfType(Class<T> type) {
+    //noinspection unchecked
+    return interfaces().stream().filter(
+        type::isInstance).map(taskInterface -> (T) taskInterface)
+        .collect(StreamUtil.getOnly())
+        .orElseThrow(() -> new IllegalArgumentException(
+            String.format("Task %s does not supply a lance interface.", this)));
+  }
 
   Set<Requirement> requirements();
 

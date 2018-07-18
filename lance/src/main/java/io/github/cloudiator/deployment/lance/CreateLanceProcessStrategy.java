@@ -29,6 +29,7 @@ import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.LanceProcess;
 import io.github.cloudiator.deployment.domain.LanceProcessBuilder;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -43,14 +44,16 @@ import org.slf4j.LoggerFactory;
 public class CreateLanceProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
+  private final LanceInstallationStrategy lanceInstallationStrategy;
 
   @Inject(optional = true)
   @Named("lance.rmiTimeout")
   private int rmiTimeout = 0;
 
   @Inject
-  CreateLanceProcessStrategy() {
-
+  CreateLanceProcessStrategy(
+      LanceInstallationStrategy lanceInstallationStrategy) {
+    this.lanceInstallationStrategy = lanceInstallationStrategy;
   }
 
   private LifecycleClient getLifecycleClient(String serverIp) {
@@ -64,13 +67,39 @@ public class CreateLanceProcessStrategy {
     return lifecycleClient;
   }
 
-  private ContainerType getContainerType(Task task) {
-    //todo correctly derive container type
+  private static ContainerType deriveContainerType(LanceInterface lanceInterface, Node node) {
+
+    switch (lanceInterface.containerType()) {
+      case DOCKER:
+        return ContainerType.DOCKER;
+      case NATIVE:
+        return ContainerType.PLAIN;
+      case BOTH:
+        return deriveContainerTypeBasedOnNode(node);
+      default:
+        throw new AssertionError("Unrecognized container type " + lanceInterface.containerType());
+    }
+  }
+
+  private static ContainerType deriveContainerTypeBasedOnNode(Node node) {
+    final de.uniulm.omi.cloudiator.domain.OperatingSystem operatingSystem = node.nodeProperties()
+        .operatingSystem().orElseThrow(() -> new IllegalStateException(String.format(
+            "Could not determine container type based on node %s as operating system is not defined.",
+            node)));
+
+    if (operatingSystem.operatingSystemFamily().operatingSystemType().supportsDocker()) {
+      return ContainerType.DOCKER;
+    }
     return ContainerType.PLAIN;
   }
 
 
-  public LanceProcess execute(Schedule schedule, Task task, Node node) {
+  public LanceProcess execute(String userId, Schedule schedule, Task task, Node node) {
+
+    ContainerType containerType = deriveContainerType(task.interfaceOfType(LanceInterface.class),
+        node);
+
+    lanceInstallationStrategy.execute(userId, node, containerType);
 
     final LifecycleClient lifecycleClient = getLifecycleClient(
         node.connectTo().ip());
@@ -119,8 +148,6 @@ public class CreateLanceProcessStrategy {
     new RegisterTaskDeploymentContextVisitor(schedule.job(), task)
         .visitDeploymentContext(deploymentContext);
 
-    final ContainerType containerType = ContainerType.PLAIN;
-
     LOGGER.debug(String.format(
         "Calling client %s to deploy instance using: deploymentContext %s, deployableComponent %s, containerType %s.",
         lifecycleClient, deploymentContext, deployableComponent, containerType));
@@ -155,7 +182,7 @@ public class CreateLanceProcessStrategy {
             applicationInstanceId));
 
     for (Task task : job.tasks()) {
-      final ComponentId componentId = ComponentId.fromString(job.id() +"/"+ task.name());
+      final ComponentId componentId = ComponentId.fromString(job.id() + "/" + task.name());
 
       try {
         lifecycleClient

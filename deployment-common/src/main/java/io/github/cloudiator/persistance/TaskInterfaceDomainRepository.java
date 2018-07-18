@@ -50,7 +50,8 @@ public class TaskInterfaceDomainRepository {
   private LanceTaskInterfaceModel createLanceInterfaceModel(LanceInterface domain,
       TaskModel taskModel) {
 
-    return new LanceTaskInterfaceModel(taskModel, domain.init().orElse(null),
+    return new LanceTaskInterfaceModel(taskModel, domain.containerType(),
+        domain.init().orElse(null),
         domain.preInstall().orElse(null), domain.install().orElse(null),
         domain.postInstall().orElse(null), domain.preStart().orElse(null),
         domain.start(), domain.startDetection().orElse(null), domain.stopDetection().orElse(null),

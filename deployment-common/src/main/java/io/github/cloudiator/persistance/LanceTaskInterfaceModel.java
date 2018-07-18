@@ -18,8 +18,12 @@ package io.github.cloudiator.persistance;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.github.cloudiator.deployment.domain.LanceContainerType;
 import javax.annotation.Nullable;
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Lob;
 
 /**
@@ -28,6 +32,9 @@ import javax.persistence.Lob;
 @Entity
 class LanceTaskInterfaceModel extends TaskInterfaceModel {
 
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private LanceContainerType lanceContainerType;
   @Nullable
   @Lob
   private String init;
@@ -73,7 +80,8 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
   protected LanceTaskInterfaceModel() {
   }
 
-  public LanceTaskInterfaceModel(TaskModel task, @Nullable String init,
+  public LanceTaskInterfaceModel(TaskModel task, LanceContainerType lanceContainerType,
+      @Nullable String init,
       @Nullable String preInstall,
       @Nullable String install, @Nullable String postInstall, @Nullable String preStart,
       String start, @Nullable String startDetection, @Nullable String stopDetection,
@@ -82,7 +90,9 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
     super(task);
 
     checkNotNull(start, "start is null");
+    checkNotNull(lanceContainerType, "lanceContainerType is null");
 
+    this.lanceContainerType = lanceContainerType;
     this.init = init;
     this.preInstall = preInstall;
     this.install = install;
@@ -212,5 +222,9 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
 
   public void setShutdown(@Nullable String shutdown) {
     this.shutdown = shutdown;
+  }
+
+  public LanceContainerType getLanceContainerType() {
+    return lanceContainerType;
   }
 }

@@ -29,7 +29,6 @@ import de.uniulm.omi.cloudiator.lance.client.DeploymentHelper;
 import de.uniulm.omi.cloudiator.lance.container.spec.os.OperatingSystem;
 import de.uniulm.omi.cloudiator.lance.lifecycle.bash.BashBasedHandlerBuilder;
 import de.uniulm.omi.cloudiator.lance.lifecycle.detector.PortUpdateHandler;
-import de.uniulm.omi.cloudiator.util.StreamUtil;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.PortProvided;
@@ -54,10 +53,7 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
   }
 
   private LanceInterface lanceInterface() {
-    return (LanceInterface) task.interfaces().stream().filter(
-        taskInterface -> taskInterface instanceof LanceInterface).collect(StreamUtil.getOnly())
-        .orElseThrow(() -> new IllegalStateException(
-            String.format("Task %s does not supply a lance interface.", task)));
+    return task.interfaceOfType(LanceInterface.class);
   }
 
   private PortType derivePortType(PortProvided provided) {
@@ -96,7 +92,7 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
   public DeployableComponent get() {
 
     final DeployableComponentBuilder builder = DeployableComponentBuilder
-        .createBuilder(task.name(), ComponentId.fromString(job.id() +"/"+ task.name()));
+        .createBuilder(task.name(), ComponentId.fromString(job.id() + "/" + task.name()));
 
     // add all ingoing ports / provided ports
     for (PortProvided provided : task.providedPorts()) {
