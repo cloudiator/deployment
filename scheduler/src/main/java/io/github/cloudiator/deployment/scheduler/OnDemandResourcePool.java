@@ -58,7 +58,7 @@ public class OnDemandResourcePool implements ResourcePool {
                 Collectors.toList())).build();
 
 
-    final NodeRequestMessage requestMessage = NodeRequestMessage.newBuilder().setGroupName("blub")
+    final NodeRequestMessage requestMessage = NodeRequestMessage.newBuilder().setGroupName(name)
         .setUserId(userId)
         .setNodeRequest(nodeRequirements).build();
 
