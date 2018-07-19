@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -149,6 +150,38 @@ class LanceInterfaceImpl implements LanceInterface {
   @Override
   public Optional<String> shutdown() {
     return Optional.ofNullable(shutdown);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    LanceInterfaceImpl that = (LanceInterfaceImpl) o;
+    return lanceContainerType == that.lanceContainerType &&
+        Objects.equals(init, that.init) &&
+        Objects.equals(preInstall, that.preInstall) &&
+        Objects.equals(install, that.install) &&
+        Objects.equals(postInstall, that.postInstall) &&
+        Objects.equals(preStart, that.preStart) &&
+        Objects.equals(start, that.start) &&
+        Objects.equals(startDetection, that.startDetection) &&
+        Objects.equals(stopDetection, that.stopDetection) &&
+        Objects.equals(postStart, that.postStart) &&
+        Objects.equals(preStop, that.preStop) &&
+        Objects.equals(stop, that.stop) &&
+        Objects.equals(postStop, that.postStop) &&
+        Objects.equals(shutdown, that.shutdown);
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(lanceContainerType, init, preInstall, install, postInstall, preStart, start,
+        startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown);
   }
 
   @Override

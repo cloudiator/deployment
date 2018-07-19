@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -47,6 +48,28 @@ class PortRequiredImpl extends PortImpl implements PortRequired {
   @Override
   public boolean isMandatory() {
     return isMandatory;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    PortRequiredImpl that = (PortRequiredImpl) o;
+    return isMandatory == that.isMandatory &&
+        Objects.equals(updateAction, that.updateAction);
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(super.hashCode(), updateAction, isMandatory);
   }
 
   @Override

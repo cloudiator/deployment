@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 
 abstract class PortImpl implements Port {
 
@@ -33,6 +34,24 @@ abstract class PortImpl implements Port {
   @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof PortImpl)) {
+      return false;
+    }
+    PortImpl port = (PortImpl) o;
+    return Objects.equals(name, port.name);
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(name);
   }
 
   protected MoreObjects.ToStringHelper toStringHelper() {

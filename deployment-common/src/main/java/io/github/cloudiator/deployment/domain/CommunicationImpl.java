@@ -18,6 +18,8 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Objects;
+
 class CommunicationImpl implements Communication {
 
   private final String portProvided;
@@ -41,5 +43,24 @@ class CommunicationImpl implements Communication {
   @Override
   public String portRequired() {
     return portRequired;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    CommunicationImpl that = (CommunicationImpl) o;
+    return Objects.equals(portProvided, that.portProvided) &&
+        Objects.equals(portRequired, that.portRequired);
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(portProvided, portRequired);
   }
 }

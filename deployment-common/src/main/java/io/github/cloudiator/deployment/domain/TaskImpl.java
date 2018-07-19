@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -89,5 +90,27 @@ class TaskImpl implements Task {
   @Override
   public String toString() {
     return toStringHelper().toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    TaskImpl task = (TaskImpl) o;
+    return Objects.equals(name, task.name) &&
+        Objects.equals(ports, task.ports) &&
+        Objects.equals(interfaces, task.interfaces) &&
+        Objects.equals(requirements, task.requirements) &&
+        Objects.equals(optimization, task.optimization);
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(name, ports, interfaces, requirements, optimization);
   }
 }

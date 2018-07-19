@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import java.util.Objects;
 
 class PortProvidedImpl extends PortImpl implements PortProvided {
 
@@ -34,6 +35,27 @@ class PortProvidedImpl extends PortImpl implements PortProvided {
   @Override
   public int port() {
     return port;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    PortProvidedImpl that = (PortProvidedImpl) o;
+    return port == that.port;
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(super.hashCode(), port);
   }
 
   @Override
