@@ -32,9 +32,13 @@ import org.cloudiator.messages.Process.ProcessCreatedResponse;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProcessRequestSubscriber implements Runnable {
 
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(ProcessRequestSubscriber.class);
   private final ProcessService processService;
   private final MessageInterface messageInterface;
   private final JobMessageRepository jobMessageRepository;
@@ -57,39 +61,50 @@ public class ProcessRequestSubscriber implements Runnable {
       @Override
       public void accept(String id, CreateProcessRequest content) {
 
-        final String userId = content.getUserId();
-        final String jobId = content.getProcess().getSchedule().getJob();
+        try {
 
-        final String taskName = content.getProcess().getTask();
+          final String userId = content.getUserId();
+          final String jobId = content.getProcess().getSchedule().getJob();
 
-        final Job job = jobMessageRepository.getById(userId, jobId);
-        final Schedule schedule = new ScheduleImpl(content.getProcess().getSchedule().getId(), job);
+          final String taskName = content.getProcess().getTask();
 
-        if (job == null) {
-          messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
-              .setMessage(String.format("Job with the id %s does not exist", jobId)).build());
-          return;
-        }
+          final Job job = jobMessageRepository.getById(userId, jobId);
+          final Schedule schedule = new ScheduleImpl(content.getProcess().getSchedule().getId(),
+              job);
 
-        final Optional<Task> optionalTask = job.tasks().stream().filter(new Predicate<Task>() {
-          @Override
-          public boolean test(Task task) {
-            return task.name().equals(taskName);
+          if (job == null) {
+            messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
+                .setMessage(String.format("Job with the id %s does not exist", jobId)).build());
+            return;
           }
-        }).collect(StreamUtil.getOnly());
 
-        if (!optionalTask.isPresent()) {
-          messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
-              .setMessage(String
-                  .format("Task with name %s does not exist in job with id %s.", taskName, jobId))
-              .build());
-          return;
+          final Optional<Task> optionalTask = job.tasks().stream().filter(new Predicate<Task>() {
+            @Override
+            public boolean test(Task task) {
+              return task.name().equals(taskName);
+            }
+          }).collect(StreamUtil.getOnly());
+
+          if (!optionalTask.isPresent()) {
+            messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
+                .setMessage(String
+                    .format("Task with name %s does not exist in job with id %s.", taskName, jobId))
+                .build());
+            return;
+          }
+
+          //todo handle correctly type of task, currently we only assume lance
+          processSpawner.spawn(userId, schedule, optionalTask.get());
+
+          //todo, reply correctly
+
+        } catch (Exception e) {
+          LOGGER.error(String
+              .format("Unexpected error while processing request %s with id %s.", content, id));
+          //todo, reply with error
         }
-
-        //todo handle correctly type of task, currently we only assume lance
-        processSpawner.spawn(userId, schedule, optionalTask.get());
-
       }
+
     });
   }
 }

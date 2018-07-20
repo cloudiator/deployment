@@ -86,6 +86,7 @@ public class ScheduleRequestSubscriber implements Runnable {
             final CreateProcessRequest createProcessRequest = CreateProcessRequest.newBuilder()
                 .setUserId(userId).setProcess(newProcess).build();
 
+            //todo: forward the response
             processService.createProcessAsync(createProcessRequest,
                 new ResponseCallback<ProcessCreatedResponse>() {
                   @Override
@@ -97,6 +98,7 @@ public class ScheduleRequestSubscriber implements Runnable {
 
           }
         } catch (Exception e) {
+          //todo: reply with error
           LOGGER.error("Unexpected exception while handling schedule.", e);
         }
 
