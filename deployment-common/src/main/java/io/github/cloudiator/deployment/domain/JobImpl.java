@@ -19,8 +19,10 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,11 +80,41 @@ class JobImpl extends JobNewImpl implements Job {
   }
 
   @Override
-  public Set<Communication> attachedCommunications(PortProvided providedPort) {
+  public PortProvided getProvidingPort(PortRequired portRequired) {
+
+    checkNotNull(portRequired, "portRequired is null");
+
+    final Set<Communication> communications = attachedCommunications(portRequired);
+
+    if (communications.isEmpty()) {
+      throw new IllegalStateException(String
+          .format("Required port with name %s is not mapped to any communication",
+              portRequired.name()));
+    }
+
+    if (communications.size() > 1) {
+      throw new IllegalStateException(String
+          .format("Required port with name %s is not mapped to multiple communications %s",
+              portRequired.name(), Joiner.on(",").join(communications)));
+    }
+
+    final Communication communication = communications.stream().findFirst().get();
+    final Task providingTask = providingTask(communication);
+
+    final Optional<PortProvided> port = providingTask
+        .findPort(communication.portProvided(), PortProvided.class);
+
+    return port.orElseThrow(() -> new IllegalStateException(
+        "Could not find a providing port for required port " + portRequired));
+  }
+
+  @Override
+  public Set<Communication> attachedCommunications(Port port) {
 
     return communications().stream().filter(
-        communication -> communication.portProvided().equals(providedPort.name()))
-        .collect(Collectors.toSet());
+        communication -> communication.portProvided().equals(port.name()) || communication
+            .portRequired()
+            .equals(port.name())).collect(Collectors.toSet());
   }
 
   @Override

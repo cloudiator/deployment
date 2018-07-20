@@ -19,7 +19,6 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
-import de.uniulm.omi.cloudiator.domain.Named;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
 import java.util.Optional;
 import java.util.Set;
@@ -38,5 +37,7 @@ public interface Job extends JobNew, Identifiable {
 
   Task requiredTask(Communication communication);
 
-  Set<Communication> attachedCommunications(PortProvided providedPort);
+  PortProvided getProvidingPort(PortRequired portRequired);
+
+  Set<Communication> attachedCommunications(Port port);
 }

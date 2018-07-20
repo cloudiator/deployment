@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import de.uniulm.omi.cloudiator.util.StreamUtil;
 import java.util.Optional;
 import java.util.Set;
@@ -48,13 +50,28 @@ public interface Task {
   Optional<Optimization> optimization();
 
   default Set<PortProvided> providedPorts() {
-    return this.ports().stream().filter(port -> port instanceof PortProvided)
-        .map(port -> (PortProvided) port).collect(Collectors.toSet());
+    return ports(PortProvided.class);
   }
 
   default Set<PortRequired> requiredPorts() {
-    return this.ports().stream().filter(port -> port instanceof PortRequired)
-        .map(port -> (PortRequired) port).collect(Collectors.toSet());
+    return ports(PortRequired.class);
+  }
+
+  default <T extends Port> Set<T> ports(Class<T> type) {
+
+    checkNotNull(type, "type is null");
+
+    //noinspection unchecked
+    return this.ports().stream().filter(type::isInstance)
+        .map(port -> (T) port).collect(Collectors.toSet());
+  }
+
+  default <T extends Port> Optional<T> findPort(String name, Class<T> type) {
+    checkNotNull(name, "name is null");
+    checkNotNull(type, "type is null");
+
+    return ports(type).stream().filter(t -> name.equals(t.name())).collect(StreamUtil.getOnly());
+
   }
 
 }

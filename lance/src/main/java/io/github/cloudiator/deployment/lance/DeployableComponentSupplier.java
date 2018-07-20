@@ -100,6 +100,7 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
           PortProperties.INFINITE_CARDINALITY);
     }
 
+    // add all outports / required ports
     for (PortRequired required : task.requiredPorts()) {
       builder.addOutport(required.name(), portUpdateHandler(required),
           PortProperties.INFINITE_CARDINALITY, deriveMinSinks(required));

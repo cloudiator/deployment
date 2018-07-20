@@ -67,11 +67,13 @@ public class RegisterTaskDeploymentContextVisitor {
               .format("Required port with name %s is not mapped to any communication",
                   portRequired.name())));
 
+      final PortProvided providingPort = job.getProvidingPort(portRequired);
+
       final ComponentId providingComponent = ComponentId
           .fromString(job.id() + "/" + job.providingTask(communication).name());
 
       deploymentContext.setProperty(portRequired.name(),
-          new PortReference(providingComponent, portRequired.name(),
+          new PortReference(providingComponent, providingPort.name(),
               PortLinkage.ALL), OutPort.class);
 
     }
