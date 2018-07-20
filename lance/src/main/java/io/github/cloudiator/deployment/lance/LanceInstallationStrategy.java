@@ -16,11 +16,12 @@
 
 package io.github.cloudiator.deployment.lance;
 
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Installation.InstallationRequest;
@@ -54,24 +55,29 @@ public class LanceInstallationStrategy {
     final InstallationRequest installationRequest = InstallationRequest.newBuilder()
         .setUserId(userId).setInstallation(builder.build()).build();
 
-    CountDownLatch countDownLatch = new CountDownLatch(1);
+    final SettableFuture<Boolean> result = SettableFuture.create();
+
     installationRequestService.createInstallationRequestAsync(installationRequest,
         new ResponseCallback<InstallationResponse>() {
           @Override
           public void accept(@Nullable InstallationResponse content, @Nullable Error error) {
-            if (error != null) {
-              throw new IllegalStateException(String
-                  .format("Exception during installation of tools. Code: %s. Message: %s",
-                      error.getCode(), error.getMessage()));
+            if (content != null) {
+              result.set(true);
             }
-            countDownLatch.countDown();
+            if (error != null) {
+              result.setException(new IllegalStateException(String
+                  .format("Exception during installation of tools. Code: %s. Message: %s",
+                      error.getCode(), error.getMessage())));
+            }
           }
         });
     try {
-      countDownLatch.await();
+      result.get();
     } catch (InterruptedException e) {
       throw new IllegalStateException(
           "LanceInstallationStrategy was interrupted during installation request.", e);
+    } catch (ExecutionException e) {
+      throw new IllegalStateException("Error during installation", e.getCause());
     }
   }
 }

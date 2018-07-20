@@ -74,7 +74,7 @@ public class LanceTaskInterfaceToLifecycleStore implements
   public LifecycleStore apply(LanceInterface lanceInterface) {
 
     Set<OperatingSystem> lanceOperatingSystems = Sets
-        .newHashSet(OperatingSystem.UBUNTU_14_04, OperatingSystem.WINDOWS_7);
+        .newHashSet(OperatingSystem.UBUNTU_14_04);
 
     final LifecycleStoreBuilder lifecycleStoreBuilder = new LifecycleStoreBuilder();
 

@@ -18,14 +18,15 @@ package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.LanceProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import org.cloudiator.messages.Process.CreateLanceProcessRequest;
-import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.services.ProcessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CreateLanceProcessSubscriber implements Runnable {
 
@@ -33,6 +34,7 @@ public class CreateLanceProcessSubscriber implements Runnable {
   private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
   private final JobConverter jobConverter = new JobConverter();
   private final CreateLanceProcessStrategy createLanceProcessStrategy;
+  private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessSubscriber.class);
 
   @Inject
   public CreateLanceProcessSubscriber(
@@ -46,9 +48,12 @@ public class CreateLanceProcessSubscriber implements Runnable {
   @Override
   public void run() {
     processService.subscribeCreateLanceProcessRequest(
-        new MessageCallback<CreateLanceProcessRequest>() {
-          @Override
-          public void accept(String id, CreateLanceProcessRequest content) {
+        (id, content) -> {
+
+          try {
+
+            //todo: reply
+
             final String userId = content.getUserId();
             final Job job = jobConverter.apply(content.getLance().getJob());
             final String task = content.getLance().getTask();
@@ -56,11 +61,17 @@ public class CreateLanceProcessSubscriber implements Runnable {
             final Schedule schedule = new ScheduleImpl(content.getLance().getSchedule().getId(),
                 job);
 
-            createLanceProcessStrategy.execute(userId, schedule, job.getTask(task).orElseThrow(
-                () -> new IllegalStateException(
-                    String.format("Job %s does not contain task %s", job, task))), node);
-
+            final LanceProcess lanceProcess = createLanceProcessStrategy
+                .execute(userId, schedule, job.getTask(task).orElseThrow(
+                    () -> new IllegalStateException(
+                        String.format("Job %s does not contain task %s", job, task))), node);
+          } catch (Exception e) {
+            LOGGER.error(String
+                .format("Exception %s while processing request %s with id %s.", e.getMessage(),
+                    content, id), e);
           }
+
+
         });
   }
 }
