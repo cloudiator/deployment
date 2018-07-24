@@ -16,22 +16,22 @@
 
 package io.github.cloudiator.deployment.scheduler;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
-import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.converters.RequirementConverter;
 import org.cloudiator.matchmaking.domain.Requirement;
-import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Node.NodeRequestMessage;
+import org.cloudiator.messages.Node.NodeRequestMessage.Builder;
 import org.cloudiator.messages.Node.NodeRequestResponse;
 import org.cloudiator.messages.NodeEntities.NodeRequirements;
-import org.cloudiator.messaging.ResponseCallback;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.NodeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +42,7 @@ public class OnDemandResourcePool implements ResourcePool {
   private static final RequirementConverter REQUIREMENT_CONVERTER = RequirementConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(OnDemandResourcePool.class);
-  private static final NodeToNodeMessageConverter nodeConverter = new NodeToNodeMessageConverter();
+  private static final NodeGroupMessageToNodeGroup NODE_GROUP_CONVERTER = new NodeGroupMessageToNodeGroup();
 
   @Inject
   public OnDemandResourcePool(NodeService nodeService) {
@@ -50,51 +50,40 @@ public class OnDemandResourcePool implements ResourcePool {
   }
 
   @Override
-  public Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements, @Nullable String name) {
+  public ListenableFuture<NodeGroup> allocate(String userId,
+      Iterable<? extends Requirement> requirements, @Nullable String name) {
+
+    LOGGER.info(
+        String.format("%s is allocating resources matching requirements %s.", this,
+            Joiner.on(",").join(requirements)));
 
     final NodeRequirements nodeRequirements = NodeRequirements.newBuilder()
         .addAllRequirements(StreamSupport.stream(requirements.spliterator(), false)
             .map(REQUIREMENT_CONVERTER::applyBack).collect(
                 Collectors.toList())).build();
 
-
-    final NodeRequestMessage requestMessage = NodeRequestMessage.newBuilder().setGroupName(name)
-        .setUserId(userId)
-        .setNodeRequest(nodeRequirements).build();
-
-    CountDownLatch countDownLatch = new CountDownLatch(1);
-
-    final Set<Node> nodes = new HashSet<>();
-    IllegalStateException illegalStateException = null;
-
-    nodeService.createNodesAsync(requestMessage,
-        new ResponseCallback<NodeRequestResponse>() {
-          @Override
-          public void accept(@Nullable NodeRequestResponse content, @Nullable Error error) {
-            if (content != null) {
-              nodes.addAll(
-                  content.getNodeGroup().getNodesList().stream().map(nodeConverter::applyBack)
-                      .collect(Collectors.toSet()));
-            } else if (error != null) {
-              LOGGER.error(String
-                  .format("Error while allocating nodes. Code: %s, Message: %s", error.getCode(),
-                      error.getMessage()));
-            }
-            countDownLatch.countDown();
-          }
-        });
-
-    try {
-      countDownLatch.await();
-
-      if (nodes.isEmpty()) {
-        throw new IllegalStateException("Failed to allocate nodes.");
-      }
-
-      return nodes;
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(
-          "ResourcePool was interrupted while waiting for node allocation.", e);
+    final Builder builder = NodeRequestMessage.newBuilder();
+    builder.setUserId(userId).setNodeRequest(nodeRequirements);
+    if (name != null) {
+      builder.setGroupName(name);
     }
+
+    final NodeRequestMessage requestMessage = builder.build();
+
+    SettableFutureResponseCallback<NodeRequestResponse, NodeGroup> futureResponseCallback = SettableFutureResponseCallback
+        .create(
+            nodeRequestResponse -> NODE_GROUP_CONVERTER.apply(nodeRequestResponse.getNodeGroup()));
+
+    LOGGER.info(
+        String.format("%s issued node request message %s.", this,
+            requestMessage));
+    nodeService.createNodesAsync(requestMessage, futureResponseCallback);
+
+    return futureResponseCallback;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).toString();
   }
 }

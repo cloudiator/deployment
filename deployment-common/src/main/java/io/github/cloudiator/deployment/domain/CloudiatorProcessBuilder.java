@@ -16,42 +16,48 @@
 
 package io.github.cloudiator.deployment.domain;
 
-public class ProcessBuilder {
+public class CloudiatorProcessBuilder {
 
   private String id;
   private String jobId;
   private String taskName;
-  private Process.State state;
+  private CloudiatorProcess.State state;
+  private String nodeId;
 
-  private ProcessBuilder() {
+  private CloudiatorProcessBuilder() {
   }
 
-  public static ProcessBuilder newBuilder() {
-    return new ProcessBuilder();
+  public static CloudiatorProcessBuilder newBuilder() {
+    return new CloudiatorProcessBuilder();
   }
 
-  public ProcessBuilder id(String id) {
+  public CloudiatorProcessBuilder id(String id) {
     this.id = id;
     return this;
   }
 
-  public ProcessBuilder taskName(String taskName) {
+  public CloudiatorProcessBuilder taskName(String taskName) {
     this.taskName = taskName;
     return this;
   }
 
-  public ProcessBuilder jobId(String jobId) {
+  public CloudiatorProcessBuilder jobId(String jobId) {
     this.jobId = jobId;
     return this;
   }
 
-  public ProcessBuilder state(Process.State state) {
+  public CloudiatorProcessBuilder nodeId(String nodeId) {
+    this.nodeId = nodeId;
+    return this;
+  }
+
+  public CloudiatorProcessBuilder state(CloudiatorProcess.State state) {
     this.state = state;
     return this;
   }
 
-  public Process build() {
-    return new ProcessImpl(id, jobId, taskName, state);
+  public CloudiatorProcess build() {
+    return new CloudiatorProcessImpl(id, jobId, taskName, nodeId, state);
   }
 
 }

@@ -28,10 +28,10 @@ import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
-import io.github.cloudiator.deployment.domain.LanceProcess;
-import io.github.cloudiator.deployment.domain.LanceProcessBuilder;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
@@ -94,10 +94,16 @@ public class CreateLanceProcessStrategy {
   }
 
 
-  public LanceProcess execute(String userId, Schedule schedule, Task task, Node node) {
+  public CloudiatorProcess execute(String userId, Schedule schedule, Task task, Node node) {
+
+    LOGGER.info(String
+        .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
+            userId, schedule, task, node));
 
     ContainerType containerType = deriveContainerType(task.interfaceOfType(LanceInterface.class),
         node);
+
+    LOGGER.debug("Executing lance installation strategy");
 
     lanceInstallationStrategy.execute(userId, node, containerType);
 
@@ -164,10 +170,9 @@ public class CreateLanceProcessStrategy {
               "Client deployed the process of task %s with component instance id %s successfully",
               task, componentInstanceId));
 
-      return LanceProcessBuilder.newBuilder().id(componentInstanceId.toString()).node(node)
-          .schedule(schedule).task(task.name()).build();
-
-
+      return CloudiatorProcessBuilder.newBuilder().id(componentInstanceId.toString())
+          .nodeId(node.id())
+          .taskName(task.name()).jobId(schedule.job().id()).build();
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
     }

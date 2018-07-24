@@ -16,13 +16,15 @@
 
 package io.github.cloudiator.deployment.scheduler;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
 import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.domain.Requirement;
 
 
 public interface ResourcePool {
 
-  Iterable<Node> allocate(String userId, Iterable<? extends Requirement> requirements, @Nullable String name);
-
+  ListenableFuture<NodeGroup> allocate(String userId,
+      Iterable<? extends Requirement> requirements, @Nullable String name);
 }

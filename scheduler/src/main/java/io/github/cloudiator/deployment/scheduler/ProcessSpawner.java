@@ -17,10 +17,10 @@
 package io.github.cloudiator.deployment.scheduler;
 
 import com.google.inject.ImplementedBy;
-import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.domain.Node;
 
 /**
  * todo: currently only lance exists,
@@ -30,7 +30,7 @@ public interface ProcessSpawner {
 
   boolean supports(Task task);
 
-  ProcessGroup spawn(String userId, Schedule schedule, Task task);
+  CloudiatorProcess spawn(String userId, Schedule schedule, Task task, Node node);
 
 
 }

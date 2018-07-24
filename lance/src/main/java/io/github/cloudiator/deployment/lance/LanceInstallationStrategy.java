@@ -16,20 +16,17 @@
 
 package io.github.cloudiator.deployment.lance;
 
-import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.concurrent.ExecutionException;
-import javax.annotation.Nullable;
-import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Installation.InstallationRequest;
 import org.cloudiator.messages.Installation.InstallationResponse;
 import org.cloudiator.messages.InstallationEntities.Installation;
 import org.cloudiator.messages.InstallationEntities.Installation.Builder;
 import org.cloudiator.messages.InstallationEntities.Tool;
-import org.cloudiator.messaging.ResponseCallback;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.InstallationRequestService;
 
 public class LanceInstallationStrategy {
@@ -43,7 +40,7 @@ public class LanceInstallationStrategy {
     this.installationRequestService = installationRequestService;
   }
 
-  public void execute(String userId, Node node, ContainerType containerType) {
+  void execute(String userId, Node node, ContainerType containerType) {
 
     final Builder builder = Installation.newBuilder()
         .setNode(nodeToNodeMessageConverter.apply(node))
@@ -55,24 +52,13 @@ public class LanceInstallationStrategy {
     final InstallationRequest installationRequest = InstallationRequest.newBuilder()
         .setUserId(userId).setInstallation(builder.build()).build();
 
-    final SettableFuture<Boolean> result = SettableFuture.create();
+    final SettableFutureResponseCallback<InstallationResponse, InstallationResponse> futureResponseCallback = SettableFutureResponseCallback
+        .create();
 
-    installationRequestService.createInstallationRequestAsync(installationRequest,
-        new ResponseCallback<InstallationResponse>() {
-          @Override
-          public void accept(@Nullable InstallationResponse content, @Nullable Error error) {
-            if (content != null) {
-              result.set(true);
-            }
-            if (error != null) {
-              result.setException(new IllegalStateException(String
-                  .format("Exception during installation of tools. Code: %s. Message: %s",
-                      error.getCode(), error.getMessage())));
-            }
-          }
-        });
+    installationRequestService
+        .createInstallationRequestAsync(installationRequest, futureResponseCallback);
     try {
-      result.get();
+      futureResponseCallback.get();
     } catch (InterruptedException e) {
       throw new IllegalStateException(
           "LanceInstallationStrategy was interrupted during installation request.", e);

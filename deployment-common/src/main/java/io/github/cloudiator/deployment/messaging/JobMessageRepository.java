@@ -30,7 +30,7 @@ import org.cloudiator.messaging.services.JobService;
 public class JobMessageRepository implements MessageRepository<Job> {
 
   private final JobService jobService;
-  private static final JobConverter JOB_CONVERTER = new JobConverter();
+  private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
 
   @Inject
   public JobMessageRepository(JobService jobService) {

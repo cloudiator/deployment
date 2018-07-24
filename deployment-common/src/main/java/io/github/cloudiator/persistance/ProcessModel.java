@@ -19,7 +19,7 @@ package io.github.cloudiator.persistance;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
-import io.github.cloudiator.deployment.domain.Process;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
@@ -34,7 +34,7 @@ class ProcessModel extends Model {
   @ManyToOne(optional = false)
   private TaskModel task;
   @Enumerated
-  private Process.State state;
+  private CloudiatorProcess.State state;
 
   /**
    * Empty constructor for hibernate
@@ -42,7 +42,7 @@ class ProcessModel extends Model {
   protected ProcessModel() {
   }
 
-  public ProcessModel(TaskModel task, Process.State state) {
+  public ProcessModel(TaskModel task, CloudiatorProcess.State state) {
     checkNotNull(task, "task is null");
     this.task = task;
     checkNotNull(state, "state is null");

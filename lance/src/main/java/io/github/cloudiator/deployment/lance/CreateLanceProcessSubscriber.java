@@ -17,13 +17,17 @@
 package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.LanceProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.messaging.JobConverter;
+import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import org.cloudiator.messages.General.Error;
+import org.cloudiator.messages.Process.LanceProcessCreatedResponse;
+import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,17 +36,20 @@ public class CreateLanceProcessSubscriber implements Runnable {
 
   private final ProcessService processService;
   private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
-  private final JobConverter jobConverter = new JobConverter();
+  private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private final CreateLanceProcessStrategy createLanceProcessStrategy;
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessSubscriber.class);
+  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
+  private final MessageInterface messageInterface;
 
   @Inject
   public CreateLanceProcessSubscriber(
       ProcessService processService,
-      LanceInstallationStrategy lanceInstallationStrategy,
-      CreateLanceProcessStrategy createLanceProcessStrategy) {
+      CreateLanceProcessStrategy createLanceProcessStrategy,
+      MessageInterface messageInterface) {
     this.processService = processService;
     this.createLanceProcessStrategy = createLanceProcessStrategy;
+    this.messageInterface = messageInterface;
   }
 
   @Override
@@ -51,24 +58,35 @@ public class CreateLanceProcessSubscriber implements Runnable {
         (id, content) -> {
 
           try {
-
-            //todo: reply
-
+            
             final String userId = content.getUserId();
-            final Job job = jobConverter.apply(content.getLance().getJob());
+            final Job job = JOB_CONVERTER.apply(content.getLance().getJob());
             final String task = content.getLance().getTask();
             final Node node = nodeMessageToNodeConverter.applyBack(content.getLance().getNode());
             final Schedule schedule = new ScheduleImpl(content.getLance().getSchedule().getId(),
                 job);
 
-            final LanceProcess lanceProcess = createLanceProcessStrategy
+            final CloudiatorProcess cloudiatorProcess = createLanceProcessStrategy
                 .execute(userId, schedule, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
                         String.format("Job %s does not contain task %s", job, task))), node);
+
+            final LanceProcessCreatedResponse lanceProcessCreatedResponse = LanceProcessCreatedResponse
+                .newBuilder()
+                .setProcess(PROCESS_MESSAGE_CONVERTER.applyBack(cloudiatorProcess)).build();
+
+            messageInterface.reply(id, lanceProcessCreatedResponse);
+
           } catch (Exception e) {
-            LOGGER.error(String
+            final String errorMessage = String
                 .format("Exception %s while processing request %s with id %s.", e.getMessage(),
-                    content, id), e);
+                    content, id);
+
+            LOGGER.error(errorMessage, e);
+
+            messageInterface.reply(LanceProcessCreatedResponse.class, id,
+                Error.newBuilder().setMessage(errorMessage).setCode(500).build());
+
           }
 
 

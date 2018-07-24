@@ -34,7 +34,7 @@ public class JobGetSubscriber implements Runnable {
 
   private final JobService jobService;
   private final JobDomainRepository jobDomainRepository;
-  private static final JobConverter JOB_CONVERTER = new JobConverter();
+  private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private final MessageInterface messageInterface;
 
   @Inject

@@ -24,6 +24,12 @@ import org.cloudiator.messages.entities.JobEntities;
 
 public class JobConverter implements TwoWayConverter<JobEntities.Job, Job> {
 
+  public static final JobConverter INSTANCE = new JobConverter();
+
+  private JobConverter() {
+
+  }
+
   private final CommunicationConverter communicationConverter = new CommunicationConverter();
   private final TaskConverter taskConverter = new TaskConverter();
 

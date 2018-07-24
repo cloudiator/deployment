@@ -17,15 +17,17 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
-import de.uniulm.omi.cloudiator.util.StreamUtil;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
+import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.messaging.NodeMessageRepository;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
@@ -43,16 +45,20 @@ public class ProcessRequestSubscriber implements Runnable {
   private final MessageInterface messageInterface;
   private final JobMessageRepository jobMessageRepository;
   private final ProcessSpawner processSpawner;
+  private final NodeMessageRepository nodeMessageRepository;
+  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
 
   @Inject
   public ProcessRequestSubscriber(ProcessService processService,
       MessageInterface messageInterface,
       JobMessageRepository jobMessageRepository,
-      ProcessSpawner processSpawner) {
+      ProcessSpawner processSpawner,
+      NodeMessageRepository nodeMessageRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
     this.processSpawner = processSpawner;
+    this.nodeMessageRepository = nodeMessageRepository;
   }
 
   @Override
@@ -65,8 +71,16 @@ public class ProcessRequestSubscriber implements Runnable {
 
           final String userId = content.getUserId();
           final String jobId = content.getProcess().getSchedule().getJob();
-
           final String taskName = content.getProcess().getTask();
+          final String nodeId = content.getProcess().getNode();
+
+          final Node node = nodeMessageRepository.getById(userId, nodeId);
+
+          if (node == null) {
+            messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
+                .setMessage(String.format("Node with the id %s does not exist", nodeId)).build());
+            return;
+          }
 
           final Job job = jobMessageRepository.getById(userId, jobId);
           final Schedule schedule = new ScheduleImpl(content.getProcess().getSchedule().getId(),
@@ -78,12 +92,7 @@ public class ProcessRequestSubscriber implements Runnable {
             return;
           }
 
-          final Optional<Task> optionalTask = job.tasks().stream().filter(new Predicate<Task>() {
-            @Override
-            public boolean test(Task task) {
-              return task.name().equals(taskName);
-            }
-          }).collect(StreamUtil.getOnly());
+          final Optional<Task> optionalTask = job.getTask(taskName);
 
           if (!optionalTask.isPresent()) {
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
@@ -94,14 +103,21 @@ public class ProcessRequestSubscriber implements Runnable {
           }
 
           //todo handle correctly type of task, currently we only assume lance
-          processSpawner.spawn(userId, schedule, optionalTask.get());
+          final CloudiatorProcess cloudiatorProcess = processSpawner
+              .spawn(userId, schedule, optionalTask.get(), node);
 
-          //todo, reply correctly
+          final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()
+              .setProcess(PROCESS_MESSAGE_CONVERTER.applyBack(cloudiatorProcess)).build();
+
+          messageInterface.reply(id, processCreatedResponse);
 
         } catch (Exception e) {
-          LOGGER.error(String
-              .format("Unexpected error while processing request %s with id %s.", content, id));
-          //todo, reply with error
+          final String errorMessage = String
+              .format("Unexpected error while processing request %s with id %s.", content, id);
+          LOGGER.error(errorMessage);
+          messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(500)
+              .setMessage(errorMessage)
+              .build());
         }
       }
 

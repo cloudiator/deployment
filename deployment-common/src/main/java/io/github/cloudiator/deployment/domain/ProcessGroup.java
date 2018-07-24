@@ -18,6 +18,6 @@ package io.github.cloudiator.deployment.domain;
 
 public interface ProcessGroup {
 
-  Iterable<Process> processes();
+  Iterable<CloudiatorProcess> processes();
 
 }

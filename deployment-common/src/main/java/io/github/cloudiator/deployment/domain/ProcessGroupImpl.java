@@ -20,15 +20,15 @@ import com.google.common.collect.ImmutableList;
 
 public class ProcessGroupImpl implements ProcessGroup {
 
-  private final Iterable<Process> processes;
+  private final Iterable<CloudiatorProcess> processes;
 
   public ProcessGroupImpl(
-      Iterable<Process> processes) {
+      Iterable<CloudiatorProcess> processes) {
     this.processes = ImmutableList.copyOf(processes);
   }
 
   @Override
-  public Iterable<Process> processes() {
+  public Iterable<CloudiatorProcess> processes() {
     return processes;
   }
 }

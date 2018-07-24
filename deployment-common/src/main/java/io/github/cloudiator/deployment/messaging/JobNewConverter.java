@@ -26,6 +26,10 @@ public class JobNewConverter implements OneWayConverter<JobEntities.JobNew, JobN
   private final CommunicationConverter communicationConverter = new CommunicationConverter();
   private final TaskConverter taskConverter = new TaskConverter();
 
+  public static final JobNewConverter INSTANCE = new JobNewConverter();
+
+  private JobNewConverter() {}
+
 
   @Override
   public JobNew apply(JobEntities.JobNew jobNew) {

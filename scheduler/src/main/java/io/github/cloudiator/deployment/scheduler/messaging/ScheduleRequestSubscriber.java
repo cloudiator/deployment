@@ -16,12 +16,21 @@
 
 package io.github.cloudiator.deployment.scheduler.messaging;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
+import io.github.cloudiator.deployment.scheduler.ResourcePool;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
@@ -42,16 +51,25 @@ public class ScheduleRequestSubscriber implements Runnable {
   private final ProcessService processService;
   private final JobMessageRepository jobMessageRepository;
   private final MessageInterface messageInterface;
+  private final ResourcePool resourcePool;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(ScheduleRequestSubscriber.class);
+  private static final LoggingScheduledThreadPoolExecutor EXECUTOR = new LoggingScheduledThreadPoolExecutor(
+      5);
+
+  static {
+    MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
+  }
 
   @Inject
   public ScheduleRequestSubscriber(ProcessService processService,
       JobMessageRepository jobMessageRepository,
-      MessageInterface messageInterface) {
+      MessageInterface messageInterface,
+      ResourcePool resourcePool) {
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
     this.messageInterface = messageInterface;
+    this.resourcePool = resourcePool;
   }
 
   @Override
@@ -76,26 +94,46 @@ public class ScheduleRequestSubscriber implements Runnable {
 
           Schedule schedule = ScheduleImpl.of(job);
 
-          //process request for each task
+          //for each task
           for (Task task : job.tasks()) {
 
-            final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
-                ProcessEntities.Schedule.newBuilder().setId(schedule.id())
-                    .setJob(schedule.job().id()).build()).setTask(task.name())
-                .build();
-            final CreateProcessRequest createProcessRequest = CreateProcessRequest.newBuilder()
-                .setUserId(userId).setProcess(newProcess).build();
+            //allocate the resources
+            final ListenableFuture<NodeGroup> allocateFuture = resourcePool
+                .allocate(userId, task.requirements(), task.name());
 
-            //todo: forward the response
-            processService.createProcessAsync(createProcessRequest,
-                new ResponseCallback<ProcessCreatedResponse>() {
-                  @Override
-                  public void accept(@Nullable ProcessCreatedResponse content,
-                      @Nullable Error error) {
+            Futures.addCallback(allocateFuture, new FutureCallback<NodeGroup>() {
+              @Override
+              public void onSuccess(@Nullable NodeGroup result) {
 
-                  }
-                });
+                //spawn processes on success
+                for (Node node : result.getNodes()) {
+                  final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
+                      ProcessEntities.Schedule.newBuilder().setId(schedule.id())
+                          .setJob(schedule.job().id()).build()).setTask(task.name())
+                      .setNode(node.id())
+                      .build();
+                  final CreateProcessRequest createProcessRequest = CreateProcessRequest
+                      .newBuilder()
+                      .setUserId(userId).setProcess(newProcess).build();
 
+                  processService.createProcessAsync(createProcessRequest,
+                      new ResponseCallback<ProcessCreatedResponse>() {
+                        @Override
+                        public void accept(@Nullable ProcessCreatedResponse content,
+                            @Nullable Error error) {
+                          if (error != null) {
+                            LOGGER.error("Error while spawning process");
+                          }
+                        }
+                      });
+                }
+              }
+
+              @Override
+              public void onFailure(Throwable t) {
+                LOGGER.error("Error while spawning nodes");
+              }
+            }, EXECUTOR);
           }
         } catch (Exception e) {
           //todo: reply with error

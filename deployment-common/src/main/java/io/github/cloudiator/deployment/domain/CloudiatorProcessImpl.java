@@ -16,18 +16,20 @@
 
 package io.github.cloudiator.deployment.domain;
 
-class ProcessImpl implements Process {
+class CloudiatorProcessImpl implements CloudiatorProcess {
 
   private final String id;
   private final String jobId;
   private final String taskName;
-  private final Process.State state;
+  private final String nodeId;
+  private final CloudiatorProcess.State state;
 
-  ProcessImpl(String id, String jobId, String taskName,
+  CloudiatorProcessImpl(String id, String jobId, String taskName, String nodeId,
       State state) {
     this.id = id;
     this.jobId = jobId;
     this.taskName = taskName;
+    this.nodeId = nodeId;
     this.state = state;
   }
 
@@ -44,6 +46,11 @@ class ProcessImpl implements Process {
   @Override
   public State state() {
     return state;
+  }
+
+  @Override
+  public String nodeId() {
+    return nodeId;
   }
 
   @Override

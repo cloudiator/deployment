@@ -17,7 +17,6 @@
 package io.github.cloudiator.deployment.jobagent.messaging;
 
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.JobBuilder;
@@ -25,11 +24,8 @@ import io.github.cloudiator.deployment.domain.JobNew;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.JobNewConverter;
 import io.github.cloudiator.persistance.JobDomainRepository;
-import javax.persistence.EntityManager;
 import org.cloudiator.messages.General.Error;
-import org.cloudiator.messages.Job.CreateJobRequest;
 import org.cloudiator.messages.Job.JobCreatedResponse;
-import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.JobService;
 import org.slf4j.Logger;
@@ -42,19 +38,16 @@ public class JobAddedSubscriber implements Runnable {
   private final JobService jobService;
   private final MessageInterface messageInterface;
   private final JobDomainRepository jobDomainRepository;
-  private final JobConverter jobConverter = new JobConverter();
-  private final JobNewConverter jobNewConverter = new JobNewConverter();
-  private final Provider<EntityManager> entityManager;
+  private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
+  private static final JobNewConverter JOB_NEW_CONVERTER = JobNewConverter.INSTANCE;
 
   @Inject
   public JobAddedSubscriber(JobService jobService,
       MessageInterface messageInterface,
-      JobDomainRepository jobDomainRepository,
-      Provider<EntityManager> entityManager) {
+      JobDomainRepository jobDomainRepository) {
     this.jobService = jobService;
     this.messageInterface = messageInterface;
     this.jobDomainRepository = jobDomainRepository;
-    this.entityManager = entityManager;
   }
 
 
@@ -67,30 +60,27 @@ public class JobAddedSubscriber implements Runnable {
 
   @Override
   public void run() {
-    jobService.subscribeToCreateJobRequest(new MessageCallback<CreateJobRequest>() {
-      @Override
-      public void accept(String id, CreateJobRequest createJobRequest) {
+    jobService.subscribeToCreateJobRequest((id, createJobRequest) -> {
 
-        try {
+      try {
 
-          JobNew jobNew = jobNewConverter.apply(createJobRequest.getJob());
+        JobNew jobNew = JOB_NEW_CONVERTER.apply(createJobRequest.getJob());
 
-          Job job = JobBuilder.newBuilder().generateId().name(jobNew.name())
-              .addCommunications(jobNew.communications())
-              .addTasks(jobNew.tasks()).build();
+        Job job = JobBuilder.newBuilder().generateId().name(jobNew.name())
+            .addCommunications(jobNew.communications())
+            .addTasks(jobNew.tasks()).build();
 
-          persistJob(job, createJobRequest.getUserId());
+        persistJob(job, createJobRequest.getUserId());
 
-          final JobCreatedResponse jobCreatedResponse = JobCreatedResponse.newBuilder()
-              .setJob(jobConverter.applyBack(job)).build();
+        final JobCreatedResponse jobCreatedResponse = JobCreatedResponse.newBuilder()
+            .setJob(JOB_CONVERTER.applyBack(job)).build();
 
-          messageInterface.reply(id, jobCreatedResponse);
+        messageInterface.reply(id, jobCreatedResponse);
 
-        } catch (Exception e) {
-          LOGGER.error(e.getMessage(), e);
-          messageInterface.reply(JobCreatedResponse.class, id,
-              Error.newBuilder().setCode(500).setMessage(e.getMessage()).build());
-        }
+      } catch (Exception e) {
+        LOGGER.error(e.getMessage(), e);
+        messageInterface.reply(JobCreatedResponse.class, id,
+            Error.newBuilder().setCode(500).setMessage(e.getMessage()).build());
       }
     });
   }
