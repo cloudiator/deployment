@@ -1,9 +1,16 @@
 #!/bin/bash
 
-docker login -u $DOCKER_USER -p $DOCKER_PASS
-export REPO=cloudiator/scheduler-agent
-export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_BRANCH ; fi`
-docker build -t $REPO:$COMMIT scheduler
-docker tag $REPO:$COMMIT $REPO:$TAG
-docker tag $REPO:$COMMIT $REPO:travis-$TRAVIS_BUILD_NUMBER
-docker push $REPO
+# build multiple times
+# see https://github.com/GoogleContainerTools/jib/issues/802
+
+echo "Publishing scheduler-agent to docker"
+
+cd scheduler
+
+export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo ${TRAVIS_BRANCH} ; fi`
+mvn -q -Ddocker.tag=${TAG} -Djib.to.auth.username=${DOCKER_USER} -Djib.to.auth.password=${DOCKER_PASS} jib:build
+
+mvn -q -Ddocker.tag=${COMMIT} -Djib.to.auth.username=${DOCKER_USER} -Djib.to.auth.password=${DOCKER_PASS} jib:build
+mvn -q -Ddocker.tag=travis-${TRAVIS_BUILD_NUMBER} -Djib.to.auth.username=${DOCKER_USER} -Djib.to.auth.password=${DOCKER_PASS} jib:build
+
+cd ..

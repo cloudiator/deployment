@@ -27,6 +27,11 @@
 
   <artifactId>job-agent</artifactId>
 
+  <properties>
+    <docker.tag>manual</docker.tag>
+  </properties>
+
+
   <dependencies>
     <dependency>
       <groupId>io.github.cloudiator.common</groupId>
@@ -50,30 +55,32 @@
 
   <build>
     <plugins>
+
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <configuration>
+          <to>
+            registry.hub.docker.com/cloudiator/job-agent:${docker.tag}
+          </to>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>jar-with-dependencies</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
-              <finalName>job-agent</finalName>
-              <appendAssemblyId>false</appendAssemblyId>
-              <archive>
-                <manifest>
-                  <mainClass>io.github.cloudiator.deployment.jobagent.JobAgent</mainClass>
-                </manifest>
-              </archive>
-            </configuration>
-          </execution>
-        </executions>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <finalName>job-agent</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+          <archive>
+            <manifest>
+              <mainClass>io.github.cloudiator.deployment.jobagent.JobAgent</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -32,7 +32,6 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
-import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
 import java.rmi.NotBoundException;
@@ -94,7 +93,7 @@ public class CreateLanceProcessStrategy {
   }
 
 
-  public CloudiatorProcess execute(String userId, Schedule schedule, Task task, Node node) {
+  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, Node node) {
 
     LOGGER.info(String
         .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
@@ -110,9 +109,9 @@ public class CreateLanceProcessStrategy {
     final LifecycleClient lifecycleClient = getLifecycleClient(
         node.connectTo().ip());
 
-    final ApplicationId applicationId = ApplicationId.fromString(schedule.job().id());
+    final ApplicationId applicationId = ApplicationId.fromString(job.id());
     final ApplicationInstanceId applicationInstanceId = ApplicationInstanceId
-        .fromString(schedule.id());
+        .fromString(schedule);
 
     LOGGER.debug(String.format(
         "Registering new applicationInstance %s for application %s at lance using client %s",
@@ -125,7 +124,7 @@ public class CreateLanceProcessStrategy {
       //if the instance could still be registered we need to register its subparts
       if (couldRegister) {
         registerApplicationComponentsForApplicationInstance(lifecycleClient,
-            applicationInstanceId, schedule.job());
+            applicationInstanceId, job);
         LOGGER.debug(String.format(
             "Could register applicationInstance %s, therefore registering all components of the job",
             applicationInstanceId));
@@ -146,12 +145,12 @@ public class CreateLanceProcessStrategy {
     LOGGER.debug(String
         .format("Creating deployable component for task %s.",
             task));
-    final DeployableComponent deployableComponent = new DeployableComponentSupplier(schedule.job(),
+    final DeployableComponent deployableComponent = new DeployableComponentSupplier(job,
         task).get();
     LOGGER.debug(
         String.format("Successfully build deployable component %s", deployableComponent));
 
-    new RegisterTaskDeploymentContextVisitor(schedule.job(), task)
+    new RegisterTaskDeploymentContextVisitor(job, task)
         .visitDeploymentContext(deploymentContext);
 
     LOGGER.debug(String.format(
@@ -172,7 +171,7 @@ public class CreateLanceProcessStrategy {
 
       return CloudiatorProcessBuilder.newBuilder().id(componentInstanceId.toString())
           .nodeId(node.id())
-          .taskName(task.name()).jobId(schedule.job().id()).build();
+          .taskName(task.name()).jobId(job.id()).build();
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
     }

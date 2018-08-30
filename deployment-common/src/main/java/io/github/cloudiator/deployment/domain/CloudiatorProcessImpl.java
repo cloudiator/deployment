@@ -16,6 +16,9 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
+
 class CloudiatorProcessImpl implements CloudiatorProcess {
 
   private final String id;
@@ -56,5 +59,32 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   @Override
   public String id() {
     return id;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    CloudiatorProcessImpl that = (CloudiatorProcessImpl) o;
+    return Objects.equals(id, that.id) &&
+        Objects.equals(jobId, that.jobId) &&
+        Objects.equals(taskName, that.taskName) &&
+        Objects.equals(nodeId, that.nodeId);
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(id, jobId, taskName, nodeId);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("id", id).add("job", jobId).add("task", taskName)
+        .add("node", nodeId).add("state", state).toString();
   }
 }

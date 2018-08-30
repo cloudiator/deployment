@@ -15,7 +15,6 @@
     <class>io.github.cloudiator.persistance.TaskModel</class>
     <class>io.github.cloudiator.persistance.TaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.LanceTaskInterfaceModel</class>
-    <class>io.github.cloudiator.persistance.ProcessModel</class>
     <class>io.github.cloudiator.persistance.OptimizationModel</class>
     <class>io.github.cloudiator.persistance.AttributeOptimizationModel</class>
     <class>io.github.cloudiator.persistance.OCLOptimizationModel</class>

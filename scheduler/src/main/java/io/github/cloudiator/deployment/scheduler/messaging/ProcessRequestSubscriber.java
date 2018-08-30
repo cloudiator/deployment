@@ -19,8 +19,6 @@ package io.github.cloudiator.deployment.scheduler.messaging;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Schedule;
-import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
@@ -70,11 +68,13 @@ public class ProcessRequestSubscriber implements Runnable {
         try {
 
           final String userId = content.getUserId();
-          final String jobId = content.getProcess().getSchedule().getJob();
+          final String jobId = content.getProcess().getJob();
           final String taskName = content.getProcess().getTask();
           final String nodeId = content.getProcess().getNode();
 
           final Node node = nodeMessageRepository.getById(userId, nodeId);
+
+          final String schedule = content.getProcess().getSchedule();
 
           if (node == null) {
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
@@ -83,8 +83,6 @@ public class ProcessRequestSubscriber implements Runnable {
           }
 
           final Job job = jobMessageRepository.getById(userId, jobId);
-          final Schedule schedule = new ScheduleImpl(content.getProcess().getSchedule().getId(),
-              job);
 
           if (job == null) {
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
@@ -104,7 +102,7 @@ public class ProcessRequestSubscriber implements Runnable {
 
           //todo handle correctly type of task, currently we only assume lance
           final CloudiatorProcess cloudiatorProcess = processSpawner
-              .spawn(userId, schedule, optionalTask.get(), node);
+              .spawn(userId, schedule, job, optionalTask.get(), node);
 
           final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()
               .setProcess(PROCESS_MESSAGE_CONVERTER.applyBack(cloudiatorProcess)).build();

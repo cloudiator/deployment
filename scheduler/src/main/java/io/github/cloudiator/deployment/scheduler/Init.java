@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.lance;
+package io.github.cloudiator.deployment.scheduler;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import org.cloudiator.messaging.kafka.KafkaContext;
-import org.cloudiator.messaging.kafka.KafkaMessagingModule;
-import org.cloudiator.messaging.services.MessageServiceModule;
+import com.google.inject.Inject;
+import com.google.inject.persist.PersistService;
 
-public class LanceAgent {
+public class Init {
 
-  private static final Injector INJECTOR = Guice
-      .createInjector(
-          new MessageServiceModule(), new KafkaMessagingModule(new KafkaContext()));
+  private final PersistService persistService;
 
-  public static void main(String[] args) {
-    INJECTOR.getInstance(CreateLanceProcessSubscriber.class).run();
+  @Inject
+  Init(PersistService persistService) {
+    this.persistService = persistService;
+    init();
+  }
+
+  private void init() {
+    persistService.start();
   }
 
 }

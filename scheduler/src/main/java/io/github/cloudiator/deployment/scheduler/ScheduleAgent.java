@@ -21,6 +21,8 @@ import com.google.inject.Injector;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleRequestSubscriber;
+import io.github.cloudiator.persistance.JpaModule;
+import io.github.cloudiator.util.JpaContext;
 import org.cloudiator.messaging.kafka.KafkaContext;
 import org.cloudiator.messaging.kafka.KafkaMessagingModule;
 import org.cloudiator.messaging.services.MessageServiceModule;
@@ -28,7 +30,8 @@ import org.cloudiator.messaging.services.MessageServiceModule;
 public class ScheduleAgent {
 
   private final static Injector INJECTOR = Guice
-      .createInjector(new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
+      .createInjector(new JpaModule("defaultPersistenceUnit", new JpaContext()),
+          new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
           new SchedulerModule());
 
   public static void main(String[] args) {

@@ -11,7 +11,7 @@ after_success:
 - lance/ci/publish_docker.sh
 branches:
   except:
-  - gh-pages
+  - gh-pagesW
 addons:
   sonarcloud:
     organization: cloudiator

@@ -27,10 +27,15 @@
 
   <artifactId>scheduler</artifactId>
 
+  <properties>
+    <docker.tag>manual</docker.tag>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.github.cloudiator.common</groupId>
-      <artifactId>common-messaging</artifactId>
+      <artifactId>common-all</artifactId>
+      <version>0.3.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.github.cloudiator.iaas</groupId>
@@ -55,10 +60,25 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.mariadb.jdbc</groupId>
+      <artifactId>mariadb-java-client</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
+
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <configuration>
+          <to>
+            registry.hub.docker.com/cloudiator/scheduler-agent:${docker.tag}
+          </to>
+        </configuration>
+      </plugin>
+
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
@@ -73,15 +93,6 @@
           <finalName>scheduler-agent</finalName>
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
-        <executions>
-          <execution>
-            <id>make-assembly</id> <!-- this is used for inheritance merges -->
-            <phase>package</phase> <!-- bind to the packaging phase -->
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

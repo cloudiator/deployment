@@ -16,26 +16,57 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import com.google.common.collect.ImmutableSet;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class ScheduleImpl implements Schedule {
 
   private final String id;
-  private final Job job;
+  private final String job;
+  private final Set<CloudiatorProcess> processes;
+  private final Instantiation instantiation;
 
-  public ScheduleImpl(String id, Job job) {
+  public ScheduleImpl(String id, String job,
+      Instantiation instantiation) {
     this.id = id;
     this.job = job;
+    this.instantiation = instantiation;
+    this.processes = new HashSet<>();
   }
 
-  public static Schedule of(Job job) {
-    return new ScheduleImpl(UUID.randomUUID().toString(), job);
+  public static Schedule create(Job job, Instantiation instantiation) {
+    return new ScheduleImpl(UUID.randomUUID().toString(), job.id(), instantiation);
   }
 
 
   @Override
-  public Job job() {
+  public String job() {
     return job;
+  }
+
+  @Override
+  public Set<CloudiatorProcess> processes() {
+    return ImmutableSet.copyOf(processes);
+  }
+
+  @Override
+  public Instantiation instantiation() {
+    return instantiation;
+  }
+
+  @Override
+  public Schedule addProcess(CloudiatorProcess cloudiatorProcess) {
+    processes.add(cloudiatorProcess);
+    return this;
+  }
+
+  @Override
+  public Schedule addProcesses(Collection<? extends CloudiatorProcess> processes) {
+    this.processes.addAll(processes);
+    return null;
   }
 
   @Override

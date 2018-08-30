@@ -17,10 +17,49 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import java.util.Collection;
+import java.util.Set;
+import org.cloudiator.messages.entities.ProcessEntities;
 
 public interface Schedule extends Identifiable {
 
-  Job job();
+  enum Instantiation {
+    AUTOMATIC,
+    MANUAL;
+
+    public static Instantiation valueOf(ProcessEntities.Instantiation instantiation) {
+      switch (instantiation) {
+        case AUTOMATIC:
+          return AUTOMATIC;
+        case MANUAL:
+          return MANUAL;
+        case UNRECOGNIZED:
+        default:
+          throw new AssertionError("Unrecognized instantiation " + instantiation);
+      }
+    }
+
+    public ProcessEntities.Instantiation toMessage() {
+      switch (this) {
+        case MANUAL:
+          return ProcessEntities.Instantiation.MANUAL;
+        case AUTOMATIC:
+          return ProcessEntities.Instantiation.AUTOMATIC;
+        default:
+          throw new AssertionError("Unrecognized instantiation " + this);
+      }
+    }
+  }
+
+  String job();
+
+  Set<CloudiatorProcess> processes();
+
+  Instantiation instantiation();
+
+  Schedule addProcess(CloudiatorProcess cloudiatorProcess);
+
+  Schedule addProcesses(Collection<? extends CloudiatorProcess> processes);
 
 
 }

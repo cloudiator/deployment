@@ -19,8 +19,6 @@ package io.github.cloudiator.deployment.lance;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Schedule;
-import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
@@ -58,16 +56,15 @@ public class CreateLanceProcessSubscriber implements Runnable {
         (id, content) -> {
 
           try {
-            
+
             final String userId = content.getUserId();
             final Job job = JOB_CONVERTER.apply(content.getLance().getJob());
             final String task = content.getLance().getTask();
             final Node node = nodeMessageToNodeConverter.applyBack(content.getLance().getNode());
-            final Schedule schedule = new ScheduleImpl(content.getLance().getSchedule().getId(),
-                job);
+            final String schedule = content.getLance().getSchedule();
 
             final CloudiatorProcess cloudiatorProcess = createLanceProcessStrategy
-                .execute(userId, schedule, job.getTask(task).orElseThrow(
+                .execute(userId, schedule, job, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
                         String.format("Job %s does not contain task %s", job, task))), node);
 

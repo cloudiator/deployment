@@ -16,10 +16,13 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.State;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
@@ -31,8 +34,18 @@ import javax.persistence.ManyToOne;
 @Entity
 class ProcessModel extends Model {
 
+  @Column(unique = true, nullable = false)
+  private String domainId;
+
   @ManyToOne(optional = false)
-  private TaskModel task;
+  private ScheduleModel schedule;
+
+  @Column(unique = true, nullable = false)
+  private String task;
+
+  @Column(nullable = false)
+  private String node;
+
   @Enumerated
   private CloudiatorProcess.State state;
 
@@ -42,15 +55,51 @@ class ProcessModel extends Model {
   protected ProcessModel() {
   }
 
-  public ProcessModel(TaskModel task, CloudiatorProcess.State state) {
+  public ProcessModel(String domainId, ScheduleModel schedule, String task, String node,
+      CloudiatorProcess.State state) {
+
+    checkNotNull(domainId, "domainId is null");
+    checkArgument(!domainId.isEmpty(), "domainId is empty");
+
+    checkNotNull(schedule, "schedule is null");
+
     checkNotNull(task, "task is null");
+    checkArgument(!task.isEmpty(), "task is empty");
+
+    checkNotNull(node, "node is null");
+    checkArgument(!node.isEmpty(), "node is empty");
+
+    this.domainId = domainId;
+    this.schedule = schedule;
     this.task = task;
-    checkNotNull(state, "state is null");
     this.state = state;
+    this.node = node;
+
   }
 
   @Override
   protected ToStringHelper stringHelper() {
-    return super.stringHelper().add("task", task).add("state", state);
+    return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
+        .add("task", task).add("state", state);
+  }
+
+  public String getNode() {
+    return node;
+  }
+
+  public String getDomainId() {
+    return domainId;
+  }
+
+  public ScheduleModel getSchedule() {
+    return schedule;
+  }
+
+  public String getTask() {
+    return task;
+  }
+
+  public State getState() {
+    return state;
   }
 }

@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.scheduler;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobConverter;
@@ -57,18 +58,15 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorProcess spawn(String userId, Schedule schedule, Task task, Node node) {
+  public CloudiatorProcess spawn(String userId, String schedule, Job job, Task task, Node node) {
 
     LOGGER.info(String
         .format("%s is spawning a new process for user: %s, Schedule %s, Task %s on Node %s", this,
             userId, schedule, task, node));
 
     final LanceProcess lanceProcess = LanceProcess.newBuilder()
-        .setSchedule(
-            ProcessEntities.Schedule.newBuilder().setId(schedule.id())
-                .setJob(schedule.job().id())
-                .build())
-        .setJob(JOB_CONVERTER.applyBack(schedule.job()))
+        .setSchedule(schedule)
+        .setJob(JOB_CONVERTER.applyBack(job))
         .setNode(NODE_MESSAGE_CONVERTER.apply(node)).setTask(task.name()).build();
     final CreateLanceProcessRequest processRequest = CreateLanceProcessRequest.newBuilder()
         .setLance(lanceProcess).setUserId(userId).build();
