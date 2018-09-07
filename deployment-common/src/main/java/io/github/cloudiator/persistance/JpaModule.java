@@ -48,6 +48,7 @@ public class JpaModule extends AbstractModule {
     bind(TaskInterfaceModelRepository.class).to(TaskInterfaceModelRepositoryJpa.class);
     bind(OptimizationModelRepository.class).to(OptimizationModelRepositoryJpa.class);
     bind(RequirementModelRepository.class).to(RequirementModelRepositoryJpa.class);
+    bind(TriggerModelRepository.class).to(TriggerModelRepositoryJpa.class);
   }
 
   private JpaPersistModule buildPersistModule() {

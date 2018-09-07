@@ -17,13 +17,15 @@
 package io.github.cloudiator.persistance;
 
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
-import io.github.cloudiator.deployment.domain.LanceInterface;
-import io.github.cloudiator.deployment.domain.LanceInterfaceBuilder;
-import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.domain.*;
+
 import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 
 class TaskInterfaceModelConverter implements
     OneWayConverter<TaskInterfaceModel, TaskInterface> {
+
+  private static final TriggerModelConverter TRIGGER_MODEL_CONVERTER = new TriggerModelConverter();
 
   @Nullable
   @Override
@@ -35,6 +37,8 @@ class TaskInterfaceModelConverter implements
 
     if (taskInterfaceModel instanceof LanceTaskInterfaceModel) {
       return lanceInterface((LanceTaskInterfaceModel) taskInterfaceModel);
+    } else if (taskInterfaceModel instanceof FaasTaskInterfaceModel) {
+      return faasInterface((FaasTaskInterfaceModel) taskInterfaceModel);
     } else {
       throw new AssertionError(
           String.format("taskInterfaceModel has illegal type %s.", taskInterfaceModel.getClass()));
@@ -57,5 +61,20 @@ class TaskInterfaceModelConverter implements
         .startDetection(lanceTaskInterfaceModel.getStartDetection())
         .stop(lanceTaskInterfaceModel.getStop())
         .stopDetection(lanceTaskInterfaceModel.getStopDetection()).build();
+  }
+
+  private FaasInterface faasInterface(FaasTaskInterfaceModel faasTaskInterfaceModel) {
+    return FaasInterfaceBuilder.newBuilder()
+        .functionName(faasTaskInterfaceModel.getFunctionName())
+        .sourceCodeUrl(faasTaskInterfaceModel.getSourceCodeUrl())
+        .handler(faasTaskInterfaceModel.getHandler())
+        .runtime(faasTaskInterfaceModel.getRuntime())
+        .timeout(faasTaskInterfaceModel.getTimeout())
+        .memory(faasTaskInterfaceModel.getMemory())
+        .triggers(faasTaskInterfaceModel.getTriggers().stream()
+            .map(TRIGGER_MODEL_CONVERTER)
+            .collect(Collectors.toSet())
+        )
+        .build();
   }
 }
