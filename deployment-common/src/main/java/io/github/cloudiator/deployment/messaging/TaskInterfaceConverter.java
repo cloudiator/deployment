@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import org.cloudiator.messages.entities.TaskEntities;
 
@@ -27,6 +28,7 @@ public class TaskInterfaceConverter implements
   public static final TaskInterfaceConverter INSTANCE = new TaskInterfaceConverter();
 
   private static final LanceInterfaceConverter LANCE_INTERFACE_CONVERTER = LanceInterfaceConverter.INSTANCE;
+  private static final SparkInterfaceConverter SPARK_INTERFACE_CONVERTER = SparkInterfaceConverter.INSTANCE;
 
   private TaskInterfaceConverter() {
 
@@ -39,6 +41,10 @@ public class TaskInterfaceConverter implements
       return TaskEntities.TaskInterface.newBuilder()
           .setLanceInterface(LANCE_INTERFACE_CONVERTER.applyBack(
               (LanceInterface) taskInterface)).build();
+    } else if (taskInterface instanceof SparkInterface) {
+      return TaskEntities.TaskInterface.newBuilder()
+          .setSparkInterface(SPARK_INTERFACE_CONVERTER.applyBack(
+              (SparkInterface) taskInterface)).build();
     } else {
       throw new AssertionError(
           "Unknown type for task interface " + taskInterface.getClass().getName());
@@ -53,6 +59,8 @@ public class TaskInterfaceConverter implements
         throw new UnsupportedOperationException("DockerInterface is not yet implemented");
       case LANCEINTERFACE:
         return LANCE_INTERFACE_CONVERTER.apply(taskInterface.getLanceInterface());
+      case SPARKINTERFACE:
+        return SPARK_INTERFACE_CONVERTER.apply(taskInterface.getSparkInterface());
       case TASKINTERFACE_NOT_SET:
         throw new AssertionError("TaskInterface is not set");
       default:

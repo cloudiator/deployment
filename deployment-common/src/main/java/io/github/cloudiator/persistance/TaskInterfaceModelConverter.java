@@ -19,6 +19,8 @@ package io.github.cloudiator.persistance;
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.LanceInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.SparkInterface;
+import io.github.cloudiator.deployment.domain.SparkInterfaceBuilder;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import javax.annotation.Nullable;
 
@@ -35,6 +37,8 @@ class TaskInterfaceModelConverter implements
 
     if (taskInterfaceModel instanceof LanceTaskInterfaceModel) {
       return lanceInterface((LanceTaskInterfaceModel) taskInterfaceModel);
+    } else if (taskInterfaceModel instanceof SparkTaskInterfaceModel) {
+      return sparkInterface((SparkTaskInterfaceModel) taskInterfaceModel);
     } else {
       throw new AssertionError(
           String.format("taskInterfaceModel has illegal type %s.", taskInterfaceModel.getClass()));
@@ -57,5 +61,13 @@ class TaskInterfaceModelConverter implements
         .startDetection(lanceTaskInterfaceModel.getStartDetection())
         .stop(lanceTaskInterfaceModel.getStop())
         .stopDetection(lanceTaskInterfaceModel.getStopDetection()).build();
+  }
+
+  private SparkInterface sparkInterface(SparkTaskInterfaceModel sparkTaskInterfaceModel) {
+    return SparkInterfaceBuilder.newBuilder().file(sparkTaskInterfaceModel.getFile())
+        .className(sparkTaskInterfaceModel.getClassName())
+        .arguments(sparkTaskInterfaceModel.getArguments())
+        .sparkArguments(sparkTaskInterfaceModel.getSparkArguments())
+        .sparkConfiguration(sparkTaskInterfaceModel.getSparkConfiguration()).build();
   }
 }

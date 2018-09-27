@@ -18,6 +18,7 @@ package io.github.cloudiator.persistance;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 
 public class TaskInterfaceDomainRepository {
@@ -42,6 +43,8 @@ public class TaskInterfaceDomainRepository {
 
     if (domain instanceof LanceInterface) {
       return createLanceInterfaceModel((LanceInterface) domain, taskModel);
+    } else if (domain instanceof SparkInterface) {
+      return createSparkInterfaceModel((SparkInterface) domain, taskModel);
     } else {
       throw new AssertionError("TaskInterface is of unknown type " + domain.getClass().getName());
     }
@@ -59,6 +62,12 @@ public class TaskInterfaceDomainRepository {
         domain.preStop().orElse(null), domain.stop().orElse(null), domain.postStop().orElse(null),
         domain.shutdown().orElse(null));
 
+  }
+
+  private SparkTaskInterfaceModel createSparkInterfaceModel(SparkInterface domain,
+      TaskModel taskModel) {
+    return new SparkTaskInterfaceModel(taskModel, domain.file(), domain.className().orElse(null),
+        domain.arguments(), domain.sparkArguments(), domain.sparkConfiguration());
   }
 
 }
