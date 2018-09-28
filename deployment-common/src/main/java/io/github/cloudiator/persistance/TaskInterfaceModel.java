@@ -17,9 +17,12 @@
 package io.github.cloudiator.persistance;
 
 import javax.persistence.Entity;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.ManyToOne;
 
 @Entity
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 class TaskInterfaceModel extends Model {
 
   @ManyToOne
