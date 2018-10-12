@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.persistance;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
+import io.github.cloudiator.util.JpaResultHelper;
+import java.util.List;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface CloudiatorProcess extends Identifiable {
+public interface ScheduleModelRepository extends ModelRepository<ScheduleModel> {
 
-  enum State {
 
-  }
+  List<ScheduleModel> findByUser(String userId);
 
-  String scheduleId();
-
-  String taskId();
-
-  State state();
-
-  String nodeId();
+  ScheduleModel findByIdAndUser(String id, String user);
 }

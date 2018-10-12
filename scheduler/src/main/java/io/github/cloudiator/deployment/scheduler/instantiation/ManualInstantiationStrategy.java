@@ -14,28 +14,22 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.scheduler.instantiation;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
-import java.util.Collection;
-import java.util.Set;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 
-public interface Schedule extends Identifiable {
+public class ManualInstantiationStrategy implements InstantiationStrategy {
 
-  enum Instantiation {
-    AUTOMATIC,
-    MANUAL
+  @Override
+  public boolean supports(Instantiation instantiation) {
+    return instantiation.equals(Instantiation.MANUAL);
   }
 
-  String job();
-
-  Set<CloudiatorProcess> processes();
-
-  Instantiation instantiation();
-
-  Schedule addProcess(CloudiatorProcess cloudiatorProcess);
-
-  Schedule addProcesses(Collection<? extends CloudiatorProcess> processes);
-
-
+  @Override
+  public void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException {
+    //intentionally left empty
+    //noop
+  }
 }

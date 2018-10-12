@@ -25,12 +25,12 @@ import java.util.Map;
 /**
  * Created by daniel on 31.05.17.
  */
-public class JpaModule extends AbstractModule {
+public class DeploymentJpaModule extends AbstractModule {
 
   private final String jpaUnit;
   private final JpaContext jpaContext;
 
-  public JpaModule(String jpaUnit, JpaContext jpaContext) {
+  public DeploymentJpaModule(String jpaUnit, JpaContext jpaContext) {
     this.jpaUnit = jpaUnit;
     this.jpaContext = jpaContext;
   }
@@ -48,6 +48,8 @@ public class JpaModule extends AbstractModule {
     bind(TaskInterfaceModelRepository.class).to(TaskInterfaceModelRepositoryJpa.class);
     bind(OptimizationModelRepository.class).to(OptimizationModelRepositoryJpa.class);
     bind(RequirementModelRepository.class).to(RequirementModelRepositoryJpa.class);
+    bind(ScheduleModelRepository.class).to(ScheduleModelRepositoryJpa.class);
+    bind(ProcessModelRepository.class).to(ProcessModelRepositoryJpa.class);
   }
 
   private JpaPersistModule buildPersistModule() {

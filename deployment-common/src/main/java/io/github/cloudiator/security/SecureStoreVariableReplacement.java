@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.security;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
+import java.util.concurrent.ExecutionException;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface CloudiatorProcess extends Identifiable {
+public class SecureStoreVariableReplacement implements VariableReplacement {
 
-  enum State {
 
+
+  @Override
+  public String apply(String s) throws ExecutionException {
+
+
+
+
+    return null;
   }
-
-  String scheduleId();
-
-  String taskId();
-
-  State state();
-
-  String nodeId();
 }

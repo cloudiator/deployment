@@ -22,6 +22,7 @@
   <persistence-unit name="defaultPersistenceUnit" transaction-type="RESOURCE_LOCAL">
     <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
+    <class>io.github.cloudiator.persistance.TenantModel</class>
     <class>io.github.cloudiator.persistance.ScheduleModel</class>
     <class>io.github.cloudiator.persistance.ProcessModel</class>
 

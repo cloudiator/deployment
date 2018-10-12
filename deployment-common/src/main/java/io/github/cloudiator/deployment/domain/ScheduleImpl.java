@@ -29,7 +29,7 @@ public class ScheduleImpl implements Schedule {
   private final Set<CloudiatorProcess> processes;
   private final Instantiation instantiation;
 
-  public ScheduleImpl(String id, String job,
+  private ScheduleImpl(String id, String job,
       Instantiation instantiation) {
     this.id = id;
     this.job = job;
@@ -41,6 +41,9 @@ public class ScheduleImpl implements Schedule {
     return new ScheduleImpl(UUID.randomUUID().toString(), job.id(), instantiation);
   }
 
+  public static Schedule create(String id, String jobId, Instantiation instantiation) {
+    return new ScheduleImpl(id, jobId, instantiation);
+  }
 
   @Override
   public String job() {

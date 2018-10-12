@@ -18,10 +18,12 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ScheduleQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleRequestSubscriber;
-import io.github.cloudiator.persistance.JpaModule;
+import io.github.cloudiator.persistance.DeploymentJpaModule;
 import io.github.cloudiator.util.JpaContext;
 import org.cloudiator.messaging.kafka.KafkaContext;
 import org.cloudiator.messaging.kafka.KafkaMessagingModule;
@@ -30,13 +32,15 @@ import org.cloudiator.messaging.services.MessageServiceModule;
 public class ScheduleAgent {
 
   private final static Injector INJECTOR = Guice
-      .createInjector(new JpaModule("defaultPersistenceUnit", new JpaContext()),
+      .createInjector(
           new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
-          new SchedulerModule());
+          new SchedulerModule(), new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
+              Configuration.conf())));
 
   public static void main(String[] args) {
     INJECTOR.getInstance(ScheduleRequestSubscriber.class).run();
     INJECTOR.getInstance(ProcessRequestSubscriber.class).run();
+    INJECTOR.getInstance(ScheduleQuerySubscriber.class).run();
   }
 
 }

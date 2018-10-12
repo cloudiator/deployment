@@ -76,7 +76,7 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
   /**
    * Empty hibernate constructor
    */
-  SparkTaskInterfaceModel() {
+  protected SparkTaskInterfaceModel() {
   }
 
   SparkTaskInterfaceModel(TaskModel taskModel, String file, @Nullable String className,

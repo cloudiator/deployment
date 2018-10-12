@@ -19,7 +19,7 @@ package io.github.cloudiator.deployment.domain;
 public class CloudiatorProcessBuilder {
 
   private String id;
-  private String jobId;
+  private String scheduleId;
   private String taskName;
   private CloudiatorProcess.State state;
   private String nodeId;
@@ -41,8 +41,8 @@ public class CloudiatorProcessBuilder {
     return this;
   }
 
-  public CloudiatorProcessBuilder jobId(String jobId) {
-    this.jobId = jobId;
+  public CloudiatorProcessBuilder scheduleId(String scheduleId) {
+    this.scheduleId = scheduleId;
     return this;
   }
 
@@ -57,7 +57,7 @@ public class CloudiatorProcessBuilder {
   }
 
   public CloudiatorProcess build() {
-    return new CloudiatorProcessImpl(id, jobId, taskName, nodeId, state);
+    return new CloudiatorProcessImpl(id, scheduleId, taskName, nodeId, state);
   }
 
 }

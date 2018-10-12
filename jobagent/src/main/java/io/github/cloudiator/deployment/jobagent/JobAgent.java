@@ -21,7 +21,7 @@ import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.jobagent.messaging.JobAddedSubscriber;
 import io.github.cloudiator.deployment.jobagent.messaging.JobGetSubscriber;
-import io.github.cloudiator.persistance.JpaModule;
+import io.github.cloudiator.persistance.DeploymentJpaModule;
 import io.github.cloudiator.util.JpaContext;
 import org.cloudiator.messaging.kafka.KafkaContext;
 import org.cloudiator.messaging.kafka.KafkaMessagingModule;
@@ -33,7 +33,7 @@ public class JobAgent {
       .createInjector(
           new KafkaMessagingModule(new KafkaContext(Configuration.conf())),
           new MessageServiceModule(), new JobAgentModule(),
-          new JpaModule("defaultPersistenceUnit", new JpaContext(
+          new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
               Configuration.conf())));
 
   public static void main(String[] args) {

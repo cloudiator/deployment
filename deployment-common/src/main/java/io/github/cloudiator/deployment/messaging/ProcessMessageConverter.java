@@ -34,13 +34,14 @@ public class ProcessMessageConverter implements
   @Override
   public Process applyBack(CloudiatorProcess cloudiatorProcess) {
 
-    return Process.newBuilder().setId(cloudiatorProcess.id()).setJob(cloudiatorProcess.jobId())
+    return Process.newBuilder().setId(cloudiatorProcess.id())
+        .setSchedule(cloudiatorProcess.scheduleId())
         .setNode(cloudiatorProcess.nodeId()).setTask(cloudiatorProcess.taskId()).build();
   }
 
   @Override
   public CloudiatorProcess apply(Process process) {
     return CloudiatorProcessBuilder.newBuilder().nodeId(process.getNode()).id(process.getId())
-        .jobId(process.getJob()).taskName(process.getTask()).build();
+        .scheduleId(process.getSchedule()).taskName(process.getTask()).build();
   }
 }
