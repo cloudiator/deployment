@@ -19,6 +19,7 @@ package io.github.cloudiator.persistance;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.domain.Trigger;
 
@@ -49,13 +50,15 @@ public class TaskInterfaceDomainRepository {
       return createLanceInterfaceModel((LanceInterface) domain, taskModel);
     } else if (domain instanceof FaasInterface) {
       return createFaasInterfaceModel((FaasInterface) domain, taskModel);
+    } else if (domain instanceof SparkInterface) {
+      return createSparkInterfaceModel((SparkInterface) domain, taskModel);
     } else {
       throw new AssertionError("TaskInterface is of unknown type " + domain.getClass().getName());
     }
   }
 
   private LanceTaskInterfaceModel createLanceInterfaceModel(LanceInterface domain,
-                                                            TaskModel taskModel) {
+      TaskModel taskModel) {
 
     return new LanceTaskInterfaceModel(taskModel, domain.containerType(),
         domain.init().orElse(null),
@@ -83,6 +86,12 @@ public class TaskInterfaceDomainRepository {
       triggerDomainRepository.saveAndGet(trigger, faasInterfaceModel);
     }
     return faasInterfaceModel;
+  }
+
+  private SparkTaskInterfaceModel createSparkInterfaceModel(SparkInterface domain,
+      TaskModel taskModel) {
+    return new SparkTaskInterfaceModel(taskModel, domain.file(), domain.className().orElse(null),
+        domain.arguments(), domain.sparkArguments(), domain.sparkConfiguration());
   }
 
 }

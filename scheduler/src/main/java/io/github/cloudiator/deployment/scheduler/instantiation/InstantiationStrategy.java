@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2018 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.scheduler.instantiation;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface CloudiatorProcess extends Identifiable {
+public interface InstantiationStrategy {
 
-  enum State {
+  boolean supports(Instantiation instantiation);
 
-  }
-
-  String scheduleId();
-
-  String taskId();
-
-  State state();
-
-  String nodeId();
+  void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException;
 }

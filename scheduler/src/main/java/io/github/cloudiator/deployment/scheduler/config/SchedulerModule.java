@@ -17,9 +17,14 @@
 package io.github.cloudiator.deployment.scheduler.config;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.Multibinder;
 import io.github.cloudiator.deployment.scheduler.Init;
 import io.github.cloudiator.deployment.scheduler.OnDemandResourcePool;
 import io.github.cloudiator.deployment.scheduler.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.CompositeInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
 
 public class SchedulerModule extends AbstractModule {
 
@@ -27,5 +32,12 @@ public class SchedulerModule extends AbstractModule {
   protected void configure() {
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
     bind(Init.class).asEagerSingleton();
+
+    Multibinder<InstantiationStrategy> instantiationStrategyMultibinder = Multibinder
+        .newSetBinder(binder(), InstantiationStrategy.class);
+    instantiationStrategyMultibinder.addBinding().to(AutomaticInstantiationStrategy.class);
+    instantiationStrategyMultibinder.addBinding().to(ManualInstantiationStrategy.class);
+
+    bind(InstantiationStrategy.class).to(CompositeInstantiationStrategy.class);
   }
 }

@@ -1,0 +1,142 @@
+/*
+ * Copyright 2018 University of Ulm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.github.cloudiator.deployment.scheduler.instantiation;
+
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
+import io.github.cloudiator.deployment.scheduler.ResourcePool;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
+import org.cloudiator.messages.Process.CreateProcessRequest;
+import org.cloudiator.messages.Process.ProcessCreatedResponse;
+import org.cloudiator.messages.entities.ProcessEntities.ProcessNew;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
+import org.cloudiator.messaging.services.ProcessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class AutomaticInstantiationStrategy implements InstantiationStrategy {
+
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(AutomaticInstantiationStrategy.class);
+  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
+  private static final LoggingScheduledThreadPoolExecutor EXECUTOR = new LoggingScheduledThreadPoolExecutor(
+      5);
+
+  static {
+    MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
+  }
+
+  private final ResourcePool resourcePool;
+  private final ProcessService processService;
+
+  @Inject
+  public AutomaticInstantiationStrategy(
+      ResourcePool resourcePool, ProcessService processService) {
+    this.resourcePool = resourcePool;
+    this.processService = processService;
+  }
+
+
+  @Override
+  public boolean supports(Instantiation instantiation) {
+    return instantiation.equals(Instantiation.AUTOMATIC);
+  }
+
+  @Override
+  public void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException {
+    //for each task
+    for (Task task : job.tasks()) {
+
+      //allocate the resources
+      final ListenableFuture<NodeGroup> allocateFuture = resourcePool
+          .allocate(userId, task.requirements(), task.name());
+
+      //futures for the process
+      final Set<ListenableFuture<CloudiatorProcess>> processFutures = new HashSet<>();
+
+      Futures.addCallback(allocateFuture, new FutureCallback<NodeGroup>() {
+        @Override
+        public void onSuccess(@Nullable NodeGroup result) {
+
+          //spawn processes on success
+          for (Node node : result.getNodes()) {
+            final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
+                schedule.id()).setTask(task.name())
+                .setNode(node.id())
+                .build();
+            final CreateProcessRequest createProcessRequest = CreateProcessRequest
+                .newBuilder()
+                .setUserId(userId).setProcess(newProcess).build();
+
+            final SettableFutureResponseCallback<ProcessCreatedResponse, CloudiatorProcess> responseCallback = SettableFutureResponseCallback
+                .create(processCreatedResponse -> PROCESS_MESSAGE_CONVERTER
+                    .apply(processCreatedResponse.getProcess()));
+
+            processService.createProcessAsync(createProcessRequest, responseCallback);
+
+            processFutures.add(responseCallback);
+
+          }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+          //todo: what to do when nodes fail?
+          LOGGER.error(String
+                  .format("An uncaught exception occurred while spawning nodes: %s.", t.getMessage()),
+              t);
+        }
+      }, EXECUTOR);
+
+      final ListenableFuture<List<CloudiatorProcess>> processes = Futures
+          .successfulAsList(processFutures);
+
+      final List<CloudiatorProcess> cloudiatorProcesses;
+      try {
+        cloudiatorProcesses = processes.get();
+      } catch (InterruptedException e) {
+        throw new InstantiationException("Execution got interrupted.", e);
+      } catch (ExecutionException e) {
+        throw new InstantiationException("Error during instantiation.", e);
+      }
+
+      if (cloudiatorProcesses.contains(null)) {
+        //todo: reply with error
+        LOGGER.error("One or more processes failed to start");
+      }
+
+      //persist the processes
+    }
+  }
+}

@@ -40,7 +40,7 @@ class JobModel extends Model {
   @Column(nullable = false)
   private String name;
 
-  @ManyToOne
+  @ManyToOne(optional = false)
   private TenantModel tenant;
 
   @OneToMany(mappedBy = "jobModel")

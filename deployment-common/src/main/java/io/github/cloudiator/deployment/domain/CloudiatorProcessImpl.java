@@ -22,23 +22,23 @@ import java.util.Objects;
 class CloudiatorProcessImpl implements CloudiatorProcess {
 
   private final String id;
-  private final String jobId;
+  private final String scheduleId;
   private final String taskName;
   private final String nodeId;
   private final CloudiatorProcess.State state;
 
-  CloudiatorProcessImpl(String id, String jobId, String taskName, String nodeId,
+  CloudiatorProcessImpl(String id, String scheduleId, String taskName, String nodeId,
       State state) {
     this.id = id;
-    this.jobId = jobId;
+    this.scheduleId = scheduleId;
     this.taskName = taskName;
     this.nodeId = nodeId;
     this.state = state;
   }
 
   @Override
-  public String jobId() {
-    return jobId;
+  public String scheduleId() {
+    return scheduleId;
   }
 
   @Override
@@ -71,7 +71,7 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     }
     CloudiatorProcessImpl that = (CloudiatorProcessImpl) o;
     return Objects.equals(id, that.id) &&
-        Objects.equals(jobId, that.jobId) &&
+        Objects.equals(scheduleId, that.scheduleId) &&
         Objects.equals(taskName, that.taskName) &&
         Objects.equals(nodeId, that.nodeId);
   }
@@ -79,12 +79,13 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   @Override
   public int hashCode() {
 
-    return Objects.hash(id, jobId, taskName, nodeId);
+    return Objects.hash(id, scheduleId, taskName, nodeId);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("id", id).add("job", jobId).add("task", taskName)
-        .add("node", nodeId).add("state", state).toString();
+    return MoreObjects.toStringHelper(this).add("id", id).add("scheduleId", scheduleId)
+        .add("task", taskName)
+        .add("nodeId", nodeId).add("state", state).toString();
   }
 }

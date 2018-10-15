@@ -14,31 +14,47 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler.messaging;
+package io.github.cloudiator.deployment.messaging;
 
-import de.uniulm.omi.cloudiator.util.OneWayConverter;
+import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Schedule;
-import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
+import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.Schedule.Builder;
 
-public class ScheduleConverter implements OneWayConverter<Schedule, ProcessEntities.Schedule> {
+public class ScheduleConverter implements TwoWayConverter<ProcessEntities.Schedule, Schedule> {
 
   public static final ScheduleConverter INSTANCE = new ScheduleConverter();
-  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
 
-  private ScheduleConverter() {}
+  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
+  private static final InstantiationConverter INSTANTIATION_CONVERTER = InstantiationConverter.INSTANCE;
+
+  private ScheduleConverter() {
+  }
 
   @Override
-  public ProcessEntities.Schedule apply(Schedule schedule) {
+  public ProcessEntities.Schedule applyBack(Schedule schedule) {
 
-    final Builder builder = ProcessEntities.Schedule.newBuilder().setId(schedule.id())
-        .setJob(schedule.job())
-        .setInstantiaton(schedule.instantiation().toMessage());
+    final Builder builder = ProcessEntities.Schedule.newBuilder();
+    builder.setId(schedule.id())
+        .setInstantiation(INSTANTIATION_CONVERTER.applyBack(schedule.instantiation()))
+        .setJob(schedule.job());
 
     schedule.processes().stream().map(PROCESS_MESSAGE_CONVERTER::applyBack)
         .forEach(builder::addProcesses);
 
     return builder.build();
+  }
+
+  @Override
+  public Schedule apply(ProcessEntities.Schedule schedule) {
+
+    final Schedule result = ScheduleImpl.create(schedule.getId(), schedule.getJob(),
+        INSTANTIATION_CONVERTER.apply(schedule.getInstantiation()));
+
+    schedule.getProcessesList().stream().map(PROCESS_MESSAGE_CONVERTER)
+        .forEach(result::addProcess);
+
+    return result;
   }
 }

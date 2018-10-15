@@ -19,9 +19,14 @@ package io.github.cloudiator.persistance;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 @Entity
@@ -30,8 +35,14 @@ class ScheduleModel extends Model {
   @Column(nullable = false)
   private String domainId;
 
+  @ManyToOne(optional = false)
+  private TenantModel tenant;
+
   @Column(nullable = false)
   private String jobId;
+
+  @Enumerated(EnumType.STRING)
+  private Schedule.Instantiation instantiation;
 
   @OneToMany(mappedBy = "schedule")
   private List<ProcessModel> proccesses;
@@ -39,16 +50,38 @@ class ScheduleModel extends Model {
   protected ScheduleModel() {
   }
 
-  private ScheduleModel(String domainId, String jobId) {
+  ScheduleModel(String domainId, TenantModel tenant, String jobId,
+      Instantiation instantiation) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
 
+    checkNotNull(tenant, "tenant is null");
+
     checkNotNull(jobId, "jobId is null");
     checkArgument(!jobId.isEmpty(), "jobId is empty");
 
+    checkNotNull(instantiation, "instantiation is null");
+
     this.domainId = domainId;
+    this.tenant = tenant;
     this.jobId = jobId;
+    this.instantiation = instantiation;
   }
 
+  public String domainId() {
+    return domainId;
+  }
+
+  public TenantModel tenant() {
+    return tenant;
+  }
+
+  public String jobId() {
+    return jobId;
+  }
+
+  public Instantiation instantiation() {
+    return instantiation;
+  }
 }

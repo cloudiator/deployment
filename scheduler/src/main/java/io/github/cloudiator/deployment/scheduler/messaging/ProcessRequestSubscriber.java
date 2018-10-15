@@ -19,9 +19,11 @@ package io.github.cloudiator.deployment.scheduler.messaging;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
+import io.github.cloudiator.deployment.messaging.ScheduleMessageRepository;
 import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
@@ -42,6 +44,7 @@ public class ProcessRequestSubscriber implements Runnable {
   private final ProcessService processService;
   private final MessageInterface messageInterface;
   private final JobMessageRepository jobMessageRepository;
+  private final ScheduleMessageRepository scheduleMessageRepository;
   private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
@@ -50,11 +53,13 @@ public class ProcessRequestSubscriber implements Runnable {
   public ProcessRequestSubscriber(ProcessService processService,
       MessageInterface messageInterface,
       JobMessageRepository jobMessageRepository,
+      ScheduleMessageRepository scheduleMessageRepository,
       ProcessSpawner processSpawner,
       NodeMessageRepository nodeMessageRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
+    this.scheduleMessageRepository = scheduleMessageRepository;
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
   }
@@ -68,13 +73,21 @@ public class ProcessRequestSubscriber implements Runnable {
         try {
 
           final String userId = content.getUserId();
-          final String jobId = content.getProcess().getJob();
+          final String scheduleId = content.getProcess().getSchedule();
+          final Schedule schedule = scheduleMessageRepository.getById(userId, scheduleId);
+
+          if (schedule == null) {
+            messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
+                .setMessage(String.format("Schedule with the id %s does not exist", scheduleId))
+                .build());
+            return;
+          }
+
+          final String jobId = schedule.job();
           final String taskName = content.getProcess().getTask();
           final String nodeId = content.getProcess().getNode();
 
           final Node node = nodeMessageRepository.getById(userId, nodeId);
-
-          final String schedule = content.getProcess().getSchedule();
 
           if (node == null) {
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
@@ -85,8 +98,10 @@ public class ProcessRequestSubscriber implements Runnable {
           final Job job = jobMessageRepository.getById(userId, jobId);
 
           if (job == null) {
-            messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
-                .setMessage(String.format("Job with the id %s does not exist", jobId)).build());
+            messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(500)
+                .setMessage(String
+                    .format("Job with the id %s does not exist but is referenced by schedule %s.",
+                        jobId, schedule)).build());
             return;
           }
 
@@ -102,7 +117,7 @@ public class ProcessRequestSubscriber implements Runnable {
 
           //todo handle correctly type of task, currently we only assume lance
           final CloudiatorProcess cloudiatorProcess = processSpawner
-              .spawn(userId, schedule, job, optionalTask.get(), node);
+              .spawn(userId, scheduleId, job, optionalTask.get(), node);
 
           final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()
               .setProcess(PROCESS_MESSAGE_CONVERTER.applyBack(cloudiatorProcess)).build();

@@ -171,7 +171,7 @@ public class CreateLanceProcessStrategy {
 
       return CloudiatorProcessBuilder.newBuilder().id(componentInstanceId.toString())
           .nodeId(node.id())
-          .taskName(task.name()).jobId(job.id()).build();
+          .taskName(task.name()).scheduleId(schedule).build();
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
     }
