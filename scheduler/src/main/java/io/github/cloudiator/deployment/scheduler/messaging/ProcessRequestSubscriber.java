@@ -56,12 +56,14 @@ public class ProcessRequestSubscriber implements Runnable {
   public ProcessRequestSubscriber(ProcessService processService,
       MessageInterface messageInterface,
       JobMessageRepository jobMessageRepository,
+      ScheduleDomainRepository scheduleDomainRepository,
       ProcessSpawner processSpawner,
       NodeMessageRepository nodeMessageRepository,
       ProcessDomainRepository processDomainRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
+    this.scheduleDomainRepository = scheduleDomainRepository;
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
     this.processDomainRepository = processDomainRepository;
