@@ -19,6 +19,7 @@ package io.github.cloudiator.persistance;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.ImmutableList;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import java.util.List;
@@ -83,5 +84,9 @@ class ScheduleModel extends Model {
 
   public Instantiation instantiation() {
     return instantiation;
+  }
+
+  public List<ProcessModel> proccesses() {
+    return ImmutableList.copyOf(proccesses);
   }
 }

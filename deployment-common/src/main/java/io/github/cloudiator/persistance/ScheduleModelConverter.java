@@ -25,6 +25,7 @@ class ScheduleModelConverter implements OneWayConverter<ScheduleModel, Schedule>
 
 
   static final ScheduleModelConverter INSTANCE = new ScheduleModelConverter();
+  private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
 
   private ScheduleModelConverter() {
   }
@@ -37,7 +38,12 @@ class ScheduleModelConverter implements OneWayConverter<ScheduleModel, Schedule>
       return null;
     }
 
-    return ScheduleImpl
+    final Schedule schedule = ScheduleImpl
         .create(scheduleModel.domainId(), scheduleModel.jobId(), scheduleModel.instantiation());
+    for (ProcessModel processModel : scheduleModel.proccesses()) {
+      schedule.addProcess(PROCESS_MODEL_CONVERTER.apply(processModel));
+    }
+
+    return schedule;
   }
 }
