@@ -89,10 +89,10 @@ public class ProcessRequestSubscriber implements Runnable {
           final Schedule schedule = scheduleMessageRepository.getById(userId, scheduleId);
 
           if (schedule == null) {
+            LOGGER.error(String.format("Schedule with the id %s does not exist.", scheduleId));
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
                 .setMessage(String.format("Schedule with the id %s does not exist", scheduleId))
                 .build());
-            return;
           }
 
           final String jobId = schedule.job();
@@ -102,6 +102,7 @@ public class ProcessRequestSubscriber implements Runnable {
           final Node node = nodeMessageRepository.getById(userId, nodeId);
 
           if (node == null) {
+            LOGGER.error(String.format("Node with the id %s does not exist.", nodeId));
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
                 .setMessage(String.format("Node with the id %s does not exist", nodeId)).build());
             return;
@@ -110,6 +111,7 @@ public class ProcessRequestSubscriber implements Runnable {
           final Job job = jobMessageRepository.getById(userId, jobId);
 
           if (job == null) {
+            LOGGER.error(String.format("Job with the id %s does not exist.", jobId));
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(500)
                 .setMessage(String
                     .format("Job with the id %s does not exist but is referenced by schedule %s.",
@@ -120,6 +122,9 @@ public class ProcessRequestSubscriber implements Runnable {
           final Optional<Task> optionalTask = job.getTask(taskName);
 
           if (!optionalTask.isPresent()) {
+            LOGGER.error(String
+                .format("Task with the name %s on job with id %s does not exist.", taskName,
+                    jobId));
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
                 .setMessage(String
                     .format("Task with name %s does not exist in job with id %s.", taskName, jobId))
