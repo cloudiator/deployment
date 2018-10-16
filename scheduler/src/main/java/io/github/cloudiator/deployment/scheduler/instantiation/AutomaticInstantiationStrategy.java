@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -75,6 +77,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
   @Override
   public void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException {
+
+    checkState(supports(schedule.instantiation()),
+        String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
+
     //for each task
     for (Task task : job.tasks()) {
 

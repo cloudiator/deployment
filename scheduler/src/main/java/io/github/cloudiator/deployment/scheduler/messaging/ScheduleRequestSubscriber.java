@@ -95,6 +95,10 @@ public class ScheduleRequestSubscriber implements Runnable {
           //persist the schedule
           persistSchedule(schedule, userId);
 
+          LOGGER.info(String
+              .format("Using strategy %s to instantiate schedule %s, job %s for user %s",
+                  instantiationStrategy, schedule, job, userId));
+
           //start the instantiation
           instantiationStrategy.instantiate(schedule, job, userId);
 

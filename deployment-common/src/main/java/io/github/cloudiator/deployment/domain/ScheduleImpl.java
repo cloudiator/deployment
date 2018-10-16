@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
 import java.util.HashSet;
@@ -75,5 +76,11 @@ public class ScheduleImpl implements Schedule {
   @Override
   public String id() {
     return id;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("id", id).add("job", job)
+        .add("instantiation", instantiation).toString();
   }
 }
