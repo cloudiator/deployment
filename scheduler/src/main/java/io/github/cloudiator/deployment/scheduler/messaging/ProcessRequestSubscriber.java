@@ -24,11 +24,11 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
-import io.github.cloudiator.deployment.messaging.ScheduleMessageRepository;
 import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
+import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.Optional;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
@@ -46,7 +46,7 @@ public class ProcessRequestSubscriber implements Runnable {
   private final ProcessService processService;
   private final MessageInterface messageInterface;
   private final JobMessageRepository jobMessageRepository;
-  private final ScheduleMessageRepository scheduleMessageRepository;
+  private final ScheduleDomainRepository scheduleDomainRepository;
   private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
@@ -56,14 +56,12 @@ public class ProcessRequestSubscriber implements Runnable {
   public ProcessRequestSubscriber(ProcessService processService,
       MessageInterface messageInterface,
       JobMessageRepository jobMessageRepository,
-      ScheduleMessageRepository scheduleMessageRepository,
       ProcessSpawner processSpawner,
       NodeMessageRepository nodeMessageRepository,
       ProcessDomainRepository processDomainRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
-    this.scheduleMessageRepository = scheduleMessageRepository;
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
     this.processDomainRepository = processDomainRepository;
@@ -86,13 +84,14 @@ public class ProcessRequestSubscriber implements Runnable {
 
           final String userId = content.getUserId();
           final String scheduleId = content.getProcess().getSchedule();
-          final Schedule schedule = scheduleMessageRepository.getById(userId, scheduleId);
+          final Schedule schedule = scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
 
           if (schedule == null) {
             LOGGER.error(String.format("Schedule with the id %s does not exist.", scheduleId));
             messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(404)
                 .setMessage(String.format("Schedule with the id %s does not exist", scheduleId))
                 .build());
+            return;
           }
 
           final String jobId = schedule.job();
@@ -153,7 +152,7 @@ public class ProcessRequestSubscriber implements Runnable {
         } catch (Exception e) {
           final String errorMessage = String
               .format("Unexpected error while processing request %s with id %s.", content, id);
-          LOGGER.error(errorMessage);
+          LOGGER.error(errorMessage, e);
           messageInterface.reply(ProcessCreatedResponse.class, id, Error.newBuilder().setCode(500)
               .setMessage(errorMessage)
               .build());
