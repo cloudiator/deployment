@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -27,6 +28,7 @@ import io.github.cloudiator.deployment.messaging.ScheduleMessageRepository;
 import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
+import io.github.cloudiator.persistance.ProcessDomainRepository;
 import java.util.Optional;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
@@ -48,6 +50,7 @@ public class ProcessRequestSubscriber implements Runnable {
   private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
+  private final ProcessDomainRepository processDomainRepository;
 
   @Inject
   public ProcessRequestSubscriber(ProcessService processService,
@@ -55,13 +58,20 @@ public class ProcessRequestSubscriber implements Runnable {
       JobMessageRepository jobMessageRepository,
       ScheduleMessageRepository scheduleMessageRepository,
       ProcessSpawner processSpawner,
-      NodeMessageRepository nodeMessageRepository) {
+      NodeMessageRepository nodeMessageRepository,
+      ProcessDomainRepository processDomainRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
     this.scheduleMessageRepository = scheduleMessageRepository;
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
+    this.processDomainRepository = processDomainRepository;
+  }
+
+  @Transactional
+  void persistProcess(CloudiatorProcess cloudiatorProcess, String userId) {
+    processDomainRepository.save(cloudiatorProcess, userId);
   }
 
   @Override
@@ -118,6 +128,9 @@ public class ProcessRequestSubscriber implements Runnable {
           //todo handle correctly type of task, currently we only assume lance
           final CloudiatorProcess cloudiatorProcess = processSpawner
               .spawn(userId, scheduleId, job, optionalTask.get(), node);
+
+          //persist the process
+          persistProcess(cloudiatorProcess, userId);
 
           final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()
               .setProcess(PROCESS_MESSAGE_CONVERTER.applyBack(cloudiatorProcess)).build();

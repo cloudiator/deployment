@@ -16,17 +16,40 @@
 
 package io.github.cloudiator.persistance;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 
-class ProcessDomainRepository {
+public class ProcessDomainRepository {
 
   private final ProcessModelRepository processModelRepository;
+  private final ScheduleModelRepository scheduleModelRepository;
 
+  @Inject
   ProcessDomainRepository(
-      ProcessModelRepository processModelRepository) {
+      ProcessModelRepository processModelRepository,
+      ScheduleModelRepository scheduleModelRepository) {
     this.processModelRepository = processModelRepository;
+    this.scheduleModelRepository = scheduleModelRepository;
   }
 
+  public void save(CloudiatorProcess domain, String userId) {
+
+    checkNotNull(domain, "domain is null");
+    checkNotNull(userId, "userId is null");
+    checkArgument(!userId.isEmpty(), "userId is empty");
+
+    final ScheduleModel scheduleModel = scheduleModelRepository
+        .findByIdAndUser(domain.scheduleId(), userId);
+    if (scheduleModel == null) {
+      throw new IllegalStateException(
+          String.format("Schedule with id %s does not exist.", domain.scheduleId()));
+    }
+
+    save(domain, scheduleModel);
+  }
 
   void save(CloudiatorProcess domain, ScheduleModel scheduleModel) {
     saveAndGet(domain, scheduleModel);
