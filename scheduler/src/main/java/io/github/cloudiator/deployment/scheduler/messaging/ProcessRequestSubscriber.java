@@ -82,6 +82,8 @@ public class ProcessRequestSubscriber implements Runnable {
 
         try {
 
+          LOGGER.info(String.format("%s received new process request %s.", this, content));
+
           final String userId = content.getUserId();
           final String scheduleId = content.getProcess().getSchedule();
           final Schedule schedule = scheduleMessageRepository.getById(userId, scheduleId);
@@ -125,9 +127,15 @@ public class ProcessRequestSubscriber implements Runnable {
             return;
           }
 
+          final Task task = optionalTask.get();
+
+          LOGGER.info(String.format(
+              "%s is spawning a new cloudiator process for user %s using processSpawner %s, schedule %s, job %s, task %s and node %s.",
+              this, userId, processSpawner, schedule, job, task, node));
+
           //todo handle correctly type of task, currently we only assume lance
           final CloudiatorProcess cloudiatorProcess = processSpawner
-              .spawn(userId, scheduleId, job, optionalTask.get(), node);
+              .spawn(userId, scheduleId, job, task, node);
 
           //persist the process
           persistProcess(cloudiatorProcess, userId);
