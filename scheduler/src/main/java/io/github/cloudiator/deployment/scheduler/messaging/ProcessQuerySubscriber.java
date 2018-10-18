@@ -83,6 +83,10 @@ public class ProcessQuerySubscriber implements Runnable {
       throw new IllegalStateException("UserId is null or empty");
     }
 
+    if (scheduleId != null && processId != null) {
+      throw new IllegalStateException("ScheduleId and ProcessId are set");
+    }
+
     if (scheduleId == null && processId != null) {
       //query by process
       return Collections.singletonList(processDomainRepository.getByIdAndUser(processId, userId));
@@ -93,13 +97,8 @@ public class ProcessQuerySubscriber implements Runnable {
       return processDomainRepository.getByScheduleIdAndUser(scheduleId, userId);
     }
 
-    if (scheduleId == null && processId == null) {
-      //query all by user
-      return processDomainRepository.getByUser(userId);
-    }
-
-    throw new IllegalStateException("ScheduleId and ProcessId are set");
-
+    //query all by user
+    return processDomainRepository.getByUser(userId);
   }
 
 
