@@ -56,9 +56,9 @@ public class ProcessQuerySubscriber implements Runnable {
       @Override
       public void accept(String id, ProcessQueryRequest content) {
 
-        final String userId = content.getUserId();
-        final String scheduleId = content.getScheduleId();
-        final String processId = content.getProcessId();
+        final String userId = Strings.emptyToNull(content.getUserId());
+        final String scheduleId = Strings.emptyToNull(content.getScheduleId());
+        final String processId = Strings.emptyToNull(content.getProcessId());
 
         try {
           final List<CloudiatorProcess> query = query(userId, scheduleId, processId);
@@ -79,7 +79,7 @@ public class ProcessQuerySubscriber implements Runnable {
   @Transactional
   List<CloudiatorProcess> query(String userId, String scheduleId, String processId) {
 
-    if (Strings.isNullOrEmpty(userId)) {
+    if (userId == null) {
       throw new IllegalStateException("UserId is null or empty");
     }
 
