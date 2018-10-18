@@ -20,6 +20,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
+import io.github.cloudiator.deployment.scheduler.messaging.ProcessQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleRequestSubscriber;
@@ -41,6 +42,7 @@ public class ScheduleAgent {
     INJECTOR.getInstance(ScheduleRequestSubscriber.class).run();
     INJECTOR.getInstance(ProcessRequestSubscriber.class).run();
     INJECTOR.getInstance(ScheduleQuerySubscriber.class).run();
+    INJECTOR.getInstance(ProcessQuerySubscriber.class).run();
   }
 
 }

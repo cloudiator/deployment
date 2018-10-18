@@ -19,6 +19,8 @@ package io.github.cloudiator.persistance;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.TypeLiteral;
+import io.github.cloudiator.util.JpaResultHelper;
+import java.util.List;
 import javax.persistence.EntityManager;
 
 class ProcessModelRepositoryJpa extends BaseModelRepositoryJpa<ProcessModel> implements
@@ -29,5 +31,38 @@ class ProcessModelRepositoryJpa extends BaseModelRepositoryJpa<ProcessModel> imp
       Provider<EntityManager> entityManager,
       TypeLiteral<ProcessModel> type) {
     super(entityManager, type);
+  }
+
+  @Override
+  public List<ProcessModel> findByUser(String userId) {
+    String query = String.format(
+        "select process from %s as process inner join process.schedule as schedule inner join schedule.tenant as tenant where tenant.userId = :userId",
+        type.getName());
+
+    //noinspection unchecked
+    return em().createQuery(query).setParameter("userId", userId).getResultList();
+  }
+
+  @Override
+  public List<ProcessModel> findByScheduleAndUser(String scheduleId, String userId) {
+    String query = String.format(
+        "select process from %s as process inner join process.schedule as schedule inner join schedule.tenant as tenant where schedule.domainId = :scheduleId and tenant.userId = :userId",
+        type.getName());
+
+    //noinspection unchecked
+    return em().createQuery(query).setParameter("scheduleId", scheduleId)
+        .setParameter("userId", userId).getResultList();
+  }
+
+  @Override
+  public ProcessModel findByIdAndUser(String id, String userId) {
+    String query = String.format(
+        "select process from %s as process inner join process.schedule as schedule inner join schedule.tenant as tenant where process.domainId = :id and tenant.userId = :userId",
+        type.getName());
+
+    //noinspection unchecked
+    return (ProcessModel) JpaResultHelper
+        .getSingleResultOrNull(
+            em().createQuery(query).setParameter("id", id).setParameter("userId", userId));
   }
 }

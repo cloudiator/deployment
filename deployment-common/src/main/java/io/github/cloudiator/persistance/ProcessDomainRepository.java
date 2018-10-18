@@ -21,11 +21,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProcessDomainRepository {
 
   private final ProcessModelRepository processModelRepository;
   private final ScheduleModelRepository scheduleModelRepository;
+  private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
 
   @Inject
   ProcessDomainRepository(
@@ -49,6 +52,22 @@ public class ProcessDomainRepository {
     }
 
     save(domain, scheduleModel);
+  }
+
+  public CloudiatorProcess getByIdAndUser(String id, String userId) {
+    return PROCESS_MODEL_CONVERTER.apply(processModelRepository.findByIdAndUser(id, userId));
+  }
+
+  public List<CloudiatorProcess> getByScheduleIdAndUser(String scheduleId, String userId) {
+
+    return processModelRepository.findByScheduleAndUser(scheduleId, userId).stream()
+        .map(PROCESS_MODEL_CONVERTER).collect(
+            Collectors.toList());
+  }
+
+  public List<CloudiatorProcess> getByUser(String userId) {
+    return processModelRepository.findByUser(userId).stream().map(PROCESS_MODEL_CONVERTER).collect(
+        Collectors.toList());
   }
 
   void save(CloudiatorProcess domain, ScheduleModel scheduleModel) {
