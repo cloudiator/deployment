@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -75,9 +77,14 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
   @Override
   public void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException {
+
+    checkState(supports(schedule.instantiation()),
+        String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
+
     //for each task
     for (Task task : job.tasks()) {
 
+      LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
       //allocate the resources
       final ListenableFuture<NodeGroup> allocateFuture = resourcePool
           .allocate(userId, task.requirements(), task.name());
@@ -89,8 +96,16 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         @Override
         public void onSuccess(@Nullable NodeGroup result) {
 
+          LOGGER.info(String.format("Node group %s was created successfully. Starting processes.",
+              result));
+
           //spawn processes on success
           for (Node node : result.getNodes()) {
+
+            LOGGER.info(String
+                .format("Requesting new process for schedule %s, task %s on node %s.", schedule,
+                    task, node));
+
             final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
                 schedule.id()).setTask(task.name())
                 .setNode(node.id())

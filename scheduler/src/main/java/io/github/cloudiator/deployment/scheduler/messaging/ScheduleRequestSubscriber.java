@@ -27,7 +27,6 @@ import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ScheduleConverter;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
-import java.util.concurrent.ExecutionException;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateScheduleRequest;
 import org.cloudiator.messages.Process.ScheduleCreatedResponse;
@@ -96,6 +95,10 @@ public class ScheduleRequestSubscriber implements Runnable {
           //persist the schedule
           persistSchedule(schedule, userId);
 
+          LOGGER.info(String
+              .format("Using strategy %s to instantiate schedule %s, job %s for user %s",
+                  instantiationStrategy, schedule, job, userId));
+
           //start the instantiation
           instantiationStrategy.instantiate(schedule, job, userId);
 
@@ -107,16 +110,14 @@ public class ScheduleRequestSubscriber implements Runnable {
         } catch (Exception e) {
           //todo: reply with error
           LOGGER.error("Unexpected exception while handling schedule.", e);
+          messageInterface.reply(ScheduleCreatedResponse.class, id, Error.newBuilder().setCode(500)
+              .setMessage(
+                  String.format("Unexpected exception while creating schedule: %s", e.getMessage()))
+              .build());
         }
 
 
       }
     });
   }
-
-  private void automaticInstantiation(String userId, Schedule schedule, Job job)
-      throws ExecutionException {
-
-  }
-
 }

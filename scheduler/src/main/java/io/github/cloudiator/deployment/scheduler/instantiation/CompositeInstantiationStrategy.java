@@ -16,15 +16,21 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CompositeInstantiationStrategy implements InstantiationStrategy {
 
   private final Set<InstantiationStrategy> strategies;
+
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(CompositeInstantiationStrategy.class);
 
   @Inject
   public CompositeInstantiationStrategy(
@@ -42,10 +48,15 @@ public class CompositeInstantiationStrategy implements InstantiationStrategy {
 
     for (InstantiationStrategy instantiationStrategy : strategies) {
       if (instantiationStrategy.supports(schedule.instantiation())) {
+        LOGGER.info(String.format("Using instantiation strategy %s to instantiate schedule %s.",
+            instantiationStrategy, schedule));
         instantiationStrategy.instantiate(schedule, job, userId);
-        break;
+        return;
       }
     }
-
+    throw new InstantiationException(String
+        .format("None of the found strategies [%s] support the schedule %s.",
+            Joiner.on(",").join(strategies),
+            schedule));
   }
 }

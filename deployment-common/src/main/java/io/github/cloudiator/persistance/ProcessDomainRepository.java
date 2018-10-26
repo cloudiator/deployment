@@ -16,17 +16,59 @@
 
 package io.github.cloudiator.persistance;
 
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-class ProcessDomainRepository {
+import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class ProcessDomainRepository {
 
   private final ProcessModelRepository processModelRepository;
+  private final ScheduleModelRepository scheduleModelRepository;
+  private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
 
+  @Inject
   ProcessDomainRepository(
-      ProcessModelRepository processModelRepository) {
+      ProcessModelRepository processModelRepository,
+      ScheduleModelRepository scheduleModelRepository) {
     this.processModelRepository = processModelRepository;
+    this.scheduleModelRepository = scheduleModelRepository;
   }
 
+  public void save(CloudiatorProcess domain, String userId) {
+
+    checkNotNull(domain, "domain is null");
+    checkNotNull(userId, "userId is null");
+    checkArgument(!userId.isEmpty(), "userId is empty");
+
+    final ScheduleModel scheduleModel = scheduleModelRepository
+        .findByIdAndUser(domain.scheduleId(), userId);
+    if (scheduleModel == null) {
+      throw new IllegalStateException(
+          String.format("Schedule with id %s does not exist.", domain.scheduleId()));
+    }
+
+    save(domain, scheduleModel);
+  }
+
+  public CloudiatorProcess getByIdAndUser(String id, String userId) {
+    return PROCESS_MODEL_CONVERTER.apply(processModelRepository.findByIdAndUser(id, userId));
+  }
+
+  public List<CloudiatorProcess> getByScheduleIdAndUser(String scheduleId, String userId) {
+
+    return processModelRepository.findByScheduleAndUser(scheduleId, userId).stream()
+        .map(PROCESS_MODEL_CONVERTER).collect(
+            Collectors.toList());
+  }
+
+  public List<CloudiatorProcess> getByUser(String userId) {
+    return processModelRepository.findByUser(userId).stream().map(PROCESS_MODEL_CONVERTER).collect(
+        Collectors.toList());
+  }
 
   void save(CloudiatorProcess domain, ScheduleModel scheduleModel) {
     saveAndGet(domain, scheduleModel);

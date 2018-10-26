@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
@@ -28,8 +30,11 @@ public class ManualInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
-  public void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException {
-    //intentionally left empty
+  public void instantiate(Schedule schedule, Job job, String userId) {
+
+    checkState(supports(schedule.instantiation()),
+        String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
+
     //noop
   }
 }

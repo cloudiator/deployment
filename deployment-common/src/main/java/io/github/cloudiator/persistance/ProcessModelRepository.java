@@ -16,6 +16,14 @@
 
 package io.github.cloudiator.persistance;
 
+import java.util.List;
+
 interface ProcessModelRepository extends ModelRepository<ProcessModel> {
+
+  List<ProcessModel> findByUser(String userId);
+
+  List<ProcessModel> findByScheduleAndUser(String scheduleId, String user);
+
+  ProcessModel findByIdAndUser(String id, String user);
 
 }
