@@ -70,7 +70,7 @@ public class ScheduleQuerySubscriber implements Runnable {
 
           if (!Strings.isNullOrEmpty(content.getScheduleId())) {
 
-            final Schedule byUserAndId = findByUserAndId(content.getUserId(), content.getUserId());
+            final Schedule byUserAndId = findByUserAndId(content.getUserId(), content.getScheduleId());
             if (byUserAndId != null) {
               builder.addSchedules(SCHEDULE_CONVERTER
                   .applyBack(byUserAndId));

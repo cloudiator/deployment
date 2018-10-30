@@ -67,6 +67,7 @@
     <module>deployment-common</module>
     <module>jobagent</module>
     <module>scheduler</module>
+    <module>faasagent</module>
     <!-- <module>misc</module> -->
   </modules>
 

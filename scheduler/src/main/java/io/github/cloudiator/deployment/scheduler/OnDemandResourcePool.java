@@ -63,7 +63,7 @@ public class OnDemandResourcePool implements ResourcePool {
                 Collectors.toList())).build();
 
     final Builder builder = NodeRequestMessage.newBuilder();
-    builder.setUserId(userId).setNodeRequest(nodeRequirements);
+    builder.setUserId(userId).setRequirements(nodeRequirements);
     if (name != null) {
       builder.setGroupName(name);
     }

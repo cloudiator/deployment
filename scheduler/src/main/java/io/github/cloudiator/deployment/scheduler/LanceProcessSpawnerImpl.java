@@ -18,10 +18,7 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Schedule;
-import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.*;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
@@ -52,9 +49,8 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
   @Override
   public boolean supports(Task task) {
-    //for the time being we only have lance so it supports everything
-    //todo implement this correctly
-    return true;
+    return task.interfaces().stream()
+        .allMatch(iface -> iface instanceof LanceInterface);
   }
 
   @Override

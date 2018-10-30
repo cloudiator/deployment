@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.StreamUtil;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
@@ -39,6 +40,9 @@ import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+import java.util.Set;
+
 public class ProcessRequestSubscriber implements Runnable {
 
   private static final Logger LOGGER = LoggerFactory
@@ -46,8 +50,8 @@ public class ProcessRequestSubscriber implements Runnable {
   private final ProcessService processService;
   private final MessageInterface messageInterface;
   private final JobMessageRepository jobMessageRepository;
+  private final Set<ProcessSpawner> processSpawners;
   private final ScheduleDomainRepository scheduleDomainRepository;
-  private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private final ProcessDomainRepository processDomainRepository;
@@ -56,15 +60,15 @@ public class ProcessRequestSubscriber implements Runnable {
   public ProcessRequestSubscriber(ProcessService processService,
       MessageInterface messageInterface,
       JobMessageRepository jobMessageRepository,
-      ScheduleDomainRepository scheduleDomainRepository,
-      ProcessSpawner processSpawner,
+      Set<ProcessSpawner> processSpawners,
       NodeMessageRepository nodeMessageRepository,
+      ScheduleDomainRepository scheduleDomainRepository,
       ProcessDomainRepository processDomainRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
+    this.processSpawners = processSpawners;
     this.scheduleDomainRepository = scheduleDomainRepository;
-    this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
     this.processDomainRepository = processDomainRepository;
   }
@@ -133,15 +137,21 @@ public class ProcessRequestSubscriber implements Runnable {
             return;
           }
 
-          final Task task = optionalTask.get();
+          Task task = optionalTask.get();
+
+
+          ProcessSpawner spawner = processSpawners.stream()
+              .filter(ps -> ps.supports(task))
+              .collect(StreamUtil.getOnly())
+              .orElseThrow(() -> new IllegalStateException("Could not select task spawner." +
+                  "Probably interface types are mixed or empty"));
 
           LOGGER.info(String.format(
               "%s is spawning a new cloudiator process for user %s using processSpawner %s, schedule %s, job %s, task %s and node %s.",
-              this, userId, processSpawner, schedule, job, task, node));
+              this, userId, spawner, schedule, job, task, node));
 
-          //todo handle correctly type of task, currently we only assume lance
-          final CloudiatorProcess cloudiatorProcess = processSpawner
-              .spawn(userId, scheduleId, job, task, node);
+          CloudiatorProcess cloudiatorProcess = spawner
+              .spawn(userId, scheduleId, job, optionalTask.get(), node);
 
           //persist the process
           persistProcess(cloudiatorProcess, userId);

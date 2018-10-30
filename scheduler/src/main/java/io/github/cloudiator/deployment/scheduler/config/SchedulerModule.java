@@ -25,11 +25,16 @@ import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstanti
 import io.github.cloudiator.deployment.scheduler.instantiation.CompositeInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.*;
 
 public class SchedulerModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    Multibinder<ProcessSpawner> processSpawnerMultibinder =
+        Multibinder.newSetBinder(binder(), ProcessSpawner.class);
+    processSpawnerMultibinder.addBinding().to(LanceProcessSpawnerImpl.class);
+    processSpawnerMultibinder.addBinding().to(FaasProcessSpawner.class);
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
     bind(Init.class).asEagerSingleton();
 
