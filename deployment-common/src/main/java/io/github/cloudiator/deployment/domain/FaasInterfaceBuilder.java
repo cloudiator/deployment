@@ -1,5 +1,7 @@
 package io.github.cloudiator.deployment.domain;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class FaasInterfaceBuilder {
@@ -11,6 +13,7 @@ public class FaasInterfaceBuilder {
   private Set<Trigger> triggers;
   private int timeout;
   private int memory;
+  private Map<String, String> functionEnvironment;
 
   private FaasInterfaceBuilder() {
   }
@@ -54,6 +57,11 @@ public class FaasInterfaceBuilder {
     return this;
   }
 
+  public FaasInterfaceBuilder functionEnvironment(Map<String, String> functionEnvironment) {
+    this.functionEnvironment = functionEnvironment;
+    return this;
+  }
+
   public FaasInterface build() {
     return new FaasInterfaceImpl(
         functionName,
@@ -62,7 +70,8 @@ public class FaasInterfaceBuilder {
         runtime,
         triggers,
         timeout,
-        memory
+        memory,
+        functionEnvironment
     );
   }
 

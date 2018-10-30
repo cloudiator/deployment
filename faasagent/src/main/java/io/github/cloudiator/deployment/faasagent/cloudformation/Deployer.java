@@ -85,6 +85,12 @@ public class Deployer {
     updateStack(stackName, updateTemplate);
 
     physicalApiId = getResourceId(stackName, TemplateUtils.API_GATEWAY);
+
+    LOGGER.info("Functions endpoints:");
+    for (Map.Entry entry : getApiEndpoints().entrySet()) {
+      LOGGER.info("{} -> {}", entry.getKey(), entry.getValue());
+    }
+
     return physicalApiId;
   }
 
@@ -177,24 +183,6 @@ public class Deployer {
     return new AWSStaticCredentialsProvider(
         new BasicAWSCredentials(keyId, accessKey)
     );
-
-//    /*
-//     * The ProfileCredentialsProvider will return your [default]
-//     * credential profile by reading from the credentials file located at
-//     * (~/.aws/credentials).
-//     */
-//    // TODO another credentials provider
-//    ProfileCredentialsProvider credentialsProvider = new ProfileCredentialsProvider();
-//    try {
-//      credentialsProvider.getCredentials();
-//    } catch (Exception e) {
-//      throw new AmazonClientException(
-//          "Cannot load the credentials from the credential profiles file. " +
-//              "Please make sure that your credentials file is at the correct " +
-//              "location (~/.aws/credentials), and is in valid format.",
-//          e);
-//    }
-//    return credentialsProvider;
   }
 
 

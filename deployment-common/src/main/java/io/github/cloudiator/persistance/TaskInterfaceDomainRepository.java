@@ -71,7 +71,7 @@ public class TaskInterfaceDomainRepository {
 
   }
 
-  private TaskInterfaceModel createFaasInterfaceModel(
+  private FaasTaskInterfaceModel createFaasInterfaceModel(
       FaasInterface domain, TaskModel taskModel) {
     FaasTaskInterfaceModel faasInterfaceModel = new FaasTaskInterfaceModel(taskModel,
         domain.functionName(),
@@ -79,7 +79,8 @@ public class TaskInterfaceDomainRepository {
         domain.handler(),
         domain.runtime(),
         domain.timeout(),
-        domain.memory());
+        domain.memory(),
+        domain.functionEnvironment());
 
     taskInterfaceModelRepository.save(faasInterfaceModel);
     for (Trigger trigger : domain.triggers()) {

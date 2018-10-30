@@ -4,6 +4,7 @@ import com.amazonaws.regions.Regions;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.ApplicationTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class ExampleModels {
@@ -18,6 +19,8 @@ public class ExampleModels {
     lambda.memorySize = 2048;
     lambda.timeout = 10;
     lambda.runtime = "node6.10";
+    lambda.env = new HashMap<>();
+    lambda.env.put("Key1", "Value1");
     return lambda;
   }
 
@@ -31,6 +34,8 @@ public class ExampleModels {
     lambda.memorySize = 1024;
     lambda.timeout = 22;
     lambda.runtime = "nodejs6.10";
+    lambda.env = new HashMap<>();
+    lambda.env.put("Key2", "Value2");
     return lambda;
   }
 

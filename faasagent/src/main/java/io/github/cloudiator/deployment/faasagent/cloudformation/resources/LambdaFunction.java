@@ -7,6 +7,8 @@ import io.github.cloudiator.deployment.faasagent.cloudformation.utils.TemplateUt
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Map;
+
 public class LambdaFunction extends AbstractResource {
 
   private final ApplicationTemplate app;
@@ -38,6 +40,7 @@ public class LambdaFunction extends AbstractResource {
         .put("MemorySize", lambda.memorySize)
         .put("Runtime", lambda.runtime)
         .put("Timeout", lambda.timeout)
+        .put("Environment", new JSONObject().put("Variables", lambda.env))
         .put("Role", TemplateUtils.getAtt(TemplateUtils.IAM_ROLE, "Arn"));
   }
 

@@ -1,8 +1,13 @@
 package io.github.cloudiator.persistance;
 
+import com.google.common.collect.ImmutableMap;
+
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -24,19 +29,22 @@ public class FaasTaskInterfaceModel extends TaskInterfaceModel {
   private int timeout;
   @Column(nullable = false)
   private int memory;
+  @ElementCollection
+  private Map<String, String> functionEnvironment= new HashMap<>();
 
   protected FaasTaskInterfaceModel() {
   }
 
   public FaasTaskInterfaceModel(TaskModel task, String functionName,
-      String sourceCodeUrl, String handler,
-      String runtime, int timeout, int memory) {
+      String sourceCodeUrl, String handler, String runtime, int timeout,
+      int memory, Map<String, String> functionEnvironment) {
     super(task);
 
     checkNotNull(functionName, "functionName is null");
     checkNotNull(sourceCodeUrl, "sourceCodeUrl is null");
     checkNotNull(handler, "handler is null");
     checkNotNull(runtime, "runtime is null");
+    checkNotNull(functionEnvironment, "Function environment is null");
 
     this.functionName = functionName;
     this.sourceCodeUrl = sourceCodeUrl;
@@ -44,6 +52,7 @@ public class FaasTaskInterfaceModel extends TaskInterfaceModel {
     this.runtime = runtime;
     this.timeout = timeout;
     this.memory = memory;
+    this.functionEnvironment = functionEnvironment;
   }
 
   public String getFunctionName() {
@@ -100,5 +109,13 @@ public class FaasTaskInterfaceModel extends TaskInterfaceModel {
 
   public void setMemory(int memory) {
     this.memory = memory;
+  }
+
+  public Map<String, String> getFunctionEnvironment() {
+    return ImmutableMap.copyOf(functionEnvironment);
+  }
+
+  public void setFunctionEnvironment(Map<String, String> functionEnvironment) {
+    this.functionEnvironment = functionEnvironment;
   }
 }

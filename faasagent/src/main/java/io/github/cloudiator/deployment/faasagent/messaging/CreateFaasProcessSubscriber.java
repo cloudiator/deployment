@@ -116,6 +116,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
         lambda.memorySize = faasInterface.memory();
         lambda.timeout = faasInterface.timeout();
         lambda.runtime = convertRuntime(faasInterface.runtime());
+        lambda.env = faasInterface.functionEnvironment();
         applicationTemplate.functions.add(lambda);
       }
     }

@@ -82,6 +82,7 @@ class TaskInterfaceModelConverter implements
             .map(TRIGGER_MODEL_CONVERTER)
             .collect(Collectors.toSet())
         )
+        .functionEnvironment(faasTaskInterfaceModel.getFunctionEnvironment())
         .build();
   }
 

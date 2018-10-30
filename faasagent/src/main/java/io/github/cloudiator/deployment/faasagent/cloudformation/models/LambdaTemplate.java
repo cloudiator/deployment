@@ -2,6 +2,7 @@ package io.github.cloudiator.deployment.faasagent.cloudformation.models;
 
 import com.google.common.collect.ImmutableSet;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -17,6 +18,7 @@ public class LambdaTemplate {
   public int memorySize = 1024; // FaasInterface memory
   public int timeout = 6; // FaasInterface timeout
   public String runtime; // FaasInterface runtime
+  public Map<String, String> env;
 
   public boolean isValid() {
     return name.matches("\\w+") &&
@@ -37,6 +39,7 @@ public class LambdaTemplate {
         httpMethod,
         handler,
         memorySize,
-        timeout);
+        timeout,
+        env);
   }
 }

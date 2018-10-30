@@ -1,5 +1,7 @@
 package io.github.cloudiator.deployment.domain;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public interface FaasInterface extends TaskInterface {
@@ -17,5 +19,7 @@ public interface FaasInterface extends TaskInterface {
   int timeout();
 
   int memory();
+
+  Map<String, String> functionEnvironment();
 
 }
