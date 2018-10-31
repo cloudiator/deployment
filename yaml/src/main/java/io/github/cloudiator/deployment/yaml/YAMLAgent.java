@@ -16,10 +16,21 @@
 
 package io.github.cloudiator.deployment.yaml;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import io.github.cloudiator.deployment.yaml.messaging.YAMLRequestSubscriber;
+import org.cloudiator.messaging.kafka.KafkaContext;
+import org.cloudiator.messaging.kafka.KafkaMessagingModule;
+import org.cloudiator.messaging.services.MessageServiceModule;
+
 public class YAMLAgent {
 
-  public static void main(String[] args) {
+  private static final Injector INJECTOR = Guice
+      .createInjector(
+          new MessageServiceModule(), new KafkaMessagingModule(new KafkaContext()));
 
+  public static void main(String[] args) {
+    INJECTOR.getInstance(YAMLRequestSubscriber.class).run();
   }
 
 }

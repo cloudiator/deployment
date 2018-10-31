@@ -16,17 +16,17 @@
 
 package io.github.cloudiator.deployment.yaml.model;
 
-import io.github.cloudiator.rest.model.Job;
+import io.github.cloudiator.rest.model.JobNew;
 
 public class YAMLModel {
 
-  private Job job;
-  
-  public Job getJob() {
+  private JobNew job;
+
+  public JobNew getJob() {
     return job;
   }
 
-  public YAMLModel setJob(Job job) {
+  public YAMLModel setJob(JobNew job) {
     this.job = job;
     return this;
   }

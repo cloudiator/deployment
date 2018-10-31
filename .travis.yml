@@ -9,6 +9,7 @@ after_success:
 - jobagent/ci/publish_docker.sh
 - scheduler/ci/publish_docker.sh
 - lance/ci/publish_docker.sh
+- yaml/ci/publish_docker.sh
 branches:
   except:
   - gh-pagesW

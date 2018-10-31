@@ -19,6 +19,10 @@ package io.github.cloudiator.deployment.yaml.messaging;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.messaging.ScheduleConverter;
+import io.github.cloudiator.deployment.yaml.YAMLModelInstantiation;
+import io.github.cloudiator.deployment.yaml.YAMLModelInstantiation.YAMLModelInstantiationFactory;
 import io.github.cloudiator.deployment.yaml.YAMLParser;
 import io.github.cloudiator.deployment.yaml.model.YAMLModel;
 import org.cloudiator.messages.General.Error;
@@ -36,12 +40,15 @@ public class YAMLRequestSubscriber implements Runnable {
 
   private final MessageInterface messageInterface;
   private final YAMLParser yamlParser;
+  private final YAMLModelInstantiation.YAMLModelInstantiationFactory yamlModelInstantiationFactory;
 
   @Inject
   public YAMLRequestSubscriber(MessageInterface messageInterface,
-      YAMLParser yamlParser) {
+      YAMLParser yamlParser,
+      YAMLModelInstantiationFactory yamlModelInstantiationFactory) {
     this.messageInterface = messageInterface;
     this.yamlParser = yamlParser;
+    this.yamlModelInstantiationFactory = yamlModelInstantiationFactory;
   }
 
 
@@ -57,6 +64,11 @@ public class YAMLRequestSubscriber implements Runnable {
             try {
 
               final YAMLModel parse = yamlParser.parse(content.getYaml());
+              final Schedule instantiate = yamlModelInstantiationFactory.create(parse, userId)
+                  .instantiate();
+
+              messageInterface.reply(id, YAMLResponse.newBuilder()
+                  .setSchedule(ScheduleConverter.INSTANCE.applyBack(instantiate)).build());
 
             } catch (JsonParseException | JsonMappingException e) {
               LOGGER.error("Encountered invalid YAML: " + e.getMessage(), e);
