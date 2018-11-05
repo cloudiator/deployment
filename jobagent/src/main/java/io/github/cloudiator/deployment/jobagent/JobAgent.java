@@ -26,11 +26,13 @@ import io.github.cloudiator.util.JpaContext;
 import org.cloudiator.messaging.kafka.KafkaContext;
 import org.cloudiator.messaging.kafka.KafkaMessagingModule;
 import org.cloudiator.messaging.services.MessageServiceModule;
+import io.github.cloudiator.deployment.validation.config.ModelValidationModule;
 
 public class JobAgent {
 
   private final static Injector injector = Guice
       .createInjector(
+          new ModelValidationModule(),
           new KafkaMessagingModule(new KafkaContext(Configuration.conf())),
           new MessageServiceModule(), new JobAgentModule(),
           new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(

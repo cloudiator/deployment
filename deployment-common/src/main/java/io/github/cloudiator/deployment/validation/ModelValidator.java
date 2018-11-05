@@ -14,30 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.validation;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
-import java.util.Collection;
 import java.util.Set;
 
-public interface Schedule extends Identifiable {
+/**
+ * Created by daniel on 19.06.16.
+ */
+public interface ModelValidator<E> {
 
-  enum Instantiation {
-    AUTOMATIC,
-    MANUAL
-  }
-
-  String job();
-
-  Set<CloudiatorProcess> processes();
-
-  Instantiation instantiation();
-
-  Schedule addProcess(CloudiatorProcess cloudiatorProcess);
-
-  Schedule addProcesses(Collection<? extends CloudiatorProcess> processes);
-
-  Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job);
-
+    Set<ValidationMessage> validate(E e);
 
 }

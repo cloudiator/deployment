@@ -37,6 +37,10 @@ public interface Job extends JobNew, Identifiable {
 
   Task requiredTask(Communication communication);
 
+  PortRequired requiredPort(Communication communication);
+
+  PortProvided providedPort(Communication communication);
+
   PortProvided getProvidingPort(PortRequired portRequired);
 
   Set<Communication> attachedCommunications(Port port);

@@ -16,6 +16,9 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
@@ -70,6 +73,25 @@ public class ScheduleImpl implements Schedule {
   @Override
   public Schedule addProcesses(Collection<? extends CloudiatorProcess> processes) {
     this.processes.addAll(processes);
+    return null;
+  }
+
+  @Override
+  public Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job) {
+
+    checkNotNull(cloudiatorProcess, "cloudiatorProcess is null");
+    checkNotNull(job, "job is null");
+
+    checkArgument(job().equals(job.id()),
+        String.format("job %s does not match job id %s", job, job()));
+
+    final Task task = job.getTask(cloudiatorProcess.taskId())
+        .orElseThrow(() -> new IllegalStateException(
+            String.format("job %s does not contain task %s", job, cloudiatorProcess.taskId())));
+
+
+
+
     return null;
   }
 

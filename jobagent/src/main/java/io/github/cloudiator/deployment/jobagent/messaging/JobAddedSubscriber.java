@@ -23,6 +23,8 @@ import io.github.cloudiator.deployment.domain.JobBuilder;
 import io.github.cloudiator.deployment.domain.JobNew;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.JobNewConverter;
+import io.github.cloudiator.deployment.validation.ModelValidationException;
+import io.github.cloudiator.deployment.validation.ModelValidationService;
 import io.github.cloudiator.persistance.JobDomainRepository;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Job.JobCreatedResponse;
@@ -40,14 +42,17 @@ public class JobAddedSubscriber implements Runnable {
   private final JobDomainRepository jobDomainRepository;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private static final JobNewConverter JOB_NEW_CONVERTER = JobNewConverter.INSTANCE;
+  private final ModelValidationService modelValidationService;
 
   @Inject
   public JobAddedSubscriber(JobService jobService,
       MessageInterface messageInterface,
-      JobDomainRepository jobDomainRepository) {
+      JobDomainRepository jobDomainRepository,
+      ModelValidationService modelValidationService) {
     this.jobService = jobService;
     this.messageInterface = messageInterface;
     this.jobDomainRepository = jobDomainRepository;
+    this.modelValidationService = modelValidationService;
   }
 
 
@@ -69,6 +74,15 @@ public class JobAddedSubscriber implements Runnable {
         Job job = JobBuilder.newBuilder().generateId().name(jobNew.name())
             .addCommunications(jobNew.communications())
             .addTasks(jobNew.tasks()).build();
+
+        try {
+          modelValidationService.validate(job);
+        } catch (ModelValidationException e) {
+          LOGGER.error(e.getMessage(), e);
+          messageInterface.reply(JobCreatedResponse.class, id, Error.newBuilder().setCode(400)
+              .setMessage("Job model contains errors: " + e.getMessage()).build());
+          return;
+        }
 
         persistJob(job, createJobRequest.getUserId());
 
