@@ -19,8 +19,8 @@ package io.github.cloudiator.deployment.yaml.messaging;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.inject.Inject;
-import io.github.cloudiator.deployment.domain.Schedule;
-import io.github.cloudiator.deployment.messaging.ScheduleConverter;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.yaml.YAMLModelInstantiation;
 import io.github.cloudiator.deployment.yaml.YAMLModelInstantiation.YAMLModelInstantiationFactory;
 import io.github.cloudiator.deployment.yaml.YAMLParser;
@@ -28,7 +28,6 @@ import io.github.cloudiator.deployment.yaml.model.YAMLModel;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Job.YAMLRequest;
 import org.cloudiator.messages.Job.YAMLResponse;
-import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,33 +54,30 @@ public class YAMLRequestSubscriber implements Runnable {
   @Override
   public void run() {
     messageInterface.subscribe(YAMLRequest.class, YAMLRequest.parser(),
-        new MessageCallback<YAMLRequest>() {
-          @Override
-          public void accept(String id, YAMLRequest content) {
+        (id, content) -> {
 
-            final String userId = content.getUserId();
+          final String userId = content.getUserId();
 
-            try {
+          try {
 
-              final YAMLModel parse = yamlParser.parse(content.getYaml());
-              final Schedule instantiate = yamlModelInstantiationFactory.create(parse, userId)
-                  .instantiate();
+            final YAMLModel parse = yamlParser.parse(content.getYaml());
+            final Job instantiate = yamlModelInstantiationFactory.create(parse, userId)
+                .instantiate();
 
-              messageInterface.reply(id, YAMLResponse.newBuilder()
-                  .setSchedule(ScheduleConverter.INSTANCE.applyBack(instantiate)).build());
+            messageInterface.reply(id, YAMLResponse.newBuilder()
+                .setJob(JobConverter.INSTANCE.applyBack(instantiate)).build());
 
-            } catch (JsonParseException | JsonMappingException e) {
-              LOGGER.error("Encountered invalid YAML: " + e.getMessage(), e);
-              messageInterface.reply(YAMLResponse.class, id,
-                  Error.newBuilder().setCode(400).setMessage("Invalid YAML: " + e.getMessage())
-                      .build());
-            } catch (Exception e) {
-              LOGGER.error(String
-                  .format("Unexpected exception while processing request %s: %s", content,
-                      e.getMessage()), e);
-            }
-
+          } catch (JsonParseException | JsonMappingException e) {
+            LOGGER.error("Encountered invalid YAML: " + e.getMessage(), e);
+            messageInterface.reply(YAMLResponse.class, id,
+                Error.newBuilder().setCode(400).setMessage("Invalid YAML: " + e.getMessage())
+                    .build());
+          } catch (Exception e) {
+            LOGGER.error(String
+                .format("Unexpected exception while processing request %s: %s", content,
+                    e.getMessage()), e);
           }
+
         });
   }
 }

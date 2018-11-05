@@ -21,33 +21,23 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.messaging.JobConverter;
-import io.github.cloudiator.deployment.messaging.ScheduleConverter;
 import io.github.cloudiator.deployment.yaml.model.YAMLModel;
 import io.github.cloudiator.rest.converter.JobNewConverter;
 import org.cloudiator.messages.Job.CreateJobRequest;
 import org.cloudiator.messages.Job.JobCreatedResponse;
-import org.cloudiator.messages.Process.CreateScheduleRequest;
-import org.cloudiator.messages.Process.ScheduleCreatedResponse;
-import org.cloudiator.messages.entities.ProcessEntities.Instantiation;
-import org.cloudiator.messages.entities.ProcessEntities.ScheduleNew;
 import org.cloudiator.messaging.ResponseException;
 import org.cloudiator.messaging.services.JobService;
-import org.cloudiator.messaging.services.ProcessService;
 
 public class YAMLModelInstantiation {
 
   public static class YAMLModelInstantiationFactory {
 
     private final JobService jobService;
-    private final ProcessService processService;
 
     @Inject
-    public YAMLModelInstantiationFactory(JobService jobService,
-        ProcessService processService) {
+    public YAMLModelInstantiationFactory(JobService jobService) {
       this.jobService = jobService;
-      this.processService = processService;
     }
 
     public YAMLModelInstantiation create(YAMLModel yamlModel, String userId) {
@@ -55,31 +45,26 @@ public class YAMLModelInstantiation {
       checkNotNull(userId, "userId is null");
       checkArgument(!userId.isEmpty(), "userId is empty");
 
-      return new YAMLModelInstantiation(yamlModel, userId, jobService, processService);
+      return new YAMLModelInstantiation(yamlModel, userId, jobService);
     }
 
   }
 
   private final JobService jobService;
-  private final ProcessService processService;
   private final String userId;
   private final YAMLModel yamlModel;
 
-  private YAMLModelInstantiation(YAMLModel yamlModel, String userId, JobService jobService,
-      ProcessService processService) {
+  private YAMLModelInstantiation(YAMLModel yamlModel, String userId, JobService jobService) {
     this.yamlModel = yamlModel;
     this.userId = userId;
     this.jobService = jobService;
-    this.processService = processService;
   }
 
-  public Schedule instantiate() {
+  public Job instantiate() {
 
     //generate the job
-    final Job job = createJob();
-    //generate the schedule
-    return createSchedule(job);
-    
+    return createJob();
+
   }
 
   private Job createJob() {
@@ -95,22 +80,6 @@ public class YAMLModelInstantiation {
     } catch (ResponseException e) {
       throw new IllegalStateException(
           "could not initialize yaml model because of " + e.getMessage(),
-          e);
-    }
-
-  }
-
-  private Schedule createSchedule(Job job) {
-
-    try {
-      final ScheduleCreatedResponse schedule = processService
-          .createSchedule(CreateScheduleRequest.newBuilder().setUserId(userId).setSchedule(
-              ScheduleNew.newBuilder().setJob(job.id()).setInstantiation(Instantiation.AUTOMATIC)
-                  .build())
-              .build());
-      return ScheduleConverter.INSTANCE.apply(schedule.getSchedule());
-    } catch (ResponseException e) {
-      throw new IllegalStateException("could not initialize yaml model because of" + e.getMessage(),
           e);
     }
 
