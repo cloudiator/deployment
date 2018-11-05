@@ -6,10 +6,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
 import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
-import java.util.Random;
 import java.util.Set;
 import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.DefaultEdge;
@@ -57,7 +58,7 @@ public class JobGraph {
     final ArrayNode edges = objectNode.putArray("edges");
     this.taskGraph.edgeSet().forEach(communicationEdge -> {
       final ObjectNode edge = edges.addObject();
-      edge.with("data").put("id", new Random().nextInt())
+      edge.with("data").put("id", communicationEdge.id())
           .put("source", taskGraph.getEdgeSource(communicationEdge).name())
           .put("target", taskGraph.getEdgeTarget(communicationEdge).name());
       if (communicationEdge.isMandatory()) {
@@ -80,6 +81,11 @@ public class JobGraph {
 
     public Communication communication() {
       return communication;
+    }
+
+    public String id() {
+      String concat = communication.portProvided() + communication.portRequired();
+      return Hashing.md5().newHasher().putString(concat, Charsets.UTF_8).hash().toString();
     }
 
     public boolean isMandatory() {
