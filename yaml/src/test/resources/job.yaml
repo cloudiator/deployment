@@ -1,0 +1,84 @@
+---
+job:
+  name: mediawiki
+  tasks:
+  - name: loadbalancer
+    taskType: SERVICE
+    ports:
+    - type: PortProvided
+      name: LBPROV
+      port: 80
+    - type: PortRequired
+      name: LOADBALANCERREQWIKI
+      isMandatory: 'false'
+      updateAction: "./mediawiki-tutorial/scripts/lance/nginx.sh configure"
+    interfaces:
+    - containerType: DOCKER
+      type: LanceInterface
+      preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
+        https://github.com/dbaur/mediawiki-tutorial.git
+      install: "./mediawiki-tutorial/scripts/lance/nginx.sh install"
+      start: "./mediawiki-tutorial/scripts/lance/nginx.sh startBlocking"
+    requirements:
+    - constraint: nodes->forAll(hardware.cores >= 2)
+      type: OclRequirement
+    - constraint: nodes->forAll(hardware.ram >= 2048)
+      type: OclRequirement
+    - constraint: nodes->forAll(location.providerId = 'nova')
+      type: OclRequirement
+    - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
+      type: OclRequirement
+  - name: wiki
+    taskType: SERVICE
+    ports:
+    - type: PortRequired
+      name: WIKIREQMARIADB
+      isMandatory: 'true'
+    - type: PortProvided
+      name: WIKIPROV
+      port: 80
+    interfaces:
+    - type: LanceInterface
+      containerType: DOCKER
+      preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
+        https://github.com/dbaur/mediawiki-tutorial.git
+      install: "./mediawiki-tutorial/scripts/lance/mediawiki.sh install"
+      postInstall: "./mediawiki-tutorial/scripts/lance/mediawiki.sh configure"
+      start: "./mediawiki-tutorial/scripts/lance/mediawiki.sh startBlocking"
+    requirements:
+    - constraint: nodes->forAll(hardware.cores >= 2)
+      type: OclRequirement
+    - constraint: nodes->forAll(hardware.ram >= 2048)
+      type: OclRequirement
+    - constraint: nodes->forAll(location.providerId = 'nova')
+      type: OclRequirement
+    - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
+      type: OclRequirement
+  - name: database
+    taskType: SERVICE
+    ports:
+    - type: PortProvided
+      name: MARIADBPROV
+      port: 3306
+    interfaces:
+    - type: LanceInterface
+      containerType: DOCKER
+      preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
+        https://github.com/dbaur/mediawiki-tutorial.git
+      install: "./mediawiki-tutorial/scripts/lance/mariaDB.sh install"
+      postInstall: "./mediawiki-tutorial/scripts/lance/mariaDB.sh configure"
+      start: "./mediawiki-tutorial/scripts/lance/mariaDB.sh startBlocking"
+    requirements:
+    - constraint: nodes->forAll(hardware.cores >= 2)
+      type: OclRequirement
+    - constraint: nodes->forAll(hardware.ram >= 2048)
+      type: OclRequirement
+    - constraint: nodes->forAll(location.providerId = 'nova')
+      type: OclRequirement
+    - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
+      type: OclRequirement
+  communications:
+  - portRequired: WIKIREQMARIADB
+    portProvided: MARIADBPROV
+  - portRequired: LOADBALANCERREQWIKI
+    portProvided: WIKIPROV

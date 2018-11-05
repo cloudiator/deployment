@@ -24,11 +24,13 @@ import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.yaml.YAMLModelInstantiation;
 import io.github.cloudiator.deployment.yaml.YAMLModelInstantiation.YAMLModelInstantiationFactory;
 import io.github.cloudiator.deployment.yaml.YAMLParser;
+import io.github.cloudiator.deployment.yaml.exception.YAMLInstantiationException;
 import io.github.cloudiator.deployment.yaml.model.YAMLModel;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Job.YAMLRequest;
 import org.cloudiator.messages.Job.YAMLResponse;
 import org.cloudiator.messaging.MessageInterface;
+import org.cloudiator.messaging.ResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,10 +74,27 @@ public class YAMLRequestSubscriber implements Runnable {
             messageInterface.reply(YAMLResponse.class, id,
                 Error.newBuilder().setCode(400).setMessage("Invalid YAML: " + e.getMessage())
                     .build());
+          } catch (YAMLInstantiationException e) {
+            if (e.getCause() instanceof ResponseException) {
+              messageInterface.reply(YAMLResponse.class, id, Error.newBuilder()
+                  .setCode(((ResponseException) e.getCause()).code())
+                  .setMessage(e.getCause().getMessage())
+                  .build());
+            } else {
+              messageInterface.reply(YAMLResponse.class, id,
+                  Error.newBuilder().setCode(500)
+                      .setMessage("Error initializing the YAML: " + e.getMessage())
+                      .build());
+            }
+
           } catch (Exception e) {
             LOGGER.error(String
                 .format("Unexpected exception while processing request %s: %s", content,
                     e.getMessage()), e);
+            messageInterface.reply(YAMLResponse.class, id,
+                Error.newBuilder().setCode(500)
+                    .setMessage("Unexpected exception while parsing the YAML: " + e.getMessage())
+                    .build());
           }
 
         });

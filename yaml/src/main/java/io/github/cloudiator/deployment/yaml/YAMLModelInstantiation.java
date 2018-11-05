@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.messaging.JobConverter;
+import io.github.cloudiator.deployment.yaml.exception.YAMLInstantiationException;
 import io.github.cloudiator.deployment.yaml.model.YAMLModel;
 import io.github.cloudiator.rest.converter.JobNewConverter;
 import org.cloudiator.messages.Job.CreateJobRequest;
@@ -60,14 +61,14 @@ public class YAMLModelInstantiation {
     this.jobService = jobService;
   }
 
-  public Job instantiate() {
+  public Job instantiate() throws YAMLInstantiationException {
 
     //generate the job
     return createJob();
 
   }
 
-  private Job createJob() {
+  private Job createJob() throws YAMLInstantiationException {
     checkArgument(yamlModel.getJob() != null, "job entity of yaml model is null");
 
     try {
@@ -78,8 +79,8 @@ public class YAMLModelInstantiation {
       return JobConverter.INSTANCE.apply(job.getJob());
 
     } catch (ResponseException e) {
-      throw new IllegalStateException(
-          "could not initialize yaml model because of " + e.getMessage(),
+      throw new YAMLInstantiationException(
+          "Could not initialize yaml model as job creation returned error: " + e.getMessage(),
           e);
     }
 
