@@ -68,6 +68,7 @@
     <module>jobagent</module>
     <module>scheduler</module>
     <module>yaml</module>
+    <module>spark</module>
     <!-- <module>misc</module> -->
   </modules>
 
