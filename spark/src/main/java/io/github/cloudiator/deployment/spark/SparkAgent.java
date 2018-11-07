@@ -15,4 +15,9 @@ public class SparkAgent  {
       .createInjector(
           new MessageServiceModule(), new KafkaMessagingModule(new KafkaContext()));
 
+
+  public static void main(String[] args) {
+    INJECTOR.getInstance(CreateSparkProcessSubscriber.class).run();
+  }
+
 }
