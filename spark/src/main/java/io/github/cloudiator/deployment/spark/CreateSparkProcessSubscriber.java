@@ -40,6 +40,9 @@ public class CreateSparkProcessSubscriber implements Runnable {
 
   @Override
   public void run() {
+
+    LOGGER.debug("CreateSparkProcessRequestSubscriber started and waiting for requests...");
+
     processService.subscribeCreateSparkProcessRequest(
         (id, content) -> {
 
@@ -55,7 +58,6 @@ public class CreateSparkProcessSubscriber implements Runnable {
 
             final String schedule = content.getSpark().getSchedule();
 
-            //TODO: implement this for Spark!
             final CloudiatorProcess cloudiatorProcess = createSparkProcessStrategy
                 .execute(userId, schedule, job, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(

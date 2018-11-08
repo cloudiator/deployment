@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
@@ -23,11 +24,13 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.cloudiator.messages.Installation;
 import org.cloudiator.messages.Installation.InstallationRequest;
-import org.cloudiator.messages.InstallationEntities;
+import org.cloudiator.messages.Installation.InstallationResponse;
+import org.cloudiator.messages.InstallationEntities.Installation;
+import org.cloudiator.messages.InstallationEntities.Installation.Builder;
 import org.cloudiator.messages.InstallationEntities.Tool;
 import org.cloudiator.messaging.MessageInterface;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.InstallationRequestService;
 import org.cloudiator.messaging.services.InstallationRequestServiceImpl;
 import org.slf4j.Logger;
@@ -57,9 +60,37 @@ public class CreateSparkProcessStrategy {
       //TODO: trigger sync install request and check if installation was successfull
       LOGGER.debug("Triggering Docker and Spark Worker installation on node: " + node.id());
 
+      final Builder builder = Installation.newBuilder()
+          .setNode(nodeMessageToNodeConverter.apply(node))
+          .addTool(Tool.DOCKER)
+          .addTool(Tool.SPARK_WORKER);
 
-      InstallationEntities.Installation sparkInstallation = InstallationEntities.Installation.newBuilder().setNode(nodeMessageToNodeConverter.apply(node)).setTool(4,
-          Tool.DOCKER).setTool(5,Tool.SPARK_WORKER).build();
+      final InstallationRequest installationRequest = InstallationRequest.newBuilder()
+          .setUserId(userId).setInstallation(builder.build()).build();
+
+      final SettableFutureResponseCallback<InstallationResponse, InstallationResponse> futureResponseCallback = SettableFutureResponseCallback
+          .create();
+
+      installationRequestService
+          .createInstallationRequestAsync(installationRequest, futureResponseCallback);
+      try {
+        futureResponseCallback.get();
+      } catch (InterruptedException e) {
+        throw new IllegalStateException(
+            "Docker and Spark Worker  installation was interrupted during installation request.", e);
+      } catch (ExecutionException e) {
+        throw new IllegalStateException("Error during Docker and Spark Worker installation", e.getCause());
+      }
+
+      LOGGER.debug("Finished Docker and Spark Worker installation on node: " + node.id());
+    }
+
+      /*
+      final Builder  sparkInstallation = Installation.newBuilder()
+          .setNode(nodeMessageToNodeConverter.apply(node))
+          .addTool(Tool.DOCKER)
+          .addTool(Tool.SPARK_WORKER)
+          .build();
 
       InstallationRequest sparkWorkerInstallationRequest = Installation.InstallationRequest.newBuilder()
           .setUserId(userId)
@@ -76,9 +107,11 @@ public class CreateSparkProcessStrategy {
             LOGGER.debug("Content " + content);
           });
 
-      LOGGER.debug("Finished Docker and Spark Worker installation on node: " + node.id());
+      */
 
-    }
+
+
+
 
   }
 
