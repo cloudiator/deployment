@@ -1,5 +1,6 @@
 package io.github.cloudiator.deployment.messaging;
 
+import com.google.common.base.Strings;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.SparkInterfaceBuilder;
@@ -32,11 +33,17 @@ public class SparkInterfaceConverter implements
   @Override
   public SparkInterface apply(TaskEntities.SparkInterface sparkInterface) {
 
-    return SparkInterfaceBuilder.newBuilder().file(sparkInterface.getFile())
-        .className(sparkInterface.getClassName())
+    final SparkInterfaceBuilder sparkInterfaceBuilder = SparkInterfaceBuilder.newBuilder()
+        .file(sparkInterface.getFile())
+
         .arguments(sparkInterface.getArgumentsList())
         .sparkArguments(sparkInterface.getSparkArgumentsMap())
-        .sparkConfiguration(sparkInterface.getSparkConfigurationMap()).build();
+        .sparkConfiguration(sparkInterface.getSparkConfigurationMap());
 
+    if (!Strings.isNullOrEmpty(sparkInterface.getClassName())) {
+      sparkInterfaceBuilder.className(sparkInterface.getClassName());
+    }
+
+    return sparkInterfaceBuilder.build();
   }
 }
