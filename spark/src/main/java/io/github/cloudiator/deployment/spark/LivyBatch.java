@@ -126,7 +126,7 @@ public class LivyBatch {
   /**
    * Number of cores to use for the driver process
    */
-  private int driverCores;
+  private Integer driverCores = null;
 
   public int getDriverCores() {
     return driverCores;
@@ -152,7 +152,7 @@ public class LivyBatch {
   /**
    * Number of cores to use for each executor
    */
-  private int executorCores;
+  private Integer executorCores = null;
 
   public int getExecutorCores() {
     return executorCores;
@@ -165,7 +165,7 @@ public class LivyBatch {
   /**
    * Number of executors to launch for this batch session
    */
-  private int numExecutors;
+  private Integer numExecutors = null;
 
   public int getNumExecutors() {
     return numExecutors;

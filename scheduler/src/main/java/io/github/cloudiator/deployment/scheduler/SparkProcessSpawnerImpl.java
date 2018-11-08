@@ -48,15 +48,6 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
       return false;
     }
 
-    /*
-
-    if(task.interfaces().contains(SparkInterface.class)){
-      return true;
-    }else {
-      return false;
-    }
-
-    */
 
   }
 

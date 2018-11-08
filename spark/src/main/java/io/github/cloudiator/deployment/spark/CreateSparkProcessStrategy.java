@@ -7,12 +7,12 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.apache.http.HttpStatus;
@@ -29,10 +29,8 @@ import org.cloudiator.messages.Installation.InstallationResponse;
 import org.cloudiator.messages.InstallationEntities.Installation;
 import org.cloudiator.messages.InstallationEntities.Installation.Builder;
 import org.cloudiator.messages.InstallationEntities.Tool;
-import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.InstallationRequestService;
-import org.cloudiator.messaging.services.InstallationRequestServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,11 +43,13 @@ public class CreateSparkProcessStrategy {
 
   private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
 
+  private static final String SPARK_ARGUMENT_DELIMITER = ",";
+
   private InstallationRequestService installationRequestService;
 
   @Inject
-  CreateSparkProcessStrategy(MessageInterface messageInterface) {
-   this.installationRequestService = new InstallationRequestServiceImpl(messageInterface);
+  CreateSparkProcessStrategy(InstallationRequestService installationRequestService) {
+    this.installationRequestService = installationRequestService;
   }
 
 
@@ -58,7 +58,7 @@ public class CreateSparkProcessStrategy {
     for (Node node: nodes) {
 
       //TODO: trigger sync install request and check if installation was successfull
-      LOGGER.debug("Triggering Docker and Spark Worker installation on node: " + node.id());
+      LOGGER.debug("Triggering Docker and Spark Worker installation...");
 
       final Builder builder = Installation.newBuilder()
           .setNode(nodeMessageToNodeConverter.apply(node))
@@ -85,32 +85,6 @@ public class CreateSparkProcessStrategy {
       LOGGER.debug("Finished Docker and Spark Worker installation on node: " + node.id());
     }
 
-      /*
-      final Builder  sparkInstallation = Installation.newBuilder()
-          .setNode(nodeMessageToNodeConverter.apply(node))
-          .addTool(Tool.DOCKER)
-          .addTool(Tool.SPARK_WORKER)
-          .build();
-
-      InstallationRequest sparkWorkerInstallationRequest = Installation.InstallationRequest.newBuilder()
-          .setUserId(userId)
-          .setInstallation(sparkInstallation).build();
-
-
-
-
-      //TODO: check if async or sync is required
-      installationRequestService.createInstallationRequestAsync(
-          sparkWorkerInstallationRequest,
-          (content, error) -> {
-            LOGGER.error("Error " + error);
-            LOGGER.debug("Content " + content);
-          });
-
-      */
-
-
-
 
 
   }
@@ -120,15 +94,9 @@ public class CreateSparkProcessStrategy {
 
 
     //find SparkInterface
-    SparkInterface sparkInterface = null;
-    for (TaskInterface taskInterface: task.interfaces()) {
+    LOGGER.debug("Submitting Spark process to Livy Server...");
+    SparkInterface sparkInterface = task.interfaceOfType(SparkInterface.class);
 
-      if(taskInterface.getClass().equals(SparkInterface.class)){
-        sparkInterface = (SparkInterface)taskInterface;
-        LOGGER.debug("Found a SparkInterface in TaskInterfaces, continueing with Spark process submission! Multiple Spark Interfaces in one Task are currently not supported!");
-        break;
-      }
-    }
     if(sparkInterface == null) throw  new IllegalStateException("No SparkInterface in TaskInterface set was found! Aborting Spark Process submission!");
 
 
@@ -160,13 +128,15 @@ public class CreateSparkProcessStrategy {
 
       int code = response.getStatusLine().getStatusCode();
 
-      if(code != HttpStatus.SC_OK){
+      if(code != HttpStatus.SC_CREATED){
         throw new IllegalStateException("Submission of Spark process to livy faild with response code: " + code);
       }
 
       //TODO: get appId from response (as soon as Livy bug is fixed and appId is properly set)
       String body = handler.handleResponse(response);
       client.close();
+
+      LOGGER.debug("Successfully submitted Spark Process to Livy Server!");
 
 
     } catch (UnsupportedEncodingException e) {
@@ -196,7 +166,7 @@ public class CreateSparkProcessStrategy {
     /**
      * add optional class name
      */
-    if(sparkInterface.className().isPresent()){
+    if(sparkInterface.className().isPresent() && !sparkInterface.className().get().isEmpty()){
       livyBatch.setClassName(sparkInterface.className().get());
     }
 
@@ -215,22 +185,36 @@ public class CreateSparkProcessStrategy {
     }
 
     if(sparkInterface.sparkArguments().containsKey("jars")){
-      //TODO: how to get a list of strings out of the set?
+
+      String jarsConcatenated = sparkInterface.sparkArguments().get("jars");
+      List<String> jarsList = Arrays.asList(jarsConcatenated.split(SPARK_ARGUMENT_DELIMITER));
+
+      livyBatch.setJars(jarsList);
+
     }
 
     if(sparkInterface.sparkArguments().containsKey("pyFiles")){
-      //TODO: how to get a list of strings out of the set?
+
+      String pyFilesConcatenated = sparkInterface.sparkArguments().get("pyFiles");
+      List<String> pyFilesList = Arrays.asList(pyFilesConcatenated.split(SPARK_ARGUMENT_DELIMITER));
+
+      livyBatch.setPyFiles(pyFilesList);
     }
 
     if(sparkInterface.sparkArguments().containsKey("files")){
-      //TODO: how to get a list of strings out of the set?
+
+      String filesConcatenated = sparkInterface.sparkArguments().get("files");
+      List<String> filesList = Arrays.asList(filesConcatenated.split(SPARK_ARGUMENT_DELIMITER));
+
+      livyBatch.setPyFiles(filesList);
+
     }
 
     if(sparkInterface.sparkArguments().containsKey("driverMemory")){
       livyBatch.setDriverMemory(sparkInterface.sparkArguments().get("driverMemory"));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("driverCores")){
+    if(sparkInterface.sparkArguments().containsKey("driverCores")  && Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")) > 0  ){
       livyBatch.setDriverCores(Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")));
     }
 
@@ -238,16 +222,20 @@ public class CreateSparkProcessStrategy {
       livyBatch.setExecutorMemory(sparkInterface.sparkArguments().get("executorMemory"));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("executorCores")){
+    if(sparkInterface.sparkArguments().containsKey("executorCores") && Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")) > 0){
       livyBatch.setExecutorCores(Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("numExecutors")){
-      livyBatch.setNumExecutors(Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")));
+    if(sparkInterface.sparkArguments().containsKey("numExecutors") && Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")) > 0 ){
+      livyBatch.setNumExecutors(Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")));
     }
 
     if(sparkInterface.sparkArguments().containsKey("archives")){
-      //TODO: how to get a list of strings out of the set?
+
+      String archivesConcatenated = sparkInterface.sparkArguments().get("archives");
+      List<String> archivesList = Arrays.asList(archivesConcatenated.split(SPARK_ARGUMENT_DELIMITER));
+
+      livyBatch.setPyFiles(archivesList);
     }
 
     if(sparkInterface.sparkArguments().containsKey("queue")){
@@ -279,14 +267,15 @@ public class CreateSparkProcessStrategy {
             userId, schedule, task, node));
 
     try{
-    //TODO: trigger the installation of the spark worker over all nodes
+
 
     LOGGER.debug("Triggering Spark Worker installations...");
     //TODO refactor as sonn as a list of nodes is available
     List<Node> nodesToPrepareSpark = new ArrayList<>();
     nodesToPrepareSpark.add(node);
 
-    this.installSparkWorkers(userId, nodesToPrepareSpark);
+    //TODO: add again as soon as Spark Installer is available in master
+    //this.installSparkWorkers(userId, nodesToPrepareSpark);
 
     //TODO: extract the spark process attributes and submit the process to livy server
     LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
