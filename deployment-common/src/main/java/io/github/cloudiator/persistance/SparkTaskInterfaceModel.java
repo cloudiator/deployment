@@ -89,6 +89,9 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
     checkNotNull(sparkConfiguration, "sparkConfiguration is null");
     this.file = file;
     this.className = className;
+    this.arguments = arguments;
+    this.sparkArguments = sparkArguments;
+    this.sparkConfiguration = sparkConfiguration;
   }
 
 }
