@@ -26,7 +26,7 @@ public class SparkInterfaceImpl implements SparkInterface {
     this.file = file;
 
     if (className != null) {
-      checkArgument(!className.isEmpty(), "className is empty");
+      checkArgument(!className.isEmpty(), "class name is empty");
     }
     this.className = className;
     checkNotNull(arguments, "arguments is null");
