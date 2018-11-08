@@ -274,12 +274,10 @@ public class CreateSparkProcessStrategy {
     List<Node> nodesToPrepareSpark = new ArrayList<>();
     nodesToPrepareSpark.add(node);
 
-    //TODO: add again as soon as Spark Installer is available in master
-    //this.installSparkWorkers(userId, nodesToPrepareSpark);
+    this.installSparkWorkers(userId, nodesToPrepareSpark);
 
-    //TODO: extract the spark process attributes and submit the process to livy server
+
     LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
-
     this.submitSparkProcessToLivy(task);
 
     return CloudiatorProcessBuilder.newBuilder().id("spark-dummy-id")
