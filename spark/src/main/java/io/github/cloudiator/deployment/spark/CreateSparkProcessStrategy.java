@@ -2,6 +2,7 @@ package io.github.cloudiator.deployment.spark;
 
 import com.google.gson.Gson;
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
@@ -105,7 +106,8 @@ public class CreateSparkProcessStrategy {
 
 
     CloseableHttpClient client = HttpClients.createDefault();
-    HttpPost httpPost = new HttpPost("http://134.60.64.164:8998/batches");
+
+    HttpPost httpPost = new HttpPost("http://" + Configuration.conf().getString("livy.server") + "/batches");
 
     LivyBatch livyBatch =buildLivyBatch(sparkInterface);
 
