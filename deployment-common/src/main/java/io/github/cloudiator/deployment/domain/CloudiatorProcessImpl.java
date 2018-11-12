@@ -50,7 +50,8 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     checkArgument(!nodeId.isEmpty(), "nodeId is empty");
     this.nodeId = nodeId;
 
-    checkNotNull(state, "state is null");
+    //todo implement state, currently we simply ignore it
+    //checkNotNull(state, "state is null");
     this.state = state;
 
     checkNotNull(type, "type is null");
