@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+
 public class CloudiatorProcessBuilder {
 
   private String id;
@@ -23,6 +25,7 @@ public class CloudiatorProcessBuilder {
   private String taskName;
   private CloudiatorProcess.State state;
   private String nodeId;
+  private Type type;
 
   private CloudiatorProcessBuilder() {
   }
@@ -56,8 +59,13 @@ public class CloudiatorProcessBuilder {
     return this;
   }
 
+  public CloudiatorProcessBuilder type(Type type) {
+    this.type = type;
+    return this;
+  }
+
   public CloudiatorProcess build() {
-    return new CloudiatorProcessImpl(id, scheduleId, taskName, nodeId, state);
+    return new CloudiatorProcessImpl(id, scheduleId, taskName, nodeId, state, type);
   }
 
 }

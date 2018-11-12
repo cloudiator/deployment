@@ -27,6 +27,11 @@ public interface CloudiatorProcess extends Identifiable {
 
   }
 
+  enum Type {
+    LANCE,
+    SPARK
+  }
+
   String scheduleId();
 
   String taskId();
@@ -34,4 +39,6 @@ public interface CloudiatorProcess extends Identifiable {
   State state();
 
   String nodeId();
+
+  Type type();
 }
