@@ -81,6 +81,9 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     checkState(supports(schedule.instantiation()),
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
+    //futures for the process
+    final Set<ListenableFuture<CloudiatorProcess>> processFutures = new HashSet<>();
+
     //for each task
     for (Task task : job.tasks()) {
 
@@ -88,9 +91,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       //allocate the resources
       final ListenableFuture<NodeGroup> allocateFuture = resourcePool
           .allocate(userId, task.requirements(), task.name());
-
-      //futures for the process
-      final Set<ListenableFuture<CloudiatorProcess>> processFutures = new HashSet<>();
 
       Futures.addCallback(allocateFuture, new FutureCallback<NodeGroup>() {
         @Override
@@ -114,13 +114,13 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
                 .newBuilder()
                 .setUserId(userId).setProcess(newProcess).build();
 
-            final SettableFutureResponseCallback<ProcessCreatedResponse, CloudiatorProcess> responseCallback = SettableFutureResponseCallback
+            final SettableFutureResponseCallback<ProcessCreatedResponse, CloudiatorProcess> processFuture = SettableFutureResponseCallback
                 .create(processCreatedResponse -> PROCESS_MESSAGE_CONVERTER
                     .apply(processCreatedResponse.getProcess()));
 
-            processService.createProcessAsync(createProcessRequest, responseCallback);
+            processService.createProcessAsync(createProcessRequest, processFuture);
 
-            processFutures.add(responseCallback);
+            processFutures.add(processFuture);
 
           }
         }
@@ -133,25 +133,25 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
               t);
         }
       }, EXECUTOR);
-
-      final ListenableFuture<List<CloudiatorProcess>> processes = Futures
-          .successfulAsList(processFutures);
-
-      final List<CloudiatorProcess> cloudiatorProcesses;
-      try {
-        cloudiatorProcesses = processes.get();
-      } catch (InterruptedException e) {
-        throw new InstantiationException("Execution got interrupted.", e);
-      } catch (ExecutionException e) {
-        throw new InstantiationException("Error during instantiation.", e);
-      }
-
-      if (cloudiatorProcesses.contains(null)) {
-        //todo: reply with error
-        LOGGER.error("One or more processes failed to start");
-      }
-
-      //persist the processes
+      
     }
+
+    final ListenableFuture<List<CloudiatorProcess>> processes = Futures
+        .successfulAsList(processFutures);
+
+    final List<CloudiatorProcess> cloudiatorProcesses;
+    try {
+      cloudiatorProcesses = processes.get();
+    } catch (InterruptedException e) {
+      throw new InstantiationException("Execution got interrupted.", e);
+    } catch (ExecutionException e) {
+      throw new InstantiationException("Error during instantiation.", e);
+    }
+
+    if (cloudiatorProcesses.contains(null)) {
+      //todo: reply with error
+      LOGGER.error("One or more processes failed to start");
+    }
+
   }
 }
