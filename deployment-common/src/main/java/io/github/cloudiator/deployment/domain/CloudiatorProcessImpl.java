@@ -16,6 +16,9 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 
@@ -26,14 +29,32 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   private final String taskName;
   private final String nodeId;
   private final CloudiatorProcess.State state;
+  private final Type type;
 
   CloudiatorProcessImpl(String id, String scheduleId, String taskName, String nodeId,
-      State state) {
+      State state, Type type) {
+
+    checkNotNull(id, "id is null");
+    checkArgument(!id.isEmpty(), "id is empty");
     this.id = id;
+
+    checkNotNull(scheduleId, "scheduleId is null");
+    checkArgument(!scheduleId.isEmpty(), "scheduleId is empty");
     this.scheduleId = scheduleId;
+
+    checkNotNull(taskName, "taskName is null");
+    checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
+
+    checkNotNull(nodeId, "nodeId is null");
+    checkArgument(!nodeId.isEmpty(), "nodeId is empty");
     this.nodeId = nodeId;
+
+    checkNotNull(state, "state is null");
     this.state = state;
+
+    checkNotNull(type, "type is null");
+    this.type = type;
   }
 
   @Override
@@ -54,6 +75,11 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   @Override
   public String nodeId() {
     return nodeId;
+  }
+
+  @Override
+  public Type type() {
+    return type;
   }
 
   @Override

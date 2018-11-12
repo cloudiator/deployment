@@ -29,6 +29,7 @@ import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
@@ -171,6 +172,7 @@ public class CreateLanceProcessStrategy {
 
       return CloudiatorProcessBuilder.newBuilder().id(componentInstanceId.toString())
           .nodeId(node.id())
+          .type(Type.LANCE)
           .taskName(task.name()).scheduleId(schedule).build();
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
