@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.SparkInterface;
@@ -282,7 +283,7 @@ public class CreateSparkProcessStrategy {
     LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
     this.submitSparkProcessToLivy(task);
 
-    return CloudiatorProcessBuilder.newBuilder().id("spark-dummy-id")
+    return CloudiatorProcessBuilder.newBuilder().id("spark-dummy-id").type(Type.SPARK)
         .nodeId(node.id())
         .taskName(task.name()).scheduleId(schedule).build();
 
