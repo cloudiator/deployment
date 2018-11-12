@@ -133,14 +133,18 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
               t);
         }
       }, EXECUTOR);
-      
+
     }
+
+    LOGGER.info(String.format("Creating %s processes for job %s.", processFutures.size(), job));
 
     final ListenableFuture<List<CloudiatorProcess>> processes = Futures
         .successfulAsList(processFutures);
 
     final List<CloudiatorProcess> cloudiatorProcesses;
     try {
+
+      LOGGER.info(String.format("Waiting for %s processes of job %s.", processFutures.size(), job));
       cloudiatorProcesses = processes.get();
     } catch (InterruptedException e) {
       throw new InstantiationException("Execution got interrupted.", e);
@@ -152,6 +156,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       //todo: reply with error
       LOGGER.error("One or more processes failed to start");
     }
+
+    LOGGER.info(String.format("Finished instantiation of job %s.", job));
 
   }
 }
