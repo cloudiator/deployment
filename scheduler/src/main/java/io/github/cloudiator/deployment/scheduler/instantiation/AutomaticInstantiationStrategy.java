@@ -36,6 +36,7 @@ import io.github.cloudiator.domain.NodeGroup;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -84,10 +85,14 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     //futures for the process
     final Set<ListenableFuture<CloudiatorProcess>> processFutures = new HashSet<>();
 
+    //countdown latch
+    CountDownLatch countDownLatch = new CountDownLatch(job.tasks().size());
+
     //for each task
     for (Task task : job.tasks()) {
 
       LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
+
       //allocate the resources
       final ListenableFuture<NodeGroup> allocateFuture = resourcePool
           .allocate(userId, task.requirements(), task.name());
@@ -122,6 +127,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
             processFutures.add(processFuture);
 
+            countDownLatch.countDown();
+
           }
         }
 
@@ -131,30 +138,33 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
           LOGGER.error(String
                   .format("An uncaught exception occurred while spawning nodes: %s.", t.getMessage()),
               t);
+
+          countDownLatch.countDown();
+
         }
       }, EXECUTOR);
 
     }
 
-    LOGGER.info(String.format("Creating %s processes for job %s.", processFutures.size(), job));
-
-    final ListenableFuture<List<CloudiatorProcess>> processes = Futures
-        .successfulAsList(processFutures);
-
-    final List<CloudiatorProcess> cloudiatorProcesses;
     try {
 
+      LOGGER.info("Waiting for knowledge about final process sizes.");
+      countDownLatch.await();
+
+      LOGGER.info(String.format("Creating %s processes for job %s.", processFutures.size(), job));
+
+      final ListenableFuture<List<CloudiatorProcess>> processes = Futures
+          .successfulAsList(processFutures);
+
       LOGGER.info(String.format("Waiting for %s processes of job %s.", processFutures.size(), job));
-      cloudiatorProcesses = processes.get();
+      final List<CloudiatorProcess> cloudiatorProcesses = processes.get();
+      if (cloudiatorProcesses.contains(null)) {
+        throw new IllegalStateException("One or more process failed to start");
+      }
     } catch (InterruptedException e) {
       throw new InstantiationException("Execution got interrupted.", e);
     } catch (ExecutionException e) {
       throw new InstantiationException("Error during instantiation.", e);
-    }
-
-    if (cloudiatorProcesses.contains(null)) {
-      //todo: reply with error
-      LOGGER.error("One or more processes failed to start");
     }
 
     LOGGER.info(String.format("Finished instantiation of job %s.", job));
