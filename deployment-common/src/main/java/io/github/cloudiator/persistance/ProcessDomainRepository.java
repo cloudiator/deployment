@@ -81,7 +81,7 @@ public class ProcessDomainRepository {
   private ProcessModel createProcessModel(CloudiatorProcess domain, ScheduleModel scheduleModel) {
 
     final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(),
-        domain.nodeId(), domain.state());
+        domain.nodeId(), domain.state(), domain.type());
     processModelRepository.save(processModel);
 
     return processModel;

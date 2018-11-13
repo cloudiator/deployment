@@ -117,11 +117,11 @@ public class ScheduleRequestSubscriber implements Runnable {
                   .build());
 
         } catch (Exception e) {
-          //todo: reply with error
-          LOGGER.error("Unexpected exception while handling schedule.", e);
+          LOGGER.error("Unexpected exception while processing schedule request.", e);
           messageInterface.reply(ScheduleCreatedResponse.class, id, Error.newBuilder().setCode(500)
               .setMessage(
-                  String.format("Unexpected exception while creating schedule: %s", e.getMessage()))
+                  String.format("Unexpected exception while processing schedule request: %s",
+                      e.getMessage()))
               .build());
         }
 

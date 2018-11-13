@@ -37,6 +37,7 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
     }
 
     return CloudiatorProcessBuilder.newBuilder().scheduleId(processModel.getSchedule().domainId())
+        .type(processModel.getType())
         .id(processModel.getDomainId()).nodeId(processModel.getNode())
         .taskName(processModel.getTask()).state(processModel.getState()).build();
   }
