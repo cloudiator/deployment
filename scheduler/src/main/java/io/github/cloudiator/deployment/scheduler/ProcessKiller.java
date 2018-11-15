@@ -16,17 +16,14 @@
 
 package io.github.cloudiator.deployment.scheduler;
 
+import com.google.inject.ImplementedBy;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.Node;
 
+@ImplementedBy(LanceProcessKillerImpl.class)
+public interface ProcessKiller {
 
-public interface ProcessSpawner {
+  boolean supports(CloudiatorProcess cloudiatorProcess);
 
-  boolean supports(Task task);
-
-  CloudiatorProcess spawn(String userId, String schedule, Job job, Task task, Node node);
-
+  void kill(String userId, CloudiatorProcess cloudiatorProcess);
 
 }

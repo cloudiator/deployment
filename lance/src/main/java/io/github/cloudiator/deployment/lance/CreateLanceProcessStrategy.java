@@ -35,9 +35,6 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,27 +42,17 @@ public class CreateLanceProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
   private final LanceInstallationStrategy lanceInstallationStrategy;
+  private final LanceClientConnector lanceClientConnector;
 
-  @Inject(optional = true)
-  @Named("lance.rmiTimeout")
-  private int rmiTimeout = 0;
 
   @Inject
   CreateLanceProcessStrategy(
-      LanceInstallationStrategy lanceInstallationStrategy) {
+      LanceInstallationStrategy lanceInstallationStrategy,
+      LanceClientConnector lanceClientConnector) {
     this.lanceInstallationStrategy = lanceInstallationStrategy;
+    this.lanceClientConnector = lanceClientConnector;
   }
 
-  private LifecycleClient getLifecycleClient(String serverIp) {
-    final LifecycleClient lifecycleClient;
-    try {
-      lifecycleClient = LifecycleClient
-          .getClient(serverIp, rmiTimeout);
-    } catch (RemoteException | NotBoundException e) {
-      throw new IllegalStateException("Error creating lifecycle client", e);
-    }
-    return lifecycleClient;
-  }
 
   private static ContainerType deriveContainerType(LanceInterface lanceInterface, Node node) {
 
@@ -107,7 +94,7 @@ public class CreateLanceProcessStrategy {
 
     lanceInstallationStrategy.execute(userId, node, containerType);
 
-    final LifecycleClient lifecycleClient = getLifecycleClient(
+    final LifecycleClient lifecycleClient = lanceClientConnector.getLifecycleClient(
         node.connectTo().ip());
 
     final ApplicationId applicationId = ApplicationId.fromString(job.id());

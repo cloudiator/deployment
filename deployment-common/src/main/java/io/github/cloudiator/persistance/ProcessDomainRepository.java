@@ -54,6 +54,16 @@ public class ProcessDomainRepository {
     save(domain, scheduleModel);
   }
 
+  public void delete(String processId, String userId) {
+    final ProcessModel processModel = processModelRepository.findByIdAndUser(processId, userId);
+    if (processModel == null) {
+      throw new IllegalStateException(String
+          .format("Process model with the id %s for the user %s does not exist.", processId,
+              userId));
+    }
+    processModelRepository.delete(processModel);
+  }
+
   public CloudiatorProcess getByIdAndUser(String id, String userId) {
     return PROCESS_MODEL_CONVERTER.apply(processModelRepository.findByIdAndUser(id, userId));
   }

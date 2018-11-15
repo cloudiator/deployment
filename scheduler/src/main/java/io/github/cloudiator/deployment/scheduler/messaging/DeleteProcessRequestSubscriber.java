@@ -16,10 +16,99 @@
 
 package io.github.cloudiator.deployment.scheduler.messaging;
 
-public class DeleteProcessRequestSubscriber implements Runnable{
+import com.google.inject.persist.Transactional;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.scheduler.ProcessKiller;
+import io.github.cloudiator.persistance.ProcessDomainRepository;
+import org.cloudiator.messages.General.Error;
+import org.cloudiator.messages.Process.DeleteProcessRequest;
+import org.cloudiator.messages.Process.LanceProcessDeletedResponse;
+import org.cloudiator.messages.Process.ProcessDeletedResponse;
+import org.cloudiator.messaging.MessageCallback;
+import org.cloudiator.messaging.MessageInterface;
+import org.cloudiator.messaging.services.ProcessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class DeleteProcessRequestSubscriber implements Runnable {
+
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(DeleteProcessRequestSubscriber.class);
+  private final ProcessService processService;
+  private final ProcessDomainRepository processDomainRepository;
+  private final MessageInterface messageInterface;
+  private final ProcessKiller processKiller;
+
+  public DeleteProcessRequestSubscriber(
+      ProcessService processService,
+      ProcessDomainRepository processDomainRepository,
+      MessageInterface messageInterface,
+      ProcessKiller processKiller) {
+    this.processService = processService;
+    this.processDomainRepository = processDomainRepository;
+    this.messageInterface = messageInterface;
+    this.processKiller = processKiller;
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  void deleteProcess(CloudiatorProcess cloudiatorProcess, String userId) {
+    processDomainRepository.delete(cloudiatorProcess.id(), userId);
+  }
 
   @Override
   public void run() {
+    processService.subscribeDeleteProcessRequest(new MessageCallback<DeleteProcessRequest>() {
+      @Override
+      public void accept(String id, DeleteProcessRequest content) {
 
+        final String userId = content.getUserId();
+        final String processId = content.getProcessId();
+
+        LOGGER.info(String
+            .format("Getting request to delete process %s for user %s: %s", processId, userId,
+                content));
+
+        try {
+
+          //retrieve the process
+          final CloudiatorProcess process = processDomainRepository
+              .getByIdAndUser(processId, userId);
+
+          if (process == null) {
+            messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(404)
+                .setMessage(String.format("Process with id %s does not exist.", processId))
+                .build());
+            return;
+          }
+
+          if (!processKiller.supports(process)) {
+            messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(504)
+                .setMessage(String.format("Deleting process of type %s is currently not supported.",
+                    process.type())).build());
+            return;
+          }
+
+          processKiller.kill(userId, process);
+
+          deleteProcess(process, userId);
+
+          LOGGER.info(String.format("Successfully delete process %s.", process));
+
+          messageInterface.reply(id, LanceProcessDeletedResponse.newBuilder().build());
+
+        } catch (Exception e) {
+          LOGGER.error(String
+              .format("Unexpected exception while deleting process with id %s", processId), e);
+          messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(500)
+              .setMessage(
+                  String.format("Unexpected exception while deleting process with id %s: %s",
+                      processId, e.getMessage())).build());
+          return;
+        }
+
+
+      }
+    });
   }
 }
