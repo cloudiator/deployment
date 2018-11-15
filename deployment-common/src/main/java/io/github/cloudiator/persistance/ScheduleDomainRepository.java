@@ -57,6 +57,18 @@ public class ScheduleDomainRepository {
     saveAndGet(domain, userId);
   }
 
+  public void delete(Schedule domain, String userId) {
+    final ScheduleModel scheduleModel = scheduleModelRepository
+        .findByIdAndUser(domain.id(), userId);
+
+    if (scheduleModel == null) {
+      throw new IllegalStateException(
+          String.format("Schedule with the id %s does not exist.", domain.id()));
+    }
+
+    scheduleModelRepository.delete(scheduleModel);
+  }
+
   ScheduleModel saveAndGet(Schedule domain, String userId) {
     return createScheduleModel(domain, userId);
   }

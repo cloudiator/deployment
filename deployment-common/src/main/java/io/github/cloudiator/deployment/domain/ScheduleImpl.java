@@ -79,6 +79,8 @@ public class ScheduleImpl implements Schedule {
   @Override
   public Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job) {
 
+    //todo: implement
+
     checkNotNull(cloudiatorProcess, "cloudiatorProcess is null");
     checkNotNull(job, "job is null");
 
@@ -88,9 +90,6 @@ public class ScheduleImpl implements Schedule {
     final Task task = job.getTask(cloudiatorProcess.taskId())
         .orElseThrow(() -> new IllegalStateException(
             String.format("job %s does not contain task %s", job, cloudiatorProcess.taskId())));
-
-
-
 
     return null;
   }

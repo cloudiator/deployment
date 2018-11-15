@@ -21,6 +21,7 @@ import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteProcessRequestSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.DeleteScheduleRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleQuerySubscriber;
@@ -45,6 +46,8 @@ public class ScheduleAgent {
     INJECTOR.getInstance(ScheduleQuerySubscriber.class).run();
     INJECTOR.getInstance(ProcessQuerySubscriber.class).run();
     INJECTOR.getInstance(DeleteProcessRequestSubscriber.class).run();
+    INJECTOR.getInstance(DeleteScheduleRequestSubscriber.class).run();
+
   }
 
 }
