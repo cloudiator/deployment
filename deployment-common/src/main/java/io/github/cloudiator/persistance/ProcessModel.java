@@ -42,7 +42,7 @@ class ProcessModel extends Model {
   @ManyToOne(optional = false)
   private ScheduleModel schedule;
 
-  @Column(unique = true, nullable = false)
+  @Column(nullable = false)
   private String task;
 
   @Column(nullable = false)
