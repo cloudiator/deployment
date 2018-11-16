@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.scheduler.messaging;
 
+import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.scheduler.ProcessKiller;
@@ -39,6 +40,7 @@ public class DeleteProcessRequestSubscriber implements Runnable {
   private final MessageInterface messageInterface;
   private final ProcessKiller processKiller;
 
+  @Inject
   public DeleteProcessRequestSubscriber(
       ProcessService processService,
       ProcessDomainRepository processDomainRepository,
