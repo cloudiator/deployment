@@ -68,6 +68,10 @@ public class DeleteScheduleRequestSubscriber implements Runnable {
         final String userId = content.getUserId();
         final String scheduleId = content.getScheduleId();
 
+        LOGGER.info(String
+            .format("%s is receiving request to delete schedule %s for user %s.", this, scheduleId,
+                userId));
+
         try {
 
           final Schedule schedule = scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
