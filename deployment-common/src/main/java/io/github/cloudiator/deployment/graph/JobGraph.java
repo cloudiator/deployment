@@ -16,7 +16,6 @@ import java.util.Set;
 import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
-import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
 /**
@@ -43,11 +42,8 @@ public class JobGraph {
   }
 
   public Iterator<Task> evaluationOrder() {
-    //reverse the graph
-    final EdgeReversedGraph<Task, CommunicationEdge> reversedGraph = new EdgeReversedGraph<>(
-        taskGraph);
     return new TopologicalOrderIterator<>(
-        reversedGraph);
+        mandatoryTaskGraph);
   }
 
   public boolean hasCycle() {
