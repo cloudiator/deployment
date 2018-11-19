@@ -34,6 +34,7 @@ import io.github.cloudiator.deployment.scheduler.ResourcePool;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeGroup;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -89,7 +90,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     CountDownLatch countDownLatch = new CountDownLatch(job.tasks().size());
 
     //for each task
-    for (Task task : job.tasks()) {
+    for (Iterator<Task> iter = job.tasksInOrder(); iter.hasNext(); ) {
+      final Task task = iter.next();
 
       LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
 

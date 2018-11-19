@@ -11,10 +11,13 @@ import com.google.common.hash.Hashing;
 import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
+import java.util.Iterator;
 import java.util.Set;
 import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
+import org.jgrapht.graph.EdgeReversedGraph;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 
 /**
  * Created by daniel on 17.06.16.
@@ -37,6 +40,14 @@ public class JobGraph {
 
   private CycleDetector<Task, CommunicationEdge> cycleDetector() {
     return new CycleDetector<>(mandatoryTaskGraph);
+  }
+
+  public Iterator<Task> evaluationOrder() {
+    //reverse the graph
+    final EdgeReversedGraph<Task, CommunicationEdge> reversedGraph = new EdgeReversedGraph<>(
+        taskGraph);
+    return new TopologicalOrderIterator<>(
+        reversedGraph);
   }
 
   public boolean hasCycle() {

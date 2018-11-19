@@ -22,6 +22,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
+import io.github.cloudiator.deployment.graph.Graphs;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -144,6 +146,11 @@ class JobImpl extends JobNewImpl implements Job {
         communication -> communication.portProvided().equals(port.name()) || communication
             .portRequired()
             .equals(port.name())).collect(Collectors.toSet());
+  }
+
+  @Override
+  public Iterator<Task> tasksInOrder() {
+    return Graphs.jobGraph(this).evaluationOrder();
   }
 
   @Override
