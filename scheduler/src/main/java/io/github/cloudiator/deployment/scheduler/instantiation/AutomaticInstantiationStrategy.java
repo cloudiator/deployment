@@ -127,9 +127,9 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
             processFutures.add(processFuture);
 
-            countDownLatch.countDown();
-
           }
+
+          countDownLatch.countDown();
         }
 
         @Override
