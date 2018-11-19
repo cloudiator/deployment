@@ -73,6 +73,9 @@ public class JobImplTest {
   public void taskInOrderTest() {
     Job job = MediaWikiJob.wikiJob();
     final Iterator<Task> taskIterator = job.tasksInOrder();
+
+    job.tasksInOrder().forEachRemaining(System.out::println);
+
     Task first = taskIterator.next();
     assertThat(first, equalTo(MediaWikiJob.databaseTask()));
   }
