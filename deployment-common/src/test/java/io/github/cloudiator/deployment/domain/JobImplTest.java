@@ -28,7 +28,7 @@ public class JobImplTest {
 
 
   @Test
-  public void providingTask() {
+  public void providingTaskTest() {
     Job job = MediaWikiJob.wikiJob();
     final Task wikiTask = job.providingTask(MediaWikiJob.wikiWithLB());
     final Task dbTask = job.providingTask(MediaWikiJob.wikiWithDB());
@@ -38,7 +38,7 @@ public class JobImplTest {
   }
 
   @Test
-  public void requiredTask() {
+  public void requiredTaskTest() {
     Job job = MediaWikiJob.wikiJob();
 
     final Task lbTask = job.requiredTask(MediaWikiJob.wikiWithLB());
@@ -50,7 +50,7 @@ public class JobImplTest {
   }
 
   @Test
-  public void attachedCommunications() {
+  public void attachedCommunicationsTest() {
 
     Job job = MediaWikiJob.wikiJob();
 
@@ -66,6 +66,17 @@ public class JobImplTest {
         .attachedCommunications(MediaWikiJob.wikiProvided());
     assertThat(wikiCommunications.size(), equalTo(1));
     assertThat(wikiCommunications, contains(MediaWikiJob.wikiWithLB()));
+
+  }
+
+  @Test
+  public void consumedByTest() {
+
+    Job job = MediaWikiJob.wikiJob();
+
+    assertThat(job.consumedBy(MediaWikiJob.databaseTask()), contains(MediaWikiJob.wikiTask()));
+    assertThat(job.consumedBy(MediaWikiJob.wikiTask()), contains(MediaWikiJob.loadBalancerTask()));
+
 
   }
 

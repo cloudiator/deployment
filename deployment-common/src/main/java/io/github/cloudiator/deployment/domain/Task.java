@@ -71,7 +71,6 @@ public interface Task {
     checkNotNull(type, "type is null");
 
     return ports(type).stream().filter(t -> name.equals(t.name())).collect(StreamUtil.getOnly());
-
   }
 
 }

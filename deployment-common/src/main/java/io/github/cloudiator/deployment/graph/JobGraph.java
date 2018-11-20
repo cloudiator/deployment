@@ -27,8 +27,11 @@ public class JobGraph {
   private final DirectedPseudograph<Task, CommunicationEdge> taskGraph;
   private final DirectedPseudograph<Task, CommunicationEdge>
       mandatoryTaskGraph;
+  private final Job job;
 
   private JobGraph(Job job) {
+    checkNotNull(job, "job is null");
+    this.job = job;
     taskGraph = GraphFactory.of(job);
     mandatoryTaskGraph = GraphFactory.of(job, true);
   }
@@ -47,7 +50,7 @@ public class JobGraph {
         mandatoryTaskGraph, new Comparator<Task>() {
       @Override
       public int compare(Task t1, Task t2) {
-        return Integer.compare(t1.providedPorts().size(), t2.providedPorts().size());
+        return Integer.compare(job.consumedBy(t2).size(), job.consumedBy(t1).size());
       }
     });
   }

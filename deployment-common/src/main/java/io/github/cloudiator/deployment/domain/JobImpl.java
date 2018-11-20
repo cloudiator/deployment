@@ -23,6 +23,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
 import io.github.cloudiator.deployment.graph.Graphs;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
@@ -81,6 +82,19 @@ class JobImpl extends JobNewImpl implements Job {
             String.format(
                 "Communication %s references required port %s but Job %s contains no task requiring this port",
                 communication, communication.portRequired(), this)));
+  }
+
+  @Override
+  public Set<Task> consumedBy(Task task) {
+
+    Set<Task> targets = new HashSet<>();
+    for (PortProvided provided : task.providedPorts()) {
+      for (Communication communication : attachedCommunications(provided)) {
+        targets.add(requiredTask(communication));
+      }
+    }
+
+    return targets;
   }
 
   @Override
