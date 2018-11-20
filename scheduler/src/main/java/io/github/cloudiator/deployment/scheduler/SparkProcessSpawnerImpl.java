@@ -10,7 +10,7 @@ import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.cloudiator.messages.Process.CreateSparkProcessRequest;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.SparkProcess;
@@ -39,12 +39,12 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
   @Override
   public boolean supports(Task task) {
 
-
     try {
       task.interfaceOfType(SparkInterface.class);
       return true;
-    }catch (IllegalArgumentException e){
-      LOGGER.debug("Provided task does not contain a SparkInterface! Skipping SparkProcessSpawner!");
+    } catch (IllegalArgumentException e) {
+      LOGGER
+          .debug("Provided task does not contain a SparkInterface! Skipping SparkProcessSpawner!");
       return false;
     }
 
@@ -52,9 +52,11 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorProcess spawn(String userId, String schedule, Job job, Task task, Node node) {
+  public Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
+      Node node) {
     LOGGER.info(String
-        .format("%s is spawning a new Spark process for user: %s, Schedule %s, Task %s on Node %s", this,
+        .format("%s is spawning a new Spark process for user: %s, Schedule %s, Task %s on Node %s",
+            this,
             userId, schedule, task, node));
 
     final SparkProcess sparkProcess = SparkProcess.newBuilder()
@@ -71,14 +73,8 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
     processService.createSparkProcessAsync(processRequest, futureResponseCallback);
 
-    try {
-      return futureResponseCallback.get();
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(
-          String.format("%s got interrupted while waiting for result", this));
-    } catch (ExecutionException e) {
-      throw new IllegalStateException("Error while creating Spark process.", e.getCause());
-    }
+    return futureResponseCallback;
+
   }
 
 

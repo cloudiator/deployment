@@ -20,13 +20,16 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
+import java.util.concurrent.Future;
+import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
 
 
 public interface ProcessSpawner {
 
   boolean supports(Task task);
 
-  CloudiatorProcess spawn(String userId, String schedule, Job job, Task task, Node node);
+  Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task, Node node);
 
 
 }

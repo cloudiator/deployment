@@ -30,6 +30,7 @@ import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.Optional;
+import java.util.concurrent.Future;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
@@ -140,8 +141,10 @@ public class ProcessRequestSubscriber implements Runnable {
               this, userId, processSpawner, schedule, job, task, node));
 
           //todo handle correctly type of task, currently we only assume lance
-          final CloudiatorProcess cloudiatorProcess = processSpawner
+          final Future<CloudiatorProcess> spawn = processSpawner
               .spawn(userId, scheduleId, job, task, node);
+
+          final CloudiatorProcess cloudiatorProcess = spawn.get();
 
           //persist the process
           persistProcess(cloudiatorProcess, userId);

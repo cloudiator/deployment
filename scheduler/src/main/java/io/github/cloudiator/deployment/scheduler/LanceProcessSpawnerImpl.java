@@ -26,7 +26,7 @@ import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.cloudiator.messages.Process.CreateLanceProcessRequest;
 import org.cloudiator.messages.Process.LanceProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.LanceProcess;
@@ -54,14 +54,16 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
     try {
       task.interfaceOfType(LanceInterface.class);
       return true;
-    }catch (IllegalArgumentException e){
-      LOGGER.debug("Provided task does not contain a LanceInterface! Skipping LanceProcessSpawner!");
+    } catch (IllegalArgumentException e) {
+      LOGGER
+          .debug("Provided task does not contain a LanceInterface! Skipping LanceProcessSpawner!");
       return false;
     }
   }
 
   @Override
-  public CloudiatorProcess spawn(String userId, String schedule, Job job, Task task, Node node) {
+  public Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
+      Node node) {
 
     LOGGER.info(String
         .format("%s is spawning a new process for user: %s, Schedule %s, Task %s on Node %s", this,
@@ -81,14 +83,8 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
     processService.createLanceProcessAsync(processRequest, futureResponseCallback);
 
-    try {
-      return futureResponseCallback.get();
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(
-          String.format("%s got interrupted while waiting for result", this));
-    } catch (ExecutionException e) {
-      throw new IllegalStateException("Error while creating process.", e.getCause());
-    }
+    return futureResponseCallback;
+
   }
 
   @Override

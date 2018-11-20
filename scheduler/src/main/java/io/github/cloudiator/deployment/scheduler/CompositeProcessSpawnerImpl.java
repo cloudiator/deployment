@@ -7,6 +7,7 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
 import java.util.Set;
+import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,8 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorProcess spawn(String userId, String schedule, Job job, Task task, Node node) {
+  public Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
+      Node node) {
 
     LOGGER.debug("Using CompositeProcessSpawner to determine correct ProcessSpawner");
 
@@ -41,11 +43,11 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
         LOGGER.info(String.format("Using processSpawner %s to spawn task %s.",
             processSpawner, task));
 
-        return processSpawner.spawn(userId,schedule,job,task,node);
+        return processSpawner.spawn(userId, schedule, job, task, node);
       }
     }
     throw new IllegalStateException(String
-        .format("None of the found processSpawners [%s] support the task %s.",
+        .format("None of the found process spawners [%s] supports the task %s.",
             Joiner.on(",").join(processSpawners),
             task));
   }
