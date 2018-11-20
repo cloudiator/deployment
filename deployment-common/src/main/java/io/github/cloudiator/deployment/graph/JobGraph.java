@@ -11,6 +11,7 @@ import com.google.common.hash.Hashing;
 import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 import org.jgrapht.alg.cycle.CycleDetector;
@@ -43,7 +44,12 @@ public class JobGraph {
 
   public Iterator<Task> evaluationOrder() {
     return new TopologicalOrderIterator<>(
-        mandatoryTaskGraph);
+        mandatoryTaskGraph, new Comparator<Task>() {
+      @Override
+      public int compare(Task t1, Task t2) {
+        return Integer.compare(t1.providedPorts().size(), t2.providedPorts().size());
+      }
+    });
   }
 
   public boolean hasCycle() {
