@@ -16,10 +16,20 @@
 
 package io.github.cloudiator.deployment.lance;
 
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
+import com.google.common.base.Predicates;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
+import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Named;
 
 public class LanceClientConnector {
@@ -33,12 +43,34 @@ public class LanceClientConnector {
   }
 
   LifecycleClient getLifecycleClient(String serverIp) {
+
+    Callable<LifecycleClient> createLifecycleClient = new Callable<LifecycleClient>() {
+      public LifecycleClient call() throws Exception {
+         final LifecycleClient lifecycleClient = LifecycleClient
+            .getClient(serverIp, rmiTimeout);
+
+         return lifecycleClient;
+      }
+    };
+
+    Retryer<LifecycleClient> retryer = RetryerBuilder.<LifecycleClient>newBuilder()
+        .retryIfResult(Predicates.<LifecycleClient>isNull())
+        .retryIfExceptionOfType(RemoteException.class)
+        .retryIfExceptionOfType(NotBoundException.class)
+        .retryIfExceptionOfType(ConnectException.class)
+        .withWaitStrategy(WaitStrategies.fixedWait(2, TimeUnit.SECONDS))
+        .withStopStrategy(StopStrategies.stopAfterAttempt(5))
+        .build();
+
     final LifecycleClient lifecycleClient;
+
     try {
-      lifecycleClient = LifecycleClient
-          .getClient(serverIp, rmiTimeout);
-    } catch (RemoteException | NotBoundException e) {
-      throw new IllegalStateException("Error creating lifecycle client", e);
+      lifecycleClient = retryer.call(createLifecycleClient);
+
+    } catch (ExecutionException e) {
+      throw new IllegalStateException("Error creating lifecycle client! Retry Execution Exception occurred!", e);
+    } catch (RetryException e) {
+      throw new IllegalStateException("Error creating lifecycle client! Exceeded retry attempts!", e);
     }
     return lifecycleClient;
   }
