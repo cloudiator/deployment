@@ -30,7 +30,7 @@
   <logger name="de.uniulm.omi.cloudiator.lance" level="DEBUG"/>
   <logger name="org.cloudiator.messaging" level="DEBUG"/>
 
-  <root level="ERROR">
+  <root level="WARN">
     <appender-ref ref="STDOUT"/>
   </root>
 

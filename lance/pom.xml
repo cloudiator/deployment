@@ -67,6 +67,7 @@
         <groupId>com.google.cloud.tools</groupId>
         <artifactId>jib-maven-plugin</artifactId>
         <configuration>
+          <from>gcr.io/distroless/java:debug</from>
           <to>
             registry.hub.docker.com/cloudiator/lance-agent:${docker.tag}
           </to>
