@@ -82,7 +82,9 @@
         <groupId>com.google.cloud.tools</groupId>
         <artifactId>jib-maven-plugin</artifactId>
         <configuration>
-          <from>gcr.io/distroless/java:debug</from>
+          <from>
+            <image>gcr.io/distroless/java:debug</image>
+          </from>
           <to>
             registry.hub.docker.com/cloudiator/yaml-agent:${docker.tag}
           </to>
