@@ -58,7 +58,7 @@ public class LanceClientConnector {
         .retryIfExceptionOfType(RemoteException.class)
         .retryIfExceptionOfType(NotBoundException.class)
         .retryIfExceptionOfType(ConnectException.class)
-        .withWaitStrategy(WaitStrategies.fixedWait(2, TimeUnit.SECONDS))
+        .withWaitStrategy(WaitStrategies.fixedWait(20, TimeUnit.SECONDS))
         .withStopStrategy(StopStrategies.stopAfterAttempt(5))
         .build();
 
