@@ -106,7 +106,6 @@ public class DeleteProcessRequestSubscriber implements Runnable {
               .setMessage(
                   String.format("Unexpected exception while deleting process with id %s: %s",
                       processId, e.getMessage())).build());
-          return;
         }
 
 
