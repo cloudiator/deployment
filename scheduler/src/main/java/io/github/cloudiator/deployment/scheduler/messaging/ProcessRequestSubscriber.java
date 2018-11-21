@@ -70,6 +70,13 @@ public class ProcessRequestSubscriber implements Runnable {
     this.processDomainRepository = processDomainRepository;
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule retrieveSchedule(String scheduleId, String userId) {
+    return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+  }
+
+  @SuppressWarnings("WeakerAccess")
   @Transactional
   void persistProcess(CloudiatorProcess cloudiatorProcess, String userId) {
     processDomainRepository.save(cloudiatorProcess, userId);
@@ -89,7 +96,7 @@ public class ProcessRequestSubscriber implements Runnable {
           final String scheduleId = content.getProcess().getSchedule();
 
           LOGGER.debug(String.format("Retrieving schedule for process request %s.", id));
-          final Schedule schedule = scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+          final Schedule schedule = retrieveSchedule(scheduleId, userId);
 
           if (schedule == null) {
             LOGGER.error(String.format("Schedule with the id %s does not exist.", scheduleId));
