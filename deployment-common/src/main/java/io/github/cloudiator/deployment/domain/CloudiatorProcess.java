@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import io.github.cloudiator.domain.NodeGroup;
 
 /**
  * Created by daniel on 13.02.17.
@@ -38,7 +39,7 @@ public interface CloudiatorProcess extends Identifiable {
 
   State state();
 
-  String nodeId();
+  NodeGroup nodeGroup();
 
   Type type();
 }

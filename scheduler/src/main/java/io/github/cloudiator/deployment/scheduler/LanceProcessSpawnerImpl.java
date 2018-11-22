@@ -21,11 +21,17 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.ProcessGroup;
+import io.github.cloudiator.deployment.domain.ProcessGroups;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import org.cloudiator.messages.Process.CreateLanceProcessRequest;
 import org.cloudiator.messages.Process.LanceProcessCreatedResponse;
@@ -62,8 +68,37 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
+  public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
+      NodeGroup nodeGroup) {
+
+    //Create all Lance processes of for the nodegroup
+    List<Future<CloudiatorProcess>> futures = new ArrayList<>();
+
+    for(Node node : nodeGroup.getNodes()){
+      futures.add(spawn(userId,schedule,job,task, node));
+    }
+
+    //wait until all processes are spawned
+    try {
+      List<CloudiatorProcess> spawnedLanceProcesses = waitForFutures(futures);
+
+      ProcessGroup processGroup = ProcessGroups.of(spawnedLanceProcesses);
+
+      return processGroup;
+
+
+    } catch (ExecutionException e) {
+      LOGGER.error("Error while waiting for LanceProcess to spawn!" ,e);
+      throw  new IllegalStateException(e);
+    }
+
+
+  }
+
+
+  private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
       Node node) {
+
 
     LOGGER.info(String
         .format("%s is spawning a new process for user: %s, Schedule %s, Task %s on Node %s", this,
@@ -85,6 +120,33 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
     return futureResponseCallback;
 
+  }
+
+  private List<CloudiatorProcess> waitForFutures(List<Future<CloudiatorProcess>> futures)
+      throws ExecutionException {
+
+    final int size = futures.size();
+    List<CloudiatorProcess> results = new ArrayList<>(size);
+
+    LOGGER.debug(String.format("Waiting for a total amount of %s processes", size));
+
+    for (int i = 0; i < size; i++) {
+
+      Future<CloudiatorProcess> future = futures.get(i);
+
+      try {
+        LOGGER.debug(String
+            .format("Waiting for process %s of %s. Number of completed processes: %s", i, size,
+                results.size()));
+        final CloudiatorProcess cloudiatorProcess = future.get();
+        results.add(cloudiatorProcess);
+      } catch (InterruptedException e) {
+        LOGGER.error("Interrupted while waiting for  Lance processes to complete. Stopping.");
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    return results;
   }
 
   @Override

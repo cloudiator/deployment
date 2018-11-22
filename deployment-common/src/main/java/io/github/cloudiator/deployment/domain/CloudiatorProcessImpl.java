@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import io.github.cloudiator.domain.NodeGroup;
 import java.util.Objects;
 
 class CloudiatorProcessImpl implements CloudiatorProcess {
@@ -27,11 +28,11 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   private final String id;
   private final String scheduleId;
   private final String taskName;
-  private final String nodeId;
+  private final NodeGroup nodeGroup;
   private final CloudiatorProcess.State state;
   private final Type type;
 
-  CloudiatorProcessImpl(String id, String scheduleId, String taskName, String nodeId,
+  CloudiatorProcessImpl(String id, String scheduleId, String taskName, NodeGroup nodeGroup,
       State state, Type type) {
 
     checkNotNull(id, "id is null");
@@ -46,9 +47,9 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
 
-    checkNotNull(nodeId, "nodeId is null");
-    checkArgument(!nodeId.isEmpty(), "nodeId is empty");
-    this.nodeId = nodeId;
+    checkNotNull(nodeGroup, "nodes is null");
+    checkArgument(!nodeGroup.getNodes().isEmpty(), "nodes in nodeGroup are empty");
+    this.nodeGroup = nodeGroup;
 
     //todo implement state, currently we simply ignore it
     //checkNotNull(state, "state is null");
@@ -74,9 +75,10 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   }
 
   @Override
-  public String nodeId() {
-    return nodeId;
+  public NodeGroup nodeGroup() {
+    return nodeGroup;
   }
+
 
   @Override
   public Type type() {
@@ -100,19 +102,19 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     return Objects.equals(id, that.id) &&
         Objects.equals(scheduleId, that.scheduleId) &&
         Objects.equals(taskName, that.taskName) &&
-        Objects.equals(nodeId, that.nodeId);
+        Objects.equals(nodeGroup, that.nodeGroup);
   }
 
   @Override
   public int hashCode() {
 
-    return Objects.hash(id, scheduleId, taskName, nodeId);
+    return Objects.hash(id, scheduleId, taskName, nodeGroup);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("id", id).add("scheduleId", scheduleId)
         .add("task", taskName)
-        .add("nodeId", nodeId).add("state", state).toString();
+        .add("nodes", nodeGroup.toString()).add("state", state).toString();
   }
 }

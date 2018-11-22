@@ -16,20 +16,19 @@
 
 package io.github.cloudiator.deployment.scheduler;
 
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.ProcessGroup;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.Node;
-import java.util.concurrent.Future;
-import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
-import org.cloudiator.messaging.SettableFutureResponseCallback;
+import io.github.cloudiator.domain.NodeGroup;
 
 
 public interface ProcessSpawner {
 
   boolean supports(Task task);
 
-  Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task, Node node);
+  ProcessGroup spawn(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup);
+
+
 
 
 }

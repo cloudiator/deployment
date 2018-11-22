@@ -20,6 +20,7 @@ import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
+import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessType;
@@ -28,6 +29,8 @@ public class ProcessMessageConverter implements
     TwoWayConverter<ProcessEntities.Process, CloudiatorProcess> {
 
   public static final ProcessMessageConverter INSTANCE = new ProcessMessageConverter();
+
+  private static final NodeGroupMessageToNodeGroup NODE_GROUP_MESSAGE_TO_NODE_GROUP = new NodeGroupMessageToNodeGroup();
 
   private ProcessMessageConverter() {
 
@@ -38,13 +41,17 @@ public class ProcessMessageConverter implements
 
     return Process.newBuilder().setId(cloudiatorProcess.id())
         .setSchedule(cloudiatorProcess.scheduleId())
-        .setNode(cloudiatorProcess.nodeId()).setTask(cloudiatorProcess.taskId())
+        .setNodeGroup(NODE_GROUP_MESSAGE_TO_NODE_GROUP.applyBack(cloudiatorProcess.nodeGroup()))
+        .setTask(cloudiatorProcess.taskId())
         .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
   }
 
   @Override
   public CloudiatorProcess apply(Process process) {
-    return CloudiatorProcessBuilder.newBuilder().nodeId(process.getNode()).id(process.getId())
+
+
+    return CloudiatorProcessBuilder.newBuilder()
+        .nodeGroup(NODE_GROUP_MESSAGE_TO_NODE_GROUP.apply(process.getNodeGroup()))
         .scheduleId(process.getSchedule()).taskName(process.getTask())
         .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
   }

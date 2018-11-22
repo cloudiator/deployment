@@ -18,11 +18,13 @@ package io.github.cloudiator.persistance;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.State;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -46,7 +48,7 @@ class ProcessModel extends Model {
   private String task;
 
   @Column(nullable = false)
-  private String node;
+  private NodeGroupModel nodeGroupModel;
 
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.Type type;
@@ -54,14 +56,18 @@ class ProcessModel extends Model {
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.State state;
 
+  @ManyToOne
+  @Nullable
+  private ProcessGroupModel processGroupModel;
+
   /**
    * Empty constructor for hibernate
    */
   protected ProcessModel() {
   }
 
-  public ProcessModel(String domainId, ScheduleModel schedule, String task, String node,
-      CloudiatorProcess.State state, CloudiatorProcess.Type type) {
+  public ProcessModel(String domainId, ScheduleModel schedule, String task, NodeGroupModel nodeGroupModel,
+      CloudiatorProcess.State state, CloudiatorProcess.Type type, @Nullable ProcessGroupModel processGroupModel) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -71,8 +77,8 @@ class ProcessModel extends Model {
     checkNotNull(task, "task is null");
     checkArgument(!task.isEmpty(), "task is empty");
 
-    checkNotNull(node, "node is null");
-    checkArgument(!node.isEmpty(), "node is empty");
+    checkNotNull(nodeGroupModel, "nodeGroup is null");
+    //checkArgument(!nodeGroupModel.isEmpty(), "nodeGroup is empty");
 
     checkNotNull(type, "type is null");
 
@@ -80,19 +86,27 @@ class ProcessModel extends Model {
     this.schedule = schedule;
     this.task = task;
     this.state = state;
-    this.node = node;
+    this.nodeGroupModel = nodeGroupModel;
     this.type = type;
+    this.processGroupModel = processGroupModel;
 
   }
 
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
-        .add("task", task).add("state", state);
+        .add("task", task).add("state", state).add("nodeGroup", nodeGroupModel);
   }
 
-  public String getNode() {
-    return node;
+  public ProcessModel assignGroup(ProcessGroupModel processGroupModel) {
+    checkState(this.processGroupModel == null, "Process Group was already assigned.");
+    this.processGroupModel = processGroupModel;
+    return this;
+  }
+
+
+  public NodeGroupModel getNodeGroup() {
+    return nodeGroupModel;
   }
 
   public String getDomainId() {
