@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler.messaging;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Job;
@@ -102,17 +104,24 @@ public class ScheduleRequestSubscriber implements Runnable {
           //start the instantiation
           instantiationStrategy.instantiate(schedule, job, userId);
 
+          //refresh the schedule object to receive the created processes
+          Schedule createdSchedule = scheduleDomainRepository
+              .findByIdAndUser(schedule.id(), userId);
+
+          checkState(createdSchedule != null, String
+              .format("Expected schedule with id %s to exist, but received null", schedule.id()));
+
           messageInterface.reply(id,
               ScheduleCreatedResponse.newBuilder()
-                  .setSchedule(SCHEDULE_CONVERTER.applyBack(schedule))
+                  .setSchedule(SCHEDULE_CONVERTER.applyBack(createdSchedule))
                   .build());
 
         } catch (Exception e) {
-          //todo: reply with error
-          LOGGER.error("Unexpected exception while handling schedule.", e);
+          LOGGER.error("Unexpected exception while processing schedule request.", e);
           messageInterface.reply(ScheduleCreatedResponse.class, id, Error.newBuilder().setCode(500)
               .setMessage(
-                  String.format("Unexpected exception while creating schedule: %s", e.getMessage()))
+                  String.format("Unexpected exception while processing schedule request: %s",
+                      e.getMessage()))
               .build());
         }
 

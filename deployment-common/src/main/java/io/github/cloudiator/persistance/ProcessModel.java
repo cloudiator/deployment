@@ -22,8 +22,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.State;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
 
@@ -40,13 +42,16 @@ class ProcessModel extends Model {
   @ManyToOne(optional = false)
   private ScheduleModel schedule;
 
-  @Column(unique = true, nullable = false)
+  @Column(nullable = false)
   private String task;
 
   @Column(nullable = false)
   private String node;
 
-  @Enumerated
+  @Enumerated(EnumType.STRING)
+  private CloudiatorProcess.Type type;
+
+  @Enumerated(EnumType.STRING)
   private CloudiatorProcess.State state;
 
   /**
@@ -56,7 +61,7 @@ class ProcessModel extends Model {
   }
 
   public ProcessModel(String domainId, ScheduleModel schedule, String task, String node,
-      CloudiatorProcess.State state) {
+      CloudiatorProcess.State state, CloudiatorProcess.Type type) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -69,11 +74,14 @@ class ProcessModel extends Model {
     checkNotNull(node, "node is null");
     checkArgument(!node.isEmpty(), "node is empty");
 
+    checkNotNull(type, "type is null");
+
     this.domainId = domainId;
     this.schedule = schedule;
     this.task = task;
     this.state = state;
     this.node = node;
+    this.type = type;
 
   }
 
@@ -101,5 +109,9 @@ class ProcessModel extends Model {
 
   public State getState() {
     return state;
+  }
+
+  public Type getType() {
+    return type;
   }
 }

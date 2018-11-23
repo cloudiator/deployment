@@ -37,5 +37,7 @@ public interface Schedule extends Identifiable {
 
   Schedule addProcesses(Collection<? extends CloudiatorProcess> processes);
 
+  Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job);
+
 
 }

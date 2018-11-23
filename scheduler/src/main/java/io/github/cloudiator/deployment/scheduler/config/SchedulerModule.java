@@ -18,9 +18,13 @@ package io.github.cloudiator.deployment.scheduler.config;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
+import io.github.cloudiator.deployment.scheduler.CompositeProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.Init;
+import io.github.cloudiator.deployment.scheduler.LanceProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.OnDemandResourcePool;
+import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
 import io.github.cloudiator.deployment.scheduler.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.SparkProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.CompositeInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
@@ -31,10 +35,6 @@ public class SchedulerModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    Multibinder<ProcessSpawner> processSpawnerMultibinder =
-        Multibinder.newSetBinder(binder(), ProcessSpawner.class);
-    processSpawnerMultibinder.addBinding().to(LanceProcessSpawnerImpl.class);
-    processSpawnerMultibinder.addBinding().to(FaasProcessSpawner.class);
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
     bind(Init.class).asEagerSingleton();
 
@@ -44,5 +44,14 @@ public class SchedulerModule extends AbstractModule {
     instantiationStrategyMultibinder.addBinding().to(ManualInstantiationStrategy.class);
 
     bind(InstantiationStrategy.class).to(CompositeInstantiationStrategy.class);
+
+    Multibinder<ProcessSpawner> processSpawnerMultibinder = Multibinder
+        .newSetBinder(binder(), ProcessSpawner.class);
+    processSpawnerMultibinder.addBinding().to(LanceProcessSpawnerImpl.class);
+    processSpawnerMultibinder.addBinding().to(SparkProcessSpawnerImpl.class);
+    processSpawnerMultibinder.addBinding().to(FaasProcessSpawnerImpl.class);
+
+    bind(ProcessSpawner.class).to(CompositeProcessSpawnerImpl.class);
+
   }
 }

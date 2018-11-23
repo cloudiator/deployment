@@ -21,6 +21,8 @@ import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.jobagent.messaging.JobAddedSubscriber;
 import io.github.cloudiator.deployment.jobagent.messaging.JobGetSubscriber;
+import io.github.cloudiator.deployment.jobagent.messaging.JobGraphSubscriber;
+import io.github.cloudiator.deployment.validation.config.ModelValidationModule;
 import io.github.cloudiator.persistance.DeploymentJpaModule;
 import io.github.cloudiator.util.JpaContext;
 import org.cloudiator.messaging.kafka.KafkaContext;
@@ -31,6 +33,7 @@ public class JobAgent {
 
   private final static Injector injector = Guice
       .createInjector(
+          new ModelValidationModule(),
           new KafkaMessagingModule(new KafkaContext(Configuration.conf())),
           new MessageServiceModule(), new JobAgentModule(),
           new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
@@ -40,6 +43,7 @@ public class JobAgent {
 
     injector.getInstance(JobAddedSubscriber.class).run();
     injector.getInstance(JobGetSubscriber.class).run();
+    injector.getInstance(JobGraphSubscriber.class).run();
 
   }
 

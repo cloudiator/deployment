@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 
@@ -37,7 +38,15 @@ public interface Job extends JobNew, Identifiable {
 
   Task requiredTask(Communication communication);
 
+  Set<Task> consumedBy(Task task);
+
+  PortRequired requiredPort(Communication communication);
+
+  PortProvided providedPort(Communication communication);
+
   PortProvided getProvidingPort(PortRequired portRequired);
 
   Set<Communication> attachedCommunications(Port port);
+
+  Iterator<Task> tasksInOrder();
 }

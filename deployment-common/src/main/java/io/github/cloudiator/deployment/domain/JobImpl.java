@@ -22,9 +22,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import de.uniulm.omi.cloudiator.util.StreamUtil;
+import io.github.cloudiator.deployment.graph.Graphs;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by daniel on 13.02.17.
@@ -80,6 +85,46 @@ class JobImpl extends JobNewImpl implements Job {
   }
 
   @Override
+  public Set<Task> consumedBy(Task task) {
+
+    Set<Task> targets = new HashSet<>();
+    for (PortProvided provided : task.providedPorts()) {
+      for (Communication communication : attachedCommunications(provided)) {
+        targets.add(requiredTask(communication));
+      }
+    }
+
+    return targets;
+  }
+
+  @Override
+  public PortRequired requiredPort(Communication communication) {
+    checkArgument(communications().contains(communication),
+        String.format("Job does not contain communication %s.", communication));
+
+    return this.tasks().stream().flatMap(
+        (Function<Task, Stream<PortRequired>>) task -> task.requiredPorts().stream())
+        .filter(portRequired -> portRequired.name().equals(communication.portRequired()))
+        .collect(StreamUtil.getOnly()).orElseThrow(() -> new IllegalStateException(String.format(
+            "Communication %s references required port %s but no task of Job %s has this port attached.",
+            communication, communication.portRequired(), this)));
+  }
+
+  @Override
+  public PortProvided providedPort(Communication communication) {
+    checkArgument(communications().contains(communication),
+        String.format("Job does not contain communication %s.", communication));
+
+    return this.tasks().stream().flatMap(
+        (Function<Task, Stream<PortProvided>>) task -> task.providedPorts().stream())
+        .filter(portProvided -> portProvided.name().equals(communication.portProvided()))
+        .collect(StreamUtil.getOnly()).orElseThrow(() -> new IllegalStateException(String.format(
+            "Communication %s references provided port %s but no task of Job %s has this port attached.",
+            communication, communication.portProvided(), this)));
+
+  }
+
+  @Override
   public PortProvided getProvidingPort(PortRequired portRequired) {
 
     checkNotNull(portRequired, "portRequired is null");
@@ -115,6 +160,11 @@ class JobImpl extends JobNewImpl implements Job {
         communication -> communication.portProvided().equals(port.name()) || communication
             .portRequired()
             .equals(port.name())).collect(Collectors.toSet());
+  }
+
+  @Override
+  public Iterator<Task> tasksInOrder() {
+    return Graphs.jobGraph(this).evaluationOrder();
   }
 
   @Override

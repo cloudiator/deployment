@@ -18,9 +18,11 @@ package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
+import org.cloudiator.messages.entities.ProcessEntities.ProcessType;
 
 public class ProcessMessageConverter implements
     TwoWayConverter<ProcessEntities.Process, CloudiatorProcess> {
@@ -36,12 +38,45 @@ public class ProcessMessageConverter implements
 
     return Process.newBuilder().setId(cloudiatorProcess.id())
         .setSchedule(cloudiatorProcess.scheduleId())
-        .setNode(cloudiatorProcess.nodeId()).setTask(cloudiatorProcess.taskId()).build();
+        .setNode(cloudiatorProcess.nodeId()).setTask(cloudiatorProcess.taskId())
+        .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
   }
 
   @Override
   public CloudiatorProcess apply(Process process) {
     return CloudiatorProcessBuilder.newBuilder().nodeId(process.getNode()).id(process.getId())
-        .scheduleId(process.getSchedule()).taskName(process.getTask()).build();
+        .scheduleId(process.getSchedule()).taskName(process.getTask())
+        .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
+  }
+
+  private static class ProcessTypeConverter implements
+      TwoWayConverter<ProcessEntities.ProcessType, CloudiatorProcess.Type> {
+
+    private static final ProcessTypeConverter INSTANCE = new ProcessTypeConverter();
+
+    @Override
+    public ProcessType applyBack(Type type) {
+      switch (type) {
+        case LANCE:
+          return ProcessType.LANCE;
+        case SPARK:
+          return ProcessType.SPARK;
+        default:
+          throw new AssertionError("Unknown type: " + type);
+      }
+    }
+
+    @Override
+    public Type apply(ProcessType processType) {
+      switch (processType) {
+        case SPARK:
+          return Type.SPARK;
+        case LANCE:
+          return Type.LANCE;
+        case UNRECOGNIZED:
+        default:
+          throw new AssertionError("Unknown process type: " + processType);
+      }
+    }
   }
 }

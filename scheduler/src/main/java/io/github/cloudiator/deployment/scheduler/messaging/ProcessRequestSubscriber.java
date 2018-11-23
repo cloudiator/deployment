@@ -31,6 +31,7 @@ import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.Optional;
+import java.util.concurrent.Future;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
@@ -50,8 +51,8 @@ public class ProcessRequestSubscriber implements Runnable {
   private final ProcessService processService;
   private final MessageInterface messageInterface;
   private final JobMessageRepository jobMessageRepository;
-  private final Set<ProcessSpawner> processSpawners;
   private final ScheduleDomainRepository scheduleDomainRepository;
+  private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private final ProcessDomainRepository processDomainRepository;
@@ -60,19 +61,26 @@ public class ProcessRequestSubscriber implements Runnable {
   public ProcessRequestSubscriber(ProcessService processService,
       MessageInterface messageInterface,
       JobMessageRepository jobMessageRepository,
-      Set<ProcessSpawner> processSpawners,
-      NodeMessageRepository nodeMessageRepository,
       ScheduleDomainRepository scheduleDomainRepository,
+      ProcessSpawner processSpawner,
+      NodeMessageRepository nodeMessageRepository,
       ProcessDomainRepository processDomainRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
-    this.processSpawners = processSpawners;
     this.scheduleDomainRepository = scheduleDomainRepository;
+    this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
     this.processDomainRepository = processDomainRepository;
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule retrieveSchedule(String scheduleId, String userId) {
+    return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+  }
+
+  @SuppressWarnings("WeakerAccess")
   @Transactional
   void persistProcess(CloudiatorProcess cloudiatorProcess, String userId) {
     processDomainRepository.save(cloudiatorProcess, userId);
@@ -90,7 +98,9 @@ public class ProcessRequestSubscriber implements Runnable {
 
           final String userId = content.getUserId();
           final String scheduleId = content.getProcess().getSchedule();
-          final Schedule schedule = scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+
+          LOGGER.debug(String.format("Retrieving schedule for process request %s.", id));
+          final Schedule schedule = retrieveSchedule(scheduleId, userId);
 
           if (schedule == null) {
             LOGGER.error(String.format("Schedule with the id %s does not exist.", scheduleId));
@@ -99,11 +109,14 @@ public class ProcessRequestSubscriber implements Runnable {
                 .build());
             return;
           }
+          LOGGER
+              .debug(String.format("Found schedule %s for process request %s.", schedule.id(), id));
 
           final String jobId = schedule.job();
           final String taskName = content.getProcess().getTask();
           final String nodeId = content.getProcess().getNode();
 
+          LOGGER.debug(String.format("Retrieving node for process request %s.", id));
           final Node node = nodeMessageRepository.getById(userId, nodeId);
 
           if (node == null) {
@@ -112,7 +125,10 @@ public class ProcessRequestSubscriber implements Runnable {
                 .setMessage(String.format("Node with the id %s does not exist", nodeId)).build());
             return;
           }
+          LOGGER
+              .debug(String.format("Found node %s for process request %s.", node.id(), id));
 
+          LOGGER.debug(String.format("Retrieving job for process request %s.", id));
           final Job job = jobMessageRepository.getById(userId, jobId);
 
           if (job == null) {
@@ -123,7 +139,10 @@ public class ProcessRequestSubscriber implements Runnable {
                         jobId, schedule)).build());
             return;
           }
+          LOGGER
+              .debug(String.format("Found job %s for process request %s.", job.id(), id));
 
+          LOGGER.debug(String.format("Checking task for process request %s.", id));
           final Optional<Task> optionalTask = job.getTask(taskName);
 
           if (!optionalTask.isPresent()) {
@@ -137,21 +156,18 @@ public class ProcessRequestSubscriber implements Runnable {
             return;
           }
 
-          Task task = optionalTask.get();
-
-
-          ProcessSpawner spawner = processSpawners.stream()
-              .filter(ps -> ps.supports(task))
-              .collect(StreamUtil.getOnly())
-              .orElseThrow(() -> new IllegalStateException("Could not select task spawner." +
-                  "Probably interface types are mixed or empty"));
+          final Task task = optionalTask.get();
+          LOGGER
+              .debug(String.format("Found task %s for process request %s.", task, id));
 
           LOGGER.info(String.format(
               "%s is spawning a new cloudiator process for user %s using processSpawner %s, schedule %s, job %s, task %s and node %s.",
-              this, userId, spawner, schedule, job, task, node));
+              this, userId, processSpawner, schedule, job, task, node));
 
-          CloudiatorProcess cloudiatorProcess = spawner
-              .spawn(userId, scheduleId, job, optionalTask.get(), node);
+          final Future<CloudiatorProcess> spawn = processSpawner
+              .spawn(userId, scheduleId, job, task, node);
+
+          final CloudiatorProcess cloudiatorProcess = spawn.get();
 
           //persist the process
           persistProcess(cloudiatorProcess, userId);
