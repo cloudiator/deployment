@@ -35,7 +35,7 @@ import java.util.Set;
 
 public class AwsDeployer implements FaasDeployer {
 
-  public class AwsDeployerFactory implements FaasDeployerFactory {
+  public static class AwsDeployerFactory implements FaasDeployerFactory {
 
     @Override
     public boolean supports(Cloud cloud) {
