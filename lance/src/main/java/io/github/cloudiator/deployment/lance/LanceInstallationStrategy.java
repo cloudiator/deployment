@@ -45,10 +45,24 @@ public class LanceInstallationStrategy {
     final Builder builder = Installation.newBuilder()
         .setNode(nodeToNodeMessageConverter.apply(node))
         .addTool(Tool.LANCE);
+    //Needed for Lifecycle DockerContainers
     if (ContainerType.DOCKER.equals(containerType) || ContainerType.DOCKER_REMOTE
         .equals(containerType)) {
       builder.addTool(Tool.DOCKER);
     }
+    doExecute(builder, userId);
+  }
+
+  //DockerInterface doesn't need a containerType
+  void execute(String userId, Node node) {
+
+    final Builder builder = Installation.newBuilder()
+        .setNode(nodeToNodeMessageConverter.apply(node))
+        .addTool(Tool.LANCE);
+    doExecute(builder, userId);
+  }
+
+  private void doExecute(Builder builder, String userId) {
     final InstallationRequest installationRequest = InstallationRequest.newBuilder()
         .setUserId(userId).setInstallation(builder.build()).build();
 

@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.FaasInterface;
+import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
@@ -31,6 +32,7 @@ public class TaskInterfaceConverter implements
   private static final LanceInterfaceConverter LANCE_INTERFACE_CONVERTER = LanceInterfaceConverter.INSTANCE;
   private static final FaasInterfaceConverter FAAS_INTERFACE_CONVERTER = FaasInterfaceConverter.INSTANCE;
   private static final SparkInterfaceConverter SPARK_INTERFACE_CONVERTER = SparkInterfaceConverter.INSTANCE;
+  private static final DockerInterfaceConverter DOCKER_INTERFACE_CONVERTER = DockerInterfaceConverter.INSTANCE;
 
   private TaskInterfaceConverter() {
 
@@ -51,6 +53,10 @@ public class TaskInterfaceConverter implements
       return TaskEntities.TaskInterface.newBuilder()
           .setSparkInterface(SPARK_INTERFACE_CONVERTER.applyBack(
               (SparkInterface) taskInterface)).build();
+    } else if (taskInterface instanceof DockerInterface) {
+      return TaskEntities.TaskInterface.newBuilder()
+          .setDockerInterface(DOCKER_INTERFACE_CONVERTER.applyBack(
+              (DockerInterface) taskInterface)).build();
     } else {
       throw new AssertionError(
           "Unknown type for task interface " + taskInterface.getClass().getName());
@@ -62,7 +68,7 @@ public class TaskInterfaceConverter implements
 
     switch (taskInterface.getTaskInterfaceCase()) {
       case DOCKERINTERFACE:
-        throw new UnsupportedOperationException("DockerInterface is not yet implemented");
+        return DOCKER_INTERFACE_CONVERTER.apply(taskInterface.getDockerInterface());
       case LANCEINTERFACE:
         return LANCE_INTERFACE_CONVERTER.apply(taskInterface.getLanceInterface());
       case FAASINTERFACE:
