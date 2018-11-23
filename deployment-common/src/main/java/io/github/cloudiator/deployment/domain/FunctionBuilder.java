@@ -10,12 +10,22 @@ public class FunctionBuilder {
   private String cloudId;
   private String locationId;
   private int memory;
+  private String stackId;
 
   private FunctionBuilder() {
   }
 
   public static FunctionBuilder newBuilder() {
     return new FunctionBuilder();
+  }
+
+  public static FunctionBuilder newBuilder(Function function) {
+    return new FunctionBuilder()
+        .id(function.id())
+        .cloudId(function.cloudId())
+        .locationId(function.locationId())
+        .memory(function.memory())
+        .stackId(function.stackId());
   }
 
   public FunctionBuilder generateId() {
@@ -43,7 +53,12 @@ public class FunctionBuilder {
     return this;
   }
 
+  public FunctionBuilder stackId(String stackId) {
+    this.stackId = stackId;
+    return this;
+  }
+
   public Function build() {
-    return new FunctionImpl(id, cloudId, locationId, memory);
+    return new FunctionImpl(id, cloudId, locationId, memory, stackId);
   }
 }

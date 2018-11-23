@@ -10,4 +10,6 @@ public interface Function extends Identifiable {
 
   int memory();
 
+  String stackId();
+
 }

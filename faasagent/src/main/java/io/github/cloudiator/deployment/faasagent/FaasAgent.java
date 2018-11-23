@@ -5,6 +5,8 @@ import com.google.inject.Injector;
 import io.github.cloudiator.deployment.faasagent.config.FaasAgentModule;
 import io.github.cloudiator.deployment.faasagent.messaging.CreateFaasProcessSubscriber;
 import io.github.cloudiator.deployment.faasagent.messaging.CreateFunctionSubscriber;
+import io.github.cloudiator.deployment.faasagent.messaging.DeleteFunctionSubscriber;
+import io.github.cloudiator.deployment.faasagent.messaging.FunctionQuerySubscriber;
 import io.github.cloudiator.persistance.DeploymentJpaModule;
 import io.github.cloudiator.persistance.JpaModule;
 import io.github.cloudiator.util.JpaContext;
@@ -21,7 +23,9 @@ public class FaasAgent {
           new FaasAgentModule());
 
   public static void main(String[] args) {
-    INJECTOR.getInstance(CreateFaasProcessSubscriber.class).run();
     INJECTOR.getInstance(CreateFunctionSubscriber.class).run();
+    INJECTOR.getInstance(FunctionQuerySubscriber.class).run();
+    INJECTOR.getInstance(CreateFaasProcessSubscriber.class).run();
+    INJECTOR.getInstance(DeleteFunctionSubscriber.class).run();
   }
 }

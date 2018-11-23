@@ -35,7 +35,7 @@ public class IamRole extends AbstractResource {
         .put("RoleName",
             String.join("-",
                 app.name,
-                app.region.getName(),
+                app.region,
                 "lambdaRole")
         );
   }

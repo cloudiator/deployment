@@ -10,12 +10,10 @@ import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
-import org.cloudiator.messages.entities.ProcessEntities.Process;
+import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.FaasProcess;
-import org.cloudiator.messaging.ResponseException;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
-import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
 
 import java.util.concurrent.ExecutionException;
 
@@ -56,8 +54,6 @@ public class FaasProcessSpawner implements ProcessSpawner {
 
     try {
       return futureResponseCallback.get();
-//      Process process = processService.createFaasProcess(processRequest).getProcess();
-//      return PROCESS_MESSAGE_CONVERTER.apply(process);
     } catch (InterruptedException e) {
       throw new IllegalStateException(
           String.format("%s got interrupted while waiting for result", this));

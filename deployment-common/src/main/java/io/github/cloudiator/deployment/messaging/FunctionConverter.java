@@ -15,6 +15,7 @@ public class FunctionConverter implements
         .setCloudId(function.cloudId())
         .setLocationId(function.locationId())
         .setMemory(function.memory())
+        .setStackId(function.stackId())
         .build();
   }
 
@@ -25,6 +26,7 @@ public class FunctionConverter implements
         .cloudId(function.getCloudId())
         .locationId(function.getLocationId())
         .memory(function.getMemory())
+        .stackId(function.getStackId())
         .build();
   }
 }

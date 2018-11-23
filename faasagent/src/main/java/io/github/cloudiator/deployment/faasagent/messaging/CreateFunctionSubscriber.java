@@ -64,6 +64,7 @@ public class CreateFunctionSubscriber implements Runnable {
         .cloudId(request.getCloudId())
         .locationId(request.getLocationId())
         .memory(request.getMemory())
+        .stackId("")
         .build();
   }
 

@@ -4,8 +4,6 @@ import io.github.cloudiator.deployment.faasagent.cloudformation.utils.JSONOrdere
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-// TODO Outputs??
-
 public abstract class AbstractResource {
 
   public JSONObject asJson() {

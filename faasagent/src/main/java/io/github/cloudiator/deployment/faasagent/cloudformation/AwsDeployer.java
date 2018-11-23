@@ -4,7 +4,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
 import com.amazonaws.services.cloudformation.model.*;
@@ -15,9 +15,12 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.sword.domain.Cloud;
+import de.uniulm.omi.cloudiator.sword.domain.CloudCredential;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.ApplicationTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.utils.TemplateUtils;
+import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,40 +33,59 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// TODO create deployer interface
-public class Deployer {
-  private static final long WAIT_INTERVAL = 2000;
-  private static final Logger LOGGER = LoggerFactory.getLogger(Deployer.class);
+public class AwsDeployer implements FaasDeployer {
 
-  private final ApplicationTemplate app;
+  public class AwsDeployerFactory implements FaasDeployerFactory {
+
+    @Override
+    public boolean supports(Cloud cloud) {
+      return "aws-ec2".equals(cloud.api().providerName());
+    }
+
+    @Override
+    public FaasDeployer create(String region, Cloud cloud) {
+      CloudCredential credential = cloud.credential();
+      return new AwsDeployer(region, credential.user(), credential.password());
+    }
+  }
+
+  private static final long WAIT_INTERVAL = 2000;
+  private static final Logger LOGGER = LoggerFactory.getLogger(AwsDeployer.class);
+
+  private final String region;
   private final AmazonCloudFormation cfApi;
   private final AmazonS3 amazonS3;
-  private final String stackName;
   private String physicalApiId;
   private String physicalBucketId;
 
-  public Deployer(ApplicationTemplate app, String keyId, String accessKey) {
-    this.app = app;
+  public AwsDeployer(String region, String keyId, String accessKey) {
+    this.region = region;
     AWSCredentialsProvider credentials = getCredentials(keyId, accessKey);
     this.cfApi = AmazonCloudFormationClientBuilder.standard()
         .withCredentials(credentials)
-        .withRegion(app.region)
+        .withRegion(region)
         .build();
     this.amazonS3 = AmazonS3ClientBuilder.standard()
         .withCredentials(credentials)
-        .withRegion(app.region)
+        .withRegion(region)
         .build();
-    this.stackName = app.name;
   }
 
-  public String deployApp() throws InterruptedException, IOException {
+  @Override
+  public String deployApp(ApplicationTemplate app) {
     final CloudformationTemplateGenerator generator = new CloudformationTemplateGenerator(app);
+    String stackName = app.name;
 
     // Create new Stack if doesn't exists
     boolean exists = cfApi.describeStacks(new DescribeStacksRequest()).getStacks()
         .stream().anyMatch((stack) -> stack.getStackName().equals(stackName));
     if (!exists) {
-      createStack(stackName, generator.getCreateTemplate());
+      try {
+        createStack(stackName, generator.getCreateTemplate());
+      } catch (InterruptedException e) {
+        LOGGER.error("Creating stack interrupted", e);
+        throw new RuntimeException("Failed to create stack");
+      }
     } else {
       LOGGER.info("Stack {} exists, skipping creation", stackName);
     }
@@ -74,27 +96,38 @@ public class Deployer {
     // Transfer files from func source url to s3
     // remember s3 keys for each function
     for (LambdaTemplate template : app.functions) {
-      template.s3CodeKey = template.name + ".zip";
-      BufferedInputStream stream = new BufferedInputStream(new URL(template.codeUrl).openStream());
-      LOGGER.info("Pushing file from {} to S3 bucket {}", template.codeUrl, physicalBucketId);
-      amazonS3.putObject(physicalBucketId, template.s3CodeKey, stream, new ObjectMetadata());
+      try {
+        template.s3CodeKey = template.name + ".zip";
+        BufferedInputStream stream = new BufferedInputStream(new URL(template.codeUrl).openStream());
+        LOGGER.info("Pushing file from {} to S3 bucket {}", template.codeUrl, physicalBucketId);
+        amazonS3.putObject(physicalBucketId, template.s3CodeKey, stream, new ObjectMetadata());
+      } catch (IOException e) {
+        LOGGER.error("Moving file {} failed", template.codeUrl, e);
+        throw new RuntimeException("Failed to prepare code sources");
+      }
     }
 
     String updateTemplate = generator.getUpdateTemplate();
     LOGGER.debug(updateTemplate);
-    updateStack(stackName, updateTemplate);
-
+    try {
+      updateStack(stackName, updateTemplate);
+    } catch (InterruptedException e) {
+      LOGGER.error("Updating stack interrupted", e);
+      throw new RuntimeException("Failed to update stack");
+    }
     physicalApiId = getResourceId(stackName, TemplateUtils.API_GATEWAY);
 
     LOGGER.info("Functions endpoints:");
-    for (Map.Entry entry : getApiEndpoints().entrySet()) {
+    for (Map.Entry entry : getApiEndpoints(app).entrySet()) {
       LOGGER.info("{} -> {}", entry.getKey(), entry.getValue());
     }
 
     return physicalApiId;
   }
 
-  public Map<String, String> getApiEndpoints() throws RuntimeException {
+  @Override
+  public Map<String, String> getApiEndpoints(ApplicationTemplate app) {
+    physicalApiId = getResourceId(app.name, TemplateUtils.API_GATEWAY);
     if (physicalApiId == null) {
       throw new RuntimeException("Application must be deployed to get API endpoints");
     }
@@ -105,13 +138,18 @@ public class Deployer {
     return endpoints;
   }
 
-  public void removeApp() throws InterruptedException {
+  @Override
+  public void removeApp(String stackName) {
     physicalBucketId = getResourceId(stackName, TemplateUtils.BUCKET);
     clearS3Bucket(physicalBucketId);
     String stackId = cfApi
         .describeStacks(new DescribeStacksRequest().withStackName(stackName))
         .getStacks().get(0).getStackId();
-    deleteStack(stackId);
+    try {
+      deleteStack(stackId);
+    } catch (InterruptedException e) {
+      throw new RuntimeException("Failed to delete stack", e);
+    }
   }
 
   private String getResourceId(String stackName, String resourceLogicalId) {
@@ -128,7 +166,7 @@ public class Deployer {
     return MessageFormat.format(
         "https://{0}.execute-api.{1}.amazonaws.com/prod/{2}",
         physicalApiId, // 0
-        app.region.getName(), // 1
+        region, // 1
         functionPath); // 2
   }
 

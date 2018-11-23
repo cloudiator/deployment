@@ -1,16 +1,19 @@
 package io.github.cloudiator.deployment.faasagent.messaging;
 
-import com.amazonaws.regions.Regions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.sword.domain.Cloud;
 import de.uniulm.omi.cloudiator.sword.domain.CloudCredential;
 import io.github.cloudiator.deployment.domain.*;
-import io.github.cloudiator.deployment.faasagent.cloudformation.Deployer;
+import io.github.cloudiator.deployment.faasagent.cloudformation.AwsDeployer;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.ApplicationTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
+import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
+import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.messaging.CloudMessageRepository;
+import io.github.cloudiator.messaging.LocationMessageRepository;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
 import org.cloudiator.messages.General;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
@@ -33,17 +36,24 @@ public class CreateFaasProcessSubscriber implements Runnable {
   private final MessageInterface messageInterface;
   private final CloudMessageRepository cloudMessageRepository;
   private final FunctionDomainRepository functionDomainRepository;
+  private final LocationMessageRepository locationMessageRepository;
+  private final FaasDeployerFactory faasDeployerFactory;
+
 
   @Inject
   public CreateFaasProcessSubscriber(
       ProcessService processService,
       MessageInterface messageInterface,
       CloudMessageRepository cloudMessageRepository,
-      FunctionDomainRepository functionDomainRepository) {
+      LocationMessageRepository locationMessageRepository,
+      FunctionDomainRepository functionDomainRepository,
+      FaasDeployerFactory faasDeployerFactory) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.cloudMessageRepository = cloudMessageRepository;
+    this.locationMessageRepository = locationMessageRepository;
     this.functionDomainRepository = functionDomainRepository;
+    this.faasDeployerFactory = faasDeployerFactory;
   }
 
   @Override
@@ -57,12 +67,15 @@ public class CreateFaasProcessSubscriber implements Runnable {
             final Function function = functionDomainRepository.findByIdAndTenant(nodeId, userId);
             final Cloud cloud = cloudMessageRepository.getById(userId, function.cloudId());
 
-            ApplicationTemplate appTemplate = convertToTemplate(content);
-            CloudCredential credential = cloud.credential();
-            // TODO get provider from node and select appropriate deployer
-            // Use composite pattern
-            Deployer deployer = new Deployer(appTemplate, credential.user(), credential.password());
-            String apiId = deployer.deployApp();
+            ApplicationTemplate appTemplate = convertToTemplate(content, function);
+            String apiId = faasDeployerFactory
+                .create(appTemplate.region, cloud)
+                .deployApp(appTemplate);
+
+            final Function newFunction = FunctionBuilder.newBuilder(function)
+                .stackId(appTemplate.name).build();
+
+            persistFunction(newFunction, userId);
 
             final FaasProcessCreatedResponse faasProcessCreatedResponse =
                 FaasProcessCreatedResponse.newBuilder()
@@ -88,7 +101,12 @@ public class CreateFaasProcessSubscriber implements Runnable {
     );
   }
 
-  private ApplicationTemplate convertToTemplate(CreateFaasProcessRequest request) {
+  @Transactional
+  void persistFunction(Function function, String userId) {
+    functionDomainRepository.save(function, userId);
+  }
+
+  private ApplicationTemplate convertToTemplate(CreateFaasProcessRequest request, Function function) {
     final Job job = JOB_CONVERTER.apply(request.getFaas().getJob());
     final String taskName = request.getFaas().getTask();
     final Task task = job.getTask(taskName)
@@ -97,7 +115,8 @@ public class CreateFaasProcessSubscriber implements Runnable {
 
     ApplicationTemplate applicationTemplate = new ApplicationTemplate();
     applicationTemplate.name = task.name();
-    applicationTemplate.region = Regions.EU_WEST_1; // TODO get from functionModel
+    applicationTemplate.region = locationMessageRepository
+        .getRegionName(request.getUserId(), function.locationId());
     applicationTemplate.functions = new ArrayList<>();
     for (TaskInterface taskInterface : task.interfaces()) {
       if (taskInterface instanceof FaasInterface) {
@@ -113,8 +132,9 @@ public class CreateFaasProcessSubscriber implements Runnable {
           }
         }
         lambda.handler = faasInterface.handler();
-        lambda.memorySize = faasInterface.memory();
+        lambda.memorySize = function.memory();
         lambda.timeout = faasInterface.timeout();
+        // TODO get runtime from node
         lambda.runtime = convertRuntime(faasInterface.runtime());
         lambda.env = faasInterface.functionEnvironment();
         applicationTemplate.functions.add(lambda);
@@ -126,7 +146,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
   private String convertRuntime(String runtime) {
     return ImmutableMap.of(
         "nodejs", "nodejs8.10",
-        "python", "python3.6",
+        "python", "python2.7",
         "java", "java8",
         "dotnet", "dotnetcore2.1",
         "go", "go1.x"

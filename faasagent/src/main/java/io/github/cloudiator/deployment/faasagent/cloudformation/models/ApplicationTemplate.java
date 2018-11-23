@@ -9,7 +9,7 @@ import static io.github.cloudiator.deployment.faasagent.cloudformation.utils.Tem
 
 public class ApplicationTemplate {
   public String name; //Task name
-  public Regions region; // based on node
+  public String region; // based on node
   public List<LambdaTemplate> functions; // From task interfaces
 
   public String getFunctionFullName(LambdaTemplate fun) {

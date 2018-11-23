@@ -22,16 +22,20 @@ public class FunctionModel extends Model {
   @Column
   private Integer memory;
 
+  @Column
+  private String stackId;
+
   protected FunctionModel() {
   }
 
   public FunctionModel(String functionId, TenantModel tenantModel, String cloudId,
-      String locationId, Integer memory) {
+      String locationId, Integer memory, String stackId) {
     this.functionId = functionId;
     this.tenantModel = tenantModel;
     this.cloudId = cloudId;
     this.locationId = locationId;
     this.memory = memory;
+    this.stackId = stackId;
   }
 
   public String getFunctionId() {
@@ -52,5 +56,14 @@ public class FunctionModel extends Model {
 
   public Integer getMemory() {
     return memory;
+  }
+
+  public String getStackId() {
+    return stackId;
+  }
+
+  public FunctionModel setStackId(String stackId) {
+    this.stackId = stackId;
+    return this;
   }
 }

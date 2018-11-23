@@ -42,7 +42,7 @@ public class ExampleModels {
   static ApplicationTemplate getAppModelZero() {
     ApplicationTemplate app = new ApplicationTemplate();
     app.name = "TestApp";
-    app.region = Regions.EU_WEST_1;
+    app.region = Regions.EU_WEST_1.getName();
     app.functions = new LinkedList<>();
     return app;
   }

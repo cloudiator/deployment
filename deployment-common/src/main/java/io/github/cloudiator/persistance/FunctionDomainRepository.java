@@ -61,10 +61,11 @@ public class FunctionDomainRepository {
         tenantModel,
         function.cloudId(),
         function.locationId(),
-        function.memory());
+        function.memory(),
+        function.stackId());
   }
 
   private FunctionModel updateModel(Function function, FunctionModel functionModel) {
-    return functionModel;
+    return functionModel.setStackId(function.stackId());
   }
 }
