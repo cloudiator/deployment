@@ -41,7 +41,8 @@ public class DeleteLanceProcessStrategy {
         .getLifecycleClient(node.connectTo().ip());
 
     try {
-      lifecycleClient.undeploy(ComponentInstanceId.fromString(processId));
+      //todo make reg deletion parameterizable
+      lifecycleClient.undeploy(ComponentInstanceId.fromString(processId), false);
     } catch (DeploymentException e) {
       throw new IllegalStateException("Killing of process %s failed.",e);
     }

@@ -3,11 +3,15 @@ package io.github.cloudiator.deployment.lance;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand;
+import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand.Option;
+import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand.OsCommand;
+import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand.Type;
+import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommandException;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
-import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand;
-import de.uniulm.omi.cloudiator.lance.lifecycle.language.EntireDockerCommand;
+import de.uniulm.omi.cloudiator.lance.lifecycle.language.EntireDockerCommands;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -70,7 +74,7 @@ abstract class DockerComponentSupplier {
       cmdsBuilder.setArgs(Type.CREATE, createArgs);
 
       Map<Option,List<String>> startOptions = startOptionMap();
-      cmdsBuilder.setOptions(Type.START, startOptionMap);
+      cmdsBuilder.setOptions(Type.START, startOptions);
     } catch (DockerCommandException ce) {
       LOGGER.error("Error creating the docker cli commands for the Docker Component of task: " + task.name());
     }

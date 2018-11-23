@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 import de.uniulm.omi.cloudiator.lance.application.component.DeployableComponent;
-import de.uniulm.omi.cloudiator.lance.application.component.DeployableComponentBuilder;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
@@ -53,7 +52,7 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
   @Override
   public DeployableComponent get() {
 
-    final DeployableComponentBuilder builder = DeployableComponentBuilder
+    final DeployableComponent.Builder builder = DeployableComponent.Builder
         .createBuilder(task.name(), ComponentId.fromString(job.id() + "/" + task.name()));
 
     // add all ingoing ports / provided ports

@@ -10,8 +10,10 @@ import io.github.cloudiator.deployment.domain.PortRequired;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
-public class PrivateDockerComponentSupplier extends DockerComponentSupplier implements Supplier<RemoteDockerComponent> {
+public class PrivateDockerComponentSupplier extends DockerComponentSupplier implements
+    Supplier<RemoteDockerComponent> {
 
   PrivateDockerComponentSupplier(Job job, Task task) {
     super(job, task);
