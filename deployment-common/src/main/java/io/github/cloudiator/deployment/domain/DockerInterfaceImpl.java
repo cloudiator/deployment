@@ -27,7 +27,7 @@ public class DockerInterfaceImpl implements DockerInterface {
   private final String dockerImage;
   private final Map<String, String> environment;
 
-  DockerInterfaceImpl(String dockerImage, Map<String, String> environment) {
+  public DockerInterfaceImpl(String dockerImage, Map<String, String> environment) {
 
     checkNotNull(dockerImage, "dockerImage is null");
     checkArgument(!dockerImage.isEmpty(), "dockerImage is empty");
