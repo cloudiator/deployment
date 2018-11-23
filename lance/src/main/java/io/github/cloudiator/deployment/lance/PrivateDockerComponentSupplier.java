@@ -8,8 +8,6 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.PortRequired;
 import io.github.cloudiator.deployment.domain.Task;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Supplier;
 
 public class PrivateDockerComponentSupplier extends DockerComponentSupplier implements
