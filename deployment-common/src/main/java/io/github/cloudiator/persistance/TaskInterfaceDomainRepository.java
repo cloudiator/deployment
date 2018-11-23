@@ -17,6 +17,7 @@
 package io.github.cloudiator.persistance;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
@@ -43,6 +44,8 @@ public class TaskInterfaceDomainRepository {
 
     if (domain instanceof LanceInterface) {
       return createLanceInterfaceModel((LanceInterface) domain, taskModel);
+    } else if (domain instanceof DockerInterface) {
+      return createDockerInterfaceModel((DockerInterface) domain, taskModel);
     } else if (domain instanceof SparkInterface) {
       return createSparkInterfaceModel((SparkInterface) domain, taskModel);
     } else {
@@ -64,10 +67,13 @@ public class TaskInterfaceDomainRepository {
 
   }
 
+  private DockerTaskInterfaceModel createDockerInterfaceModel(DockerInterface domain, TaskModel taskModel) {
+    return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(),domain.environment());
+  }
+
   private SparkTaskInterfaceModel createSparkInterfaceModel(SparkInterface domain,
       TaskModel taskModel) {
     return new SparkTaskInterfaceModel(taskModel, domain.file(), domain.className().orElse(null),
         domain.arguments(), domain.sparkArguments(), domain.sparkConfiguration());
   }
-
 }
