@@ -45,7 +45,6 @@ public class DockerTaskInterfaceModel extends TaskInterfaceModel {
     this.environmentMap = environmentMap;
   }
 
-  @Nullable
   public String getDockerImage() {
     return dockerImage;
   }
