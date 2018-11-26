@@ -17,6 +17,8 @@
 package io.github.cloudiator.persistance;
 
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
+import io.github.cloudiator.deployment.domain.DockerInterface;
+import io.github.cloudiator.deployment.domain.DockerInterfaceBuilder;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.LanceInterfaceBuilder;
 import io.github.cloudiator.deployment.domain.SparkInterface;
@@ -37,6 +39,8 @@ class TaskInterfaceModelConverter implements
 
     if (taskInterfaceModel instanceof LanceTaskInterfaceModel) {
       return lanceInterface((LanceTaskInterfaceModel) taskInterfaceModel);
+    } else if (taskInterfaceModel instanceof DockerTaskInterfaceModel) {
+      return dockerInterface((DockerTaskInterfaceModel) taskInterfaceModel);
     } else if (taskInterfaceModel instanceof SparkTaskInterfaceModel) {
       return sparkInterface((SparkTaskInterfaceModel) taskInterfaceModel);
     } else {
@@ -61,6 +65,12 @@ class TaskInterfaceModelConverter implements
         .startDetection(lanceTaskInterfaceModel.getStartDetection())
         .stop(lanceTaskInterfaceModel.getStop())
         .stopDetection(lanceTaskInterfaceModel.getStopDetection()).build();
+  }
+
+  private DockerInterface dockerInterface(DockerTaskInterfaceModel dockerTaskInterfaceModel) {
+    return DockerInterfaceBuilder.newBuilder()
+        .dockerImage(dockerTaskInterfaceModel.getDockerImage())
+        .environment(dockerTaskInterfaceModel.getEnvVars()).build();
   }
 
   private SparkInterface sparkInterface(SparkTaskInterfaceModel sparkTaskInterfaceModel) {
