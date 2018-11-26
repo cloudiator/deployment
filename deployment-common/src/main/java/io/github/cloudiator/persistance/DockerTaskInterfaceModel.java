@@ -54,6 +54,13 @@ public class DockerTaskInterfaceModel extends TaskInterfaceModel {
     return ImmutableMap.copyOf(environmentMap);
   }
 
+  /**
+   * Empty constructor for hibernate.
+   */
+  protected DockerTaskInterfaceModel() {
+  }
+
+
   public DockerTaskInterfaceModel putEnvVars(String key, String value) {
     checkNotNull(key, "key is null");
     checkNotNull(value, "value is null");
