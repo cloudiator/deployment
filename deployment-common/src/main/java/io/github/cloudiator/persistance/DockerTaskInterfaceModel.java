@@ -27,7 +27,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 
 @Entity
-class DockerTaskInterfaceModel extends TaskInterfaceModel {
+public class DockerTaskInterfaceModel extends TaskInterfaceModel {
 
   @Column(nullable = false)
   private String dockerImage;
@@ -45,9 +45,20 @@ class DockerTaskInterfaceModel extends TaskInterfaceModel {
     this.environmentMap = environmentMap;
   }
 
+  public String getDockerImage() {
+    return dockerImage;
+  }
+
   public Map<String, String> getEnvVars() {
     return ImmutableMap.copyOf(environmentMap);
   }
+
+  /**
+   * Empty constructor for hibernate.
+   */
+  protected DockerTaskInterfaceModel() {
+  }
+
 
   public DockerTaskInterfaceModel putEnvVars(String key, String value) {
     checkNotNull(key, "key is null");
