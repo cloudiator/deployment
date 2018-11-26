@@ -45,6 +45,11 @@ public class DockerTaskInterfaceModel extends TaskInterfaceModel {
     this.environmentMap = environmentMap;
   }
 
+  @Nullable
+  public String getDockerImage() {
+    return dockerImage;
+  }
+
   public Map<String, String> getEnvVars() {
     return ImmutableMap.copyOf(environmentMap);
   }
