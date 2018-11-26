@@ -49,6 +49,13 @@ public class DockerTaskInterfaceModel extends TaskInterfaceModel {
     return dockerImage;
   }
 
+  public DockerTaskInterfaceModel putEnvVar(String key, String value) {
+    checkNotNull(key, "key is null");
+    checkNotNull(value, "value is null");
+    environmentMap.put(key, value);
+    return this;
+  }
+
   public Map<String, String> getEnvVars() {
     return ImmutableMap.copyOf(environmentMap);
   }
@@ -58,7 +65,6 @@ public class DockerTaskInterfaceModel extends TaskInterfaceModel {
    */
   protected DockerTaskInterfaceModel() {
   }
-
 
   public DockerTaskInterfaceModel putEnvVars(String key, String value) {
     checkNotNull(key, "key is null");
