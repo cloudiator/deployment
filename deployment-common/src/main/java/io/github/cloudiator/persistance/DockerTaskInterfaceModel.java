@@ -27,7 +27,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 
 @Entity
-class DockerTaskInterfaceModel extends TaskInterfaceModel {
+public class DockerTaskInterfaceModel extends TaskInterfaceModel {
 
   @Column(nullable = false)
   private String dockerImage;
