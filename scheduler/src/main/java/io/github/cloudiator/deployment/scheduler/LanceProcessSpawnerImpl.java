@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.scheduler;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
@@ -62,7 +63,14 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
       return true;
     } catch (IllegalArgumentException e) {
       LOGGER
-          .debug("Provided task does not contain a LanceInterface! Skipping LanceProcessSpawner!");
+          .debug("Provided task does not contain a LanceInterface. Checking for DockerInterface...");
+    }
+    try {
+      task.interfaceOfType(DockerInterface.class);
+      return true;
+    } catch (IllegalArgumentException e) {
+      LOGGER
+          .debug("Provided task does neither contain a LanceInterface nor DockerInterface! Skipping LanceProcessSpawner!");
       return false;
     }
   }
