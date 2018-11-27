@@ -26,13 +26,14 @@ import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessGroupMessageConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
+import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.Optional;
 import org.cloudiator.messages.General.Error;
-import org.cloudiator.messages.NodeEntities.NodeGroup;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
 import org.cloudiator.messaging.MessageCallback;
@@ -55,6 +56,7 @@ public class ProcessRequestSubscriber implements Runnable {
   private static final NodeGroupMessageToNodeGroup NODE_GROUP_MESSAGE_TO_NODE_GROUP = new NodeGroupMessageToNodeGroup();
   private static final ProcessGroupMessageConverter PROCESS_GROUP_MESSAGE_CONVERTER = new ProcessGroupMessageConverter();
   private final ProcessDomainRepository processDomainRepository;
+  private final NodeGroupMessageRepository nodeGroupMessageRepository;
 
   @Inject
   public ProcessRequestSubscriber(ProcessService processService,
@@ -63,7 +65,8 @@ public class ProcessRequestSubscriber implements Runnable {
       ScheduleDomainRepository scheduleDomainRepository,
       ProcessSpawner processSpawner,
       NodeMessageRepository nodeMessageRepository,
-      ProcessDomainRepository processDomainRepository) {
+      ProcessDomainRepository processDomainRepository,
+      NodeGroupMessageRepository nodeGroupMessageRepository){
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
@@ -71,6 +74,7 @@ public class ProcessRequestSubscriber implements Runnable {
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
     this.processDomainRepository = processDomainRepository;
+    this.nodeGroupMessageRepository = nodeGroupMessageRepository;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -121,7 +125,7 @@ public class ProcessRequestSubscriber implements Runnable {
 
           final String jobId = schedule.job();
           final String taskName = content.getProcess().getTask();
-          final NodeGroup nodeGroup = content.getProcess()
+          final String nodeGroupId = content.getProcess()
               .getNodeGroup();
 
           //not required anymore as nodeGroup is present
@@ -171,18 +175,29 @@ public class ProcessRequestSubscriber implements Runnable {
           LOGGER
               .debug(String.format("Found task %s for process request %s.", task, id));
 
+          //get NodeGroup object from message repository
+          final NodeGroup nodeGroup = nodeGroupMessageRepository
+              .getById(userId, nodeGroupId);
+
+          if(nodeGroup == null || nodeGroup.getNodes().isEmpty()){
+            LOGGER.error(String
+                .format("NodeGroup with the id %s on job with id %s is empty or does not contain any nodes!", nodeGroup,
+                    jobId));
+          }
+
           LOGGER.info(String.format(
               "%s is spawning a new cloudiator process for user %s using processSpawner %s, schedule %s, job %s, task %s and node %s.",
-              this, userId, processSpawner, schedule, job, task, nodeGroup));
+              this, userId, processSpawner, schedule, job, task, nodeGroupId));
+
 
           //todo handle correctly type of task, currently we only assume lance
           final ProcessGroup processGroup = processSpawner
-              .spawn(userId, scheduleId, job, task, NODE_GROUP_MESSAGE_TO_NODE_GROUP.apply(nodeGroup));
+              .spawn(userId, scheduleId, job, task, nodeGroup);
 
 
 
           //persist processes via process group
-          persistProcessGroup(processGroup, userId, nodeGroup.getId());
+          persistProcessGroup(processGroup, userId, nodeGroupId);
 
 
           final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()

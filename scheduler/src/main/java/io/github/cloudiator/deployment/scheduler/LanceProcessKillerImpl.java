@@ -20,6 +20,8 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.concurrent.ExecutionException;
@@ -36,13 +38,15 @@ public class LanceProcessKillerImpl implements ProcessKiller {
       .getLogger(LanceProcessKillerImpl.class);
   private final ProcessService processService;
   private final NodeMessageRepository nodeMessageRepository;
+  private final NodeGroupMessageRepository nodeGroupMessageRepository;
   private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
 
   @Inject
   public LanceProcessKillerImpl(ProcessService processService,
-      NodeMessageRepository nodeMessageRepository) {
+      NodeMessageRepository nodeMessageRepository, NodeGroupMessageRepository nodeGroupMessageRepository) {
     this.processService = processService;
     this.nodeMessageRepository = nodeMessageRepository;
+    this.nodeGroupMessageRepository = nodeGroupMessageRepository;
   }
 
   @Override
@@ -57,33 +61,42 @@ public class LanceProcessKillerImpl implements ProcessKiller {
         .format("%s is killing the process %s for user: %s", this,
             cloudiatorProcess, userId));
 
-    final Node byId = nodeMessageRepository.getById(userId, cloudiatorProcess.nodeId());
+    NodeGroup nodeGroup = nodeGroupMessageRepository
+        .getById(userId, cloudiatorProcess.nodeGroup());
 
-    if (byId == null) {
-      throw new IllegalStateException(
-          String.format("Could not find node for process %s.", cloudiatorProcess));
+    for (Node node: nodeGroup.getNodes()) {
+
+      final Node byId = nodeMessageRepository.getById(userId, node.id());
+
+      if (byId == null) {
+        throw new IllegalStateException(
+            String.format("Could not find node for process %s.", cloudiatorProcess));
+      }
+
+      final DeleteLanceProcessRequest deleteLanceProcessRequest = DeleteLanceProcessRequest
+          .newBuilder()
+          .setProcessId(cloudiatorProcess.id()).setUserId(userId)
+          .setNode(NODE_MESSAGE_CONVERTER.apply(byId))
+          .build();
+
+      SettableFutureResponseCallback<LanceProcessDeletedResponse, LanceProcessDeletedResponse> futureResponseCallback = SettableFutureResponseCallback
+          .create();
+
+      processService.deleteLanceProcessAsync(deleteLanceProcessRequest, futureResponseCallback);
+
+      try {
+        futureResponseCallback.get();
+
+        LOGGER.info("%s successfully killed the process %s.", this, cloudiatorProcess, userId);
+      } catch (InterruptedException e) {
+        throw new IllegalStateException("Got interrupted while waiting for lance process deletion.");
+      } catch (ExecutionException e) {
+        throw new IllegalStateException("Error while deleting lance process.", e.getCause());
+      }
+
     }
 
-    final DeleteLanceProcessRequest deleteLanceProcessRequest = DeleteLanceProcessRequest
-        .newBuilder()
-        .setProcessId(cloudiatorProcess.id()).setUserId(userId)
-        .setNode(NODE_MESSAGE_CONVERTER.apply(byId))
-        .build();
 
-    SettableFutureResponseCallback<LanceProcessDeletedResponse, LanceProcessDeletedResponse> futureResponseCallback = SettableFutureResponseCallback
-        .create();
-
-    processService.deleteLanceProcessAsync(deleteLanceProcessRequest, futureResponseCallback);
-
-    try {
-      futureResponseCallback.get();
-
-      LOGGER.info("%s successfully killed the process %s.", this, cloudiatorProcess, userId);
-    } catch (InterruptedException e) {
-      throw new IllegalStateException("Got interrupted while waiting for lance process deletion.");
-    } catch (ExecutionException e) {
-      throw new IllegalStateException("Error while deleting lance process.", e.getCause());
-    }
 
   }
 }

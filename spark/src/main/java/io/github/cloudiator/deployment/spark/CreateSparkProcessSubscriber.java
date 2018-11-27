@@ -7,7 +7,10 @@ import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import java.util.ArrayList;
+import java.util.List;
 import org.cloudiator.messages.General.Error;
+import org.cloudiator.messages.NodeEntities;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
@@ -52,8 +55,14 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final Job job = JOB_CONVERTER.apply(content.getSpark().getJob());
             final String task = content.getSpark().getTask();
 
+
             //TODO: this should be a list of nodes
-            final Node node = nodeMessageToNodeConverter.applyBack(content.getSpark().getNode());
+            List<Node> nodes = new ArrayList<Node>();
+            for (NodeEntities.Node node: content.getSpark().getNodeList()) {
+              final Node domainNode = nodeMessageToNodeConverter.applyBack(node);
+              nodes.add(domainNode);
+            }
+
 
 
             final String schedule = content.getSpark().getSchedule();
@@ -61,7 +70,7 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final CloudiatorProcess cloudiatorProcess = createSparkProcessStrategy
                 .execute(userId, schedule, job, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
-                        String.format("Job %s does not contain task %s", job, task))), node);
+                        String.format("Job %s does not contain task %s", job, task))), nodes);
 
 
             final SparkProcessCreatedResponse sparkProcessCreatedResponse = SparkProcessCreatedResponse

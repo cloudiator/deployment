@@ -60,7 +60,7 @@ public class CreateSparkProcessStrategy {
     for (Node node: nodes) {
 
       //TODO: trigger sync install request and check if installation was successfull
-      LOGGER.debug("Triggering Docker and Spark Worker installation...");
+      LOGGER.debug("Installing Docker and Spark Worker on node: " + node.id());
 
       final Builder builder = Installation.newBuilder()
           .setNode(nodeMessageToNodeConverter.apply(node))
@@ -261,30 +261,26 @@ public class CreateSparkProcessStrategy {
 
 
 
-  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, Node node) {
+  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, List<Node> nodes) {
 
 
 
     LOGGER.info(String
         .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
-            userId, schedule, task, node));
+            userId, schedule, task, nodes));
 
     try{
 
 
     LOGGER.debug("Triggering Spark Worker installations...");
-    //TODO refactor as sonn as a list of nodes is available
-    List<Node> nodesToPrepareSpark = new ArrayList<>();
-    nodesToPrepareSpark.add(node);
-
-    this.installSparkWorkers(userId, nodesToPrepareSpark);
+    this.installSparkWorkers(userId, nodes);
 
 
     LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
     this.submitSparkProcessToLivy(task);
 
     return CloudiatorProcessBuilder.newBuilder().id("spark-dummy-id").type(Type.SPARK)
-        .nodeId(node.id())
+        .nodeGroup("dummynodegroupId")
         .taskName(task.name()).scheduleId(schedule).build();
 
     } catch (Exception e) {

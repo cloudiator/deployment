@@ -123,7 +123,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
            final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
                schedule.id()).setTask(task.name())
-               .setNodeGroup(nodeGroupMessageToNodeGroupConverter.applyBack(result))
+               .setNodeGroup(result.id())
                .build();
            final CreateProcessRequest createProcessRequest = CreateProcessRequest
                .newBuilder()

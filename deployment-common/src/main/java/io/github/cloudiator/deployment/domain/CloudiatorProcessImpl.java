@@ -20,7 +20,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
-import io.github.cloudiator.domain.NodeGroup;
 import java.util.Objects;
 
 class CloudiatorProcessImpl implements CloudiatorProcess {
@@ -28,11 +27,11 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   private final String id;
   private final String scheduleId;
   private final String taskName;
-  private final NodeGroup nodeGroup;
+  private final String nodeGroup;
   private final CloudiatorProcess.State state;
   private final Type type;
 
-  CloudiatorProcessImpl(String id, String scheduleId, String taskName, NodeGroup nodeGroup,
+  CloudiatorProcessImpl(String id, String scheduleId, String taskName, String nodeGroup,
       State state, Type type) {
 
     checkNotNull(id, "id is null");
@@ -47,8 +46,8 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
 
-    checkNotNull(nodeGroup, "nodes is null");
-    checkArgument(!nodeGroup.getNodes().isEmpty(), "nodes in nodeGroup are empty");
+    checkNotNull(nodeGroup, "nodeGroup is null");
+    checkArgument(!nodeGroup.isEmpty(), "nodeGroup is empty");
     this.nodeGroup = nodeGroup;
 
     //todo implement state, currently we simply ignore it
@@ -75,7 +74,7 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   }
 
   @Override
-  public NodeGroup nodeGroup() {
+  public String nodeGroup() {
     return nodeGroup;
   }
 
@@ -115,6 +114,6 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
   public String toString() {
     return MoreObjects.toStringHelper(this).add("id", id).add("scheduleId", scheduleId)
         .add("task", taskName)
-        .add("nodes", nodeGroup.toString()).add("state", state).toString();
+        .add("nodes", nodeGroup).add("state", state).toString();
   }
 }

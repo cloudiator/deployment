@@ -71,11 +71,11 @@ public class ScheduleGraph {
     return nodes.stream().filter(new Predicate<Node>() {
       @Override
       public boolean test(Node node) {
-        return node.id().equals(cloudiatorProcess.nodeGroup().id());
+        return node.id().equals(cloudiatorProcess.nodeGroup());
       }
     }).collect(StreamUtil.getOnly()).orElseThrow(() -> new IllegalStateException(String.format(
         "Node set %s does not contain the node with id %s required for cloudiator process %s.",
-        this.nodes, cloudiatorProcess.nodeGroup().id(), cloudiatorProcess)));
+        this.nodes, cloudiatorProcess.nodeGroup(), cloudiatorProcess)));
   }
 
   public JsonNode toJson() {
@@ -86,7 +86,7 @@ public class ScheduleGraph {
       vertex.with("data").put("id", process.id()).put("type", "INSTANCE")
           .put("name", process.taskId())
           .put("state", process.state().toString())
-          .put("parent", process.nodeGroup().id());
+          .put("parent", process.nodeGroup());
     });
     //add virtual machines as compound nodes
     this.scheduleGraph.vertexSet().stream().map(this::nodeFor).distinct()

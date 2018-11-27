@@ -41,7 +41,7 @@ public class ProcessMessageConverter implements
 
     return Process.newBuilder().setId(cloudiatorProcess.id())
         .setSchedule(cloudiatorProcess.scheduleId())
-        .setNodeGroup(NODE_GROUP_MESSAGE_TO_NODE_GROUP.applyBack(cloudiatorProcess.nodeGroup()))
+        .setNodeGroup(cloudiatorProcess.nodeGroup())
         .setTask(cloudiatorProcess.taskId())
         .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
   }
@@ -51,8 +51,10 @@ public class ProcessMessageConverter implements
 
 
     return CloudiatorProcessBuilder.newBuilder()
-        .nodeGroup(NODE_GROUP_MESSAGE_TO_NODE_GROUP.apply(process.getNodeGroup()))
-        .scheduleId(process.getSchedule()).taskName(process.getTask())
+        .id(process.getId())
+        .scheduleId(process.getSchedule())
+        .taskName(process.getTask())
+        .nodeGroup(process.getNodeGroup())
         .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
   }
 

@@ -7,7 +7,6 @@ import io.github.cloudiator.deployment.domain.ProcessGroup;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.NodeGroup;
 import java.util.Set;
-import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +32,7 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public Future<ProcessGroup> spawn(String userId, String schedule, Job job, Task task,
+  public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
       NodeGroup nodeGroup) {
 
     LOGGER.debug("Using CompositeProcessSpawner to determine correct ProcessSpawner");

@@ -25,6 +25,9 @@ import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +46,7 @@ public class ScheduleDeletionStrategy {
 
   private final ProcessService processService;
   private final NodeService nodeService;
+  private final NodeGroupMessageRepository nodeGroupMessageRepository;
   private static final LoggingScheduledThreadPoolExecutor EXECUTOR = new LoggingScheduledThreadPoolExecutor(
       5);
   private static final Logger LOGGER = LoggerFactory
@@ -54,9 +58,10 @@ public class ScheduleDeletionStrategy {
 
   @Inject
   public ScheduleDeletionStrategy(ProcessService processService,
-      NodeService nodeService) {
+      NodeService nodeService, NodeGroupMessageRepository nodeGroupMessageRepository) {
     this.processService = processService;
     this.nodeService = nodeService;
+    this.nodeGroupMessageRepository = nodeGroupMessageRepository;
   }
 
   public void delete(Schedule schedule, String userId) {
@@ -89,35 +94,43 @@ public class ScheduleDeletionStrategy {
         public void onSuccess(@Nullable ProcessDeletedResponse result) {
           //delete the node
           LOGGER.info(String.format(
-              "Successfully deleted the process %s. Starting the deletion of the corresponding node %s.",
-              cloudiatorProcess, cloudiatorProcess.nodeId()));
+              "Successfully deleted the process %s. Starting the deletion of the corresponding nodes on nodegroup %s.",
+              cloudiatorProcess, cloudiatorProcess.nodeGroup()));
 
-          final NodeDeleteMessage nodeDeleteMessage = NodeDeleteMessage.newBuilder()
-              .setNodeId(cloudiatorProcess.nodeId()).setUserId(userId)
-              .build();
+          NodeGroup nodeGroup = nodeGroupMessageRepository
+              .getById(userId, cloudiatorProcess.nodeGroup());
 
-          SettableFutureResponseCallback<NodeDeleteResponseMessage, NodeDeleteResponseMessage> nodeFuture = SettableFutureResponseCallback
-              .create();
+          for (Node node: nodeGroup.getNodes()) {
 
-          nodeService.deleteNodeAsync(nodeDeleteMessage, nodeFuture);
+            final NodeDeleteMessage nodeDeleteMessage = NodeDeleteMessage.newBuilder()
+                .setNodeId(node.id()).setUserId(userId)
+                .build();
 
-          try {
-            nodeFuture.get();
-          } catch (InterruptedException e) {
-            throw new IllegalStateException(String
-                .format("Interrupted while deleting node with id %s.", cloudiatorProcess.nodeId()),
-                e);
-          } catch (ExecutionException e) {
-            throw new IllegalStateException(String
-                .format("Error while deleting node %s of process %s.", cloudiatorProcess.nodeId(),
-                    cloudiatorProcess), e);
-          } finally {
-            countDownLatch.countDown();
+            SettableFutureResponseCallback<NodeDeleteResponseMessage, NodeDeleteResponseMessage> nodeFuture = SettableFutureResponseCallback
+                .create();
+
+            nodeService.deleteNodeAsync(nodeDeleteMessage, nodeFuture);
+
+            try {
+              nodeFuture.get();
+            } catch (InterruptedException e) {
+              throw new IllegalStateException(String
+                  .format("Interrupted while deleting node with id %s.", node.id()),
+                  e);
+            } catch (ExecutionException e) {
+              throw new IllegalStateException(String
+                  .format("Error while deleting node %s of process %s.", node.id(),
+                      cloudiatorProcess), e);
+            } finally {
+              countDownLatch.countDown();
+            }
+
+            LOGGER.debug(String
+                .format("Deleted process %s. %s processes remaining.", cloudiatorProcess,
+                    countDownLatch.getCount()));
           }
 
-          LOGGER.debug(String
-              .format("Deleted process %s. %s processes remaining.", cloudiatorProcess,
-                  countDownLatch.getCount()));
+
 
         }
 

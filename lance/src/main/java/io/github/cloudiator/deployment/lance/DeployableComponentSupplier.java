@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 import de.uniulm.omi.cloudiator.lance.application.component.DeployableComponent;
-import de.uniulm.omi.cloudiator.lance.application.component.DeployableComponentBuilder;
 import de.uniulm.omi.cloudiator.lance.application.component.OutPort;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties.PortType;
@@ -91,8 +90,11 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
   @Override
   public DeployableComponent get() {
 
+    DeployableComponent builder = new DeployableComponent.Builder(task.name(),ComponentId.fromString(job.id() + "/" + task.name())).build();
+    return builder;
+    /*
     final DeployableComponentBuilder builder = DeployableComponentBuilder
-        .createBuilder(task.name(), ComponentId.fromString(job.id() + "/" + task.name()));
+      //  .createBuilder(task.name(), ComponentId.fromString(job.id() + "/" + task.name()));
 
     // add all ingoing ports / provided ports
     for (PortProvided provided : task.providedPorts()) {
@@ -109,5 +111,6 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
     builder.addLifecycleStore(LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE.apply(lanceInterface()));
 
     return builder.build();
+    */
   }
 }
