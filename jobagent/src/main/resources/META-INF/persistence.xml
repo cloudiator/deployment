@@ -19,6 +19,7 @@
     <class>io.github.cloudiator.persistance.TriggerModel</class>
     <class>io.github.cloudiator.persistance.HttpTriggerModel</class>
     <class>io.github.cloudiator.persistance.SparkTaskInterfaceModel</class>
+    <class>io.github.cloudiator.persistance.DockerTaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.OptimizationModel</class>
     <class>io.github.cloudiator.persistance.AttributeOptimizationModel</class>
     <class>io.github.cloudiator.persistance.OCLOptimizationModel</class>

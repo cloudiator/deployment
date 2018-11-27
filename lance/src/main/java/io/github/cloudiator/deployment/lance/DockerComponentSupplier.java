@@ -220,11 +220,13 @@ abstract class DockerComponentSupplier {
 
   private static Map<Option,List<String>> createOptionMap(Map<String,String> envMap) {
     Map<Option,List<String>> createOptionMap = new HashMap<>();
+    List<String> setEnvVars = new ArrayList<>();
     Map<String,String> actualEnv = getActualEnv(envMap);
 
     for (Map.Entry<String, String> entry : actualEnv.entrySet()) {
-      createOptionMap.put(Option.ENVIRONMENT, Arrays.asList(entry.getKey() + "=" + entry.getValue()));
+      setEnvVars.add(entry.getKey() + "=" + entry.getValue());
     }
+    createOptionMap.put(Option.ENVIRONMENT, setEnvVars);
     createOptionMap.put(Option.RESTART, new ArrayList<>(Arrays.asList("no")));
     createOptionMap.put(Option.INTERACTIVE, new ArrayList<>(Arrays.asList("")));
 
@@ -325,7 +327,7 @@ abstract class DockerComponentSupplier {
       }
     }
 
-    return new ArrayList<>();
+    return new ArrayList<>(Arrays.asList(""));
   }
 
   private static String buildPath(List<String> path) {
