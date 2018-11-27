@@ -58,7 +58,8 @@ public class LanceInstallationStrategy {
 
     final Builder builder = Installation.newBuilder()
         .setNode(nodeToNodeMessageConverter.apply(node))
-        .addTool(Tool.LANCE);
+        .addTool(Tool.LANCE)
+        .addTool(Tool.DOCKER);
     doExecute(builder, userId);
   }
 
