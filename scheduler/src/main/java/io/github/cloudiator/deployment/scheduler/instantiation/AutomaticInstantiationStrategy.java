@@ -30,10 +30,8 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.ProcessGroupMessageConverter;
-import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.ResourcePool;
 import io.github.cloudiator.domain.NodeGroup;
-import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +53,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
   private static final Logger LOGGER = LoggerFactory
       .getLogger(AutomaticInstantiationStrategy.class);
-  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final ProcessGroupMessageConverter PROCESS_GROUP_MESSAGE_CONVERTER = new ProcessGroupMessageConverter();
   private static final ExecutorService EXECUTOR = new LoggingThreadPoolExecutor(0,
       2147483647, 60L, TimeUnit.SECONDS, new SynchronousQueue());
@@ -118,8 +115,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
                .format("Requesting new process for schedule %s, task %s on node group %s.", schedule,
                     task, result.id()));
 
-          //TODO: pass all nodes to the newProcess
-          NodeGroupMessageToNodeGroup nodeGroupMessageToNodeGroupConverter = new NodeGroupMessageToNodeGroup();
 
            final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
                schedule.id()).setTask(task.name())

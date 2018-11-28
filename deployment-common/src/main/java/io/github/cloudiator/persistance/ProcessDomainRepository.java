@@ -120,7 +120,7 @@ public class ProcessDomainRepository {
 
   private ProcessModel createProcessModel(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel, String nodeGroupId) {
 
-    NodeGroupModel nodeGroupModel = nodeGroupModelRepository.findById(Long.valueOf(nodeGroupId));
+    NodeGroupModel nodeGroupModel = nodeGroupModelRepository.findByTenantAndDomainId(scheduleModel.tenant().getUserId(),nodeGroupId);
 
 
     final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(),

@@ -55,8 +55,6 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final Job job = JOB_CONVERTER.apply(content.getSpark().getJob());
             final String task = content.getSpark().getTask();
 
-
-            //TODO: this should be a list of nodes
             List<Node> nodes = new ArrayList<Node>();
             for (NodeEntities.Node node: content.getSpark().getNodeList()) {
               final Node domainNode = nodeMessageToNodeConverter.applyBack(node);

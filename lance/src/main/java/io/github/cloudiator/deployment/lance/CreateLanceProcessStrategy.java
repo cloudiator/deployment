@@ -38,7 +38,6 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -245,8 +244,9 @@ public class CreateLanceProcessStrategy {
             "Client deployed the process of task %s with component instance id %s successfully",
             task, cId));
 
+    //TODO: here the nodegroup needs to be passed instead of the node!!
     return CloudiatorProcessBuilder.newBuilder().id(cId.toString())
-        .nodeId(node.id())
+        //.nodeId(node.id())
         .type(Type.LANCE)
         .taskName(task.name()).scheduleId(schedule).build();
   }

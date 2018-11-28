@@ -263,7 +263,7 @@ public class CreateSparkProcessStrategy {
 
   public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, List<Node> nodes) {
 
-
+    //TODO: pass list of nodes, the nodeGroupId and get the NodeGroup object here? Because the nodegroup Id is required for creating the CloudiatorProcess
 
     LOGGER.info(String
         .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
