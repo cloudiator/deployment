@@ -69,6 +69,7 @@
     <module>scheduler</module>
     <module>yaml</module>
     <module>spark</module>
+    <module>faasagent</module>
     <!-- <module>misc</module> -->
   </modules>
 

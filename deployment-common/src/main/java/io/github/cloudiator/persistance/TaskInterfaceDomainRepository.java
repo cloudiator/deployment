@@ -17,19 +17,24 @@
 package io.github.cloudiator.persistance;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.domain.Trigger;
 
 public class TaskInterfaceDomainRepository {
 
   private final TaskInterfaceModelRepository taskInterfaceModelRepository;
+  private final TriggerDomainRepository triggerDomainRepository;
 
   @Inject
   public TaskInterfaceDomainRepository(
-      TaskInterfaceModelRepository taskInterfaceModelRepository) {
+      TaskInterfaceModelRepository taskInterfaceModelRepository,
+      TriggerDomainRepository triggerDomainRepository) {
     this.taskInterfaceModelRepository = taskInterfaceModelRepository;
+    this.triggerDomainRepository = triggerDomainRepository;
   }
 
   TaskInterfaceModel saveAndGet(TaskInterface domain, TaskModel taskModel) {
@@ -44,6 +49,8 @@ public class TaskInterfaceDomainRepository {
 
     if (domain instanceof LanceInterface) {
       return createLanceInterfaceModel((LanceInterface) domain, taskModel);
+    } else if (domain instanceof FaasInterface) {
+      return createFaasInterfaceModel((FaasInterface) domain, taskModel);
     } else if (domain instanceof DockerInterface) {
       return createDockerInterfaceModel((DockerInterface) domain, taskModel);
     } else if (domain instanceof SparkInterface) {
@@ -67,6 +74,24 @@ public class TaskInterfaceDomainRepository {
 
   }
 
+  private FaasTaskInterfaceModel createFaasInterfaceModel(
+      FaasInterface domain, TaskModel taskModel) {
+    FaasTaskInterfaceModel faasInterfaceModel = new FaasTaskInterfaceModel(taskModel,
+        domain.functionName(),
+        domain.sourceCodeUrl(),
+        domain.handler(),
+        domain.runtime(),
+        domain.timeout(),
+        domain.memory(),
+        domain.functionEnvironment());
+
+    taskInterfaceModelRepository.save(faasInterfaceModel);
+    for (Trigger trigger : domain.triggers()) {
+      triggerDomainRepository.saveAndGet(trigger, faasInterfaceModel);
+    }
+    return faasInterfaceModel;
+  }
+  
   private DockerTaskInterfaceModel createDockerInterfaceModel(DockerInterface domain, TaskModel taskModel) {
     return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(),domain.environment());
   }
