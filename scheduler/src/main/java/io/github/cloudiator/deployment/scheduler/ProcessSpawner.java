@@ -31,5 +31,4 @@ public interface ProcessSpawner {
 
   Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task, Node node);
 
-
 }

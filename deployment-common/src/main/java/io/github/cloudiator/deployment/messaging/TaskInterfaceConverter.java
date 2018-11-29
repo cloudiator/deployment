@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
+import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.SparkInterface;
@@ -29,6 +30,7 @@ public class TaskInterfaceConverter implements
   public static final TaskInterfaceConverter INSTANCE = new TaskInterfaceConverter();
 
   private static final LanceInterfaceConverter LANCE_INTERFACE_CONVERTER = LanceInterfaceConverter.INSTANCE;
+  private static final FaasInterfaceConverter FAAS_INTERFACE_CONVERTER = FaasInterfaceConverter.INSTANCE;
   private static final SparkInterfaceConverter SPARK_INTERFACE_CONVERTER = SparkInterfaceConverter.INSTANCE;
   private static final DockerInterfaceConverter DOCKER_INTERFACE_CONVERTER = DockerInterfaceConverter.INSTANCE;
 
@@ -43,6 +45,10 @@ public class TaskInterfaceConverter implements
       return TaskEntities.TaskInterface.newBuilder()
           .setLanceInterface(LANCE_INTERFACE_CONVERTER.applyBack(
               (LanceInterface) taskInterface)).build();
+    } else if (taskInterface instanceof FaasInterface) {
+      return TaskEntities.TaskInterface.newBuilder()
+          .setFaasInterface(FAAS_INTERFACE_CONVERTER.applyBack(
+              (FaasInterface) taskInterface)).build();
     } else if (taskInterface instanceof SparkInterface) {
       return TaskEntities.TaskInterface.newBuilder()
           .setSparkInterface(SPARK_INTERFACE_CONVERTER.applyBack(
@@ -65,6 +71,8 @@ public class TaskInterfaceConverter implements
         return DOCKER_INTERFACE_CONVERTER.apply(taskInterface.getDockerInterface());
       case LANCEINTERFACE:
         return LANCE_INTERFACE_CONVERTER.apply(taskInterface.getLanceInterface());
+      case FAASINTERFACE:
+        return FAAS_INTERFACE_CONVERTER.apply(taskInterface.getFaasInterface());
       case SPARKINTERFACE:
         return SPARK_INTERFACE_CONVERTER.apply(taskInterface.getSparkInterface());
       case TASKINTERFACE_NOT_SET:
