@@ -20,7 +20,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,19 +34,16 @@ public class ProcessDomainRepository {
   private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
   private static  final NodeGroupConverter NODE_GROUP_CONVERTER = new NodeGroupConverter();
   private final ProcessGroupModelRepository processGroupModelRepository;
-  private final NodeGroupModelRepository nodeGroupModelRepository;
 
   @Inject
   ProcessDomainRepository(
       ProcessModelRepository processModelRepository,
       ScheduleModelRepository scheduleModelRepository,
-      ProcessGroupModelRepository processGroupModelRepository,
-      NodeGroupModelRepository nodeGroupModelRepository) {
+      ProcessGroupModelRepository processGroupModelRepository) {
     this.processModelRepository = processModelRepository;
     this.scheduleModelRepository = scheduleModelRepository;
     this.processGroupModelRepository = processGroupModelRepository;
-    this.nodeGroupModelRepository = nodeGroupModelRepository;
-    //TODO: get NodeGroup via Messages and not via DB
+
   }
 
 
@@ -68,7 +67,7 @@ public class ProcessDomainRepository {
       //persist processGroup
       final ProcessGroupModel processGroupModel = new ProcessGroupModel(processGroup.id(), scheduleModel);
 
-      final ProcessModel processModel = saveAndGet(cloudiatorProcess,scheduleModel, processGroupModel, nodeGroupId);
+      final ProcessModel processModel = saveAndGet(cloudiatorProcess,scheduleModel, processGroupModel);
       processGroupModel.addProcess(processModel);
       processModel.assignGroup(processGroupModel);
       processModelRepository.save(processModel);
@@ -115,20 +114,36 @@ public class ProcessDomainRepository {
   */
 
 
-  ProcessModel saveAndGet(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel, String nodeGroupId ) {
-    return createProcessModel(domain, scheduleModel, processGroupModel, nodeGroupId);
+  ProcessModel saveAndGet(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel) {
+    return createProcessModel(domain, scheduleModel, processGroupModel);
   }
 
-  private ProcessModel createProcessModel(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel, String nodeGroupId) {
+  private ProcessModel createProcessModel(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel) {
 
-    NodeGroupModel nodeGroupModel = nodeGroupModelRepository.findByTenantAndDomainId(scheduleModel.tenant().getUserId(),nodeGroupId);
+    //TODO: fetch this by the message!?
 
 
-    final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(),
-        nodeGroupModel, domain.state(), domain.type(), processGroupModel);
-    processModelRepository.save(processModel);
+    if(domain instanceof CloudiatorSingleProcess){
 
-    return processModel;
+      final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(),
+          ((CloudiatorSingleProcess) domain).node(),
+          null, domain.state(), domain.type(), processGroupModel);
+      processModelRepository.save(processModel);
+
+      return processModel;
+
+    }else if(domain instanceof CloudiatorClusterProcess){
+
+      final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(), null,
+          ((CloudiatorClusterProcess) domain).nodeGroup(), domain.state(), domain.type(), processGroupModel);
+      processModelRepository.save(processModel);
+
+      return processModel;
+    }else{
+      throw  new IllegalStateException("Unknown CloudiatorProcess interface for persisting CloudiatorProcess: " + domain.getClass().getName());
+    }
+
+
   }
 
 }

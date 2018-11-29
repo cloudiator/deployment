@@ -23,10 +23,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
-import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -78,6 +78,12 @@ public class ScheduleDeletionStrategy {
     //delete all processes
     for (CloudiatorProcess cloudiatorProcess : schedule.processes()) {
 
+      if(cloudiatorProcess instanceof CloudiatorClusterProcess){
+        throw  new IllegalStateException("Trying to schedule the deletion of the CloudiatorClusterProcess for Lance, this should never happen!");
+      }
+
+      final CloudiatorSingleProcess cloudiatorSingleProcess = (CloudiatorSingleProcess) cloudiatorProcess;
+
       final DeleteProcessRequest deleteProcessRequest = DeleteProcessRequest.newBuilder()
           .setProcessId(cloudiatorProcess.id())
           .setUserId(userId).build();
@@ -95,15 +101,12 @@ public class ScheduleDeletionStrategy {
           //delete the node
           LOGGER.info(String.format(
               "Successfully deleted the process %s. Starting the deletion of the corresponding nodes on nodegroup %s.",
-              cloudiatorProcess, cloudiatorProcess.nodeGroup()));
+              cloudiatorSingleProcess.id(), cloudiatorSingleProcess.node()));
 
-          NodeGroup nodeGroup = nodeGroupMessageRepository
-              .getById(userId, cloudiatorProcess.nodeGroup());
 
-          for (Node node: nodeGroup.getNodes()) {
 
             final NodeDeleteMessage nodeDeleteMessage = NodeDeleteMessage.newBuilder()
-                .setNodeId(node.id()).setUserId(userId)
+                .setNodeId(((CloudiatorSingleProcess) cloudiatorProcess).node()).setUserId(userId)
                 .build();
 
             SettableFutureResponseCallback<NodeDeleteResponseMessage, NodeDeleteResponseMessage> nodeFuture = SettableFutureResponseCallback
@@ -115,11 +118,11 @@ public class ScheduleDeletionStrategy {
               nodeFuture.get();
             } catch (InterruptedException e) {
               throw new IllegalStateException(String
-                  .format("Interrupted while deleting node with id %s.", node.id()),
+                  .format("Interrupted while deleting node with id %s.", cloudiatorSingleProcess.node()),
                   e);
             } catch (ExecutionException e) {
               throw new IllegalStateException(String
-                  .format("Error while deleting node %s of process %s.", node.id(),
+                  .format("Error while deleting node %s of process %s.", cloudiatorSingleProcess.node(),
                       cloudiatorProcess), e);
             } finally {
               countDownLatch.countDown();
@@ -132,7 +135,7 @@ public class ScheduleDeletionStrategy {
 
 
 
-        }
+
 
         @Override
         public void onFailure(Throwable t) {

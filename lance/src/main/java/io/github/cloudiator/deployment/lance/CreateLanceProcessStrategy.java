@@ -32,17 +32,14 @@ import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
-import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.domain.NodeGroup;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 public class CreateLanceProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
@@ -86,21 +83,11 @@ public class CreateLanceProcessStrategy {
   }
 
 
-  public CloudiatorSingleProcess execute(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup) {
-
-    if(nodeGroup.getNodes().size()>1){
-      throw  new IllegalStateException("NodeGroup for LanceProcess contains more than one node: " + nodeGroup.getNodes().size() + " nodes! This should never happen!");
-    }
-    Optional<Node> mandatoryNode = nodeGroup.getNodes().stream().findFirst();
-
-    if(!mandatoryNode.isPresent()){
-      throw  new IllegalStateException("NodeGroup for LanceProcess does not contain any nodes!");
-    }
-    Node node = mandatoryNode.get();
+  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, Node node) {
 
     LOGGER.info(String
-        .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on nodeGroup %s",
-            userId, schedule, task, nodeGroup));
+        .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
+            userId, schedule, task, node));
     ContainerType containerType = ContainerType.PLAIN;
 
     if (usesLanceInterface(task)) {
@@ -153,17 +140,17 @@ public class CreateLanceProcessStrategy {
 
     if (usesLanceInterface(task)) {
       LOGGER.debug("Deploying a LifecycleComponent for a " + containerType + " container connected with a LanceInterface");
-      return deployLifecycleComponent(task, job, deploymentContext, lifecycleClient, containerType, schedule, nodeGroup.id());
+      return deployLifecycleComponent(task, job, deploymentContext, lifecycleClient, containerType, schedule, node);
     } else if (usesDockerInterface(task)) {
       LOGGER.debug("Deploying a DockerComponent for a container connected with a DockerInterface");
-      return deployDockerComponent(task, job, deploymentContext, lifecycleClient, schedule, nodeGroup.id());
+      return deployDockerComponent(task, job, deploymentContext, lifecycleClient, schedule, node);
     } else {
       throw new IllegalStateException("Wrong task interface submitted. Must be either LanceInterface or DockerInterface");
     }
   }
 
   private CloudiatorProcess deployLifecycleComponent(Task task, Job job, DeploymentContext deploymentContext,
-      LifecycleClient lifecycleClient, ContainerType containerType, String schedule, String nodeGroupId) {
+      LifecycleClient lifecycleClient, ContainerType containerType, String schedule, Node node) {
     LOGGER.debug(String
         .format("Creating Lifecycle component for task %s.",
             task));
@@ -183,26 +170,26 @@ public class CreateLanceProcessStrategy {
       ComponentInstanceId componentInstanceId = lifecycleClient
           .deploy(deploymentContext, deployableComponent, OperatingSystem.UBUNTU_14_04,
               containerType);
-      return waitForDeployment(lifecycleClient, componentInstanceId, task, schedule, nodeGroupId);
+      return waitForDeployment(lifecycleClient, componentInstanceId, task, node, schedule);
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
     }
   }
 
   private CloudiatorProcess deployDockerComponent(Task task, Job job, DeploymentContext deploymentContext,
-      LifecycleClient lifecycleClient, String schedule, String nodeGroupId) {
+      LifecycleClient lifecycleClient, String schedule, Node node) {
     if(DockerComponentSupplier.usePrivateRegistry(task.interfaceOfType(DockerInterface.class))) {
-      return deployPrivateDockerComponent(task, job, deploymentContext, lifecycleClient, schedule, nodeGroupId);
+      return deployPrivateDockerComponent(task, job, deploymentContext, lifecycleClient, schedule, node);
     } else {
-      return deployPublicDockerComponent(task, job, deploymentContext, lifecycleClient, schedule, nodeGroupId);
+      return deployPublicDockerComponent(task, job, deploymentContext, lifecycleClient, schedule, node);
     }
   }
 
   private CloudiatorProcess deployPrivateDockerComponent(Task task, Job job, DeploymentContext deploymentContext,
-    LifecycleClient lifecycleClient, String schedule, String nodeGroupId) {
+      LifecycleClient lifecycleClient, String schedule, Node node) {
     LOGGER.debug(String
-          .format("Creating Private Docker component for task %s.",
-        task));
+        .format("Creating Private Docker component for task %s.",
+            task));
 
     final RemoteDockerComponent remoteDockerComponent = new PrivateDockerComponentSupplier(job, task).get();
     LOGGER.debug(
@@ -217,14 +204,14 @@ public class CreateLanceProcessStrategy {
 
     try {
       ComponentInstanceId componentInstanceId = lifecycleClient.deploy(deploymentContext, remoteDockerComponent);
-      return waitForDeployment(lifecycleClient, componentInstanceId, task, schedule, nodeGroupId);
+      return waitForDeployment(lifecycleClient, componentInstanceId, task, node, schedule);
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
     }
   }
 
   private CloudiatorProcess deployPublicDockerComponent(Task task, Job job, DeploymentContext deploymentContext,
-      LifecycleClient lifecycleClient, String schedule, String nodeGroupId) {
+      LifecycleClient lifecycleClient, String schedule, Node node) {
     LOGGER.debug(String
         .format("Creating Public Docker component for task %s.",
             task));
@@ -242,13 +229,13 @@ public class CreateLanceProcessStrategy {
 
     try {
       ComponentInstanceId componentInstanceId = lifecycleClient.deploy(deploymentContext, dockerComponent);
-      return waitForDeployment(lifecycleClient, componentInstanceId, task, schedule, nodeGroupId );
+      return waitForDeployment(lifecycleClient, componentInstanceId, task, node, schedule);
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
     }
   }
 
-  private CloudiatorProcess waitForDeployment(LifecycleClient client, ComponentInstanceId cId, Task task, String schedule, String nodeGroupId) {
+  private CloudiatorProcess waitForDeployment(LifecycleClient client, ComponentInstanceId cId, Task task, Node node, String schedule) {
     client.waitForDeployment(cId);
 
     LOGGER.debug(String
@@ -256,9 +243,8 @@ public class CreateLanceProcessStrategy {
             "Client deployed the process of task %s with component instance id %s successfully",
             task, cId));
 
-    return CloudiatorProcessBuilder.newBuilder()
-        .id(cId.toString())
-        .nodeGroup(nodeGroupId)
+    return CloudiatorSingleProcessBuilder.newBuilder().id(cId.toString())
+        .node(node.id())
         .type(Type.LANCE)
         .taskName(task.name()).scheduleId(schedule).build();
   }

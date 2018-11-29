@@ -17,10 +17,11 @@
 package io.github.cloudiator.deployment.scheduler;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
@@ -61,12 +62,16 @@ public class LanceProcessKillerImpl implements ProcessKiller {
         .format("%s is killing the process %s for user: %s", this,
             cloudiatorProcess, userId));
 
-    NodeGroup nodeGroup = nodeGroupMessageRepository
-        .getById(userId, cloudiatorProcess.nodeGroup());
+    if(cloudiatorProcess instanceof CloudiatorClusterProcess)
+      throw  new IllegalStateException("Trying to kill a SparkClusterProcess in of Lance, this should never happen!");
+    //NodeGroup nodeGroup = nodeGroupMessageRepository
+     //   .getById(userId, cloudiatorProcess.nodeGroup());
 
-    for (Node node: nodeGroup.getNodes()) {
 
-      final Node byId = nodeMessageRepository.getById(userId, node.id());
+      CloudiatorSingleProcess cloudiatorSingleProcess = (CloudiatorSingleProcess)cloudiatorProcess;
+
+
+      final Node byId = nodeMessageRepository.getById(userId,((CloudiatorSingleProcess) cloudiatorProcess).node());
 
       if (byId == null) {
         throw new IllegalStateException(
@@ -94,7 +99,7 @@ public class LanceProcessKillerImpl implements ProcessKiller {
         throw new IllegalStateException("Error while deleting lance process.", e.getCause());
       }
 
-    }
+
 
 
 

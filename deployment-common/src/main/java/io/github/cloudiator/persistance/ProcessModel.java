@@ -47,8 +47,12 @@ class ProcessModel extends Model {
   @Column(nullable = false)
   private String task;
 
-  @Column(nullable = false)
-  private NodeGroupModel nodeGroupModel;
+  //TODO: refactor this to proper inheritance?
+  @Column(nullable = true)
+  private String node;
+
+  @Column(nullable = true)
+  private String nodeGroup;
 
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.Type type;
@@ -66,7 +70,7 @@ class ProcessModel extends Model {
   protected ProcessModel() {
   }
 
-  public ProcessModel(String domainId, ScheduleModel schedule, String task, NodeGroupModel nodeGroupModel,
+  public ProcessModel(String domainId, ScheduleModel schedule, String task, @Nullable String node, @Nullable String nodeGroup,
       CloudiatorProcess.State state, CloudiatorProcess.Type type, @Nullable ProcessGroupModel processGroupModel) {
 
     checkNotNull(domainId, "domainId is null");
@@ -77,7 +81,7 @@ class ProcessModel extends Model {
     checkNotNull(task, "task is null");
     checkArgument(!task.isEmpty(), "task is empty");
 
-    checkNotNull(nodeGroupModel, "nodeGroup is null");
+    //checkNotNull(nodeGroupModel, "nodeGroup is null");
     //checkArgument(!nodeGroupModel.isEmpty(), "nodeGroup is empty");
 
     checkNotNull(type, "type is null");
@@ -86,7 +90,8 @@ class ProcessModel extends Model {
     this.schedule = schedule;
     this.task = task;
     this.state = state;
-    this.nodeGroupModel = nodeGroupModel;
+    this.node = node;
+    this.nodeGroup = nodeGroup;
     this.type = type;
     this.processGroupModel = processGroupModel;
 
@@ -95,7 +100,7 @@ class ProcessModel extends Model {
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
-        .add("task", task).add("state", state).add("nodeGroup", nodeGroupModel);
+        .add("task", task).add("state", state).add("nodeGroup", nodeGroup).add("node", node);
   }
 
   public ProcessModel assignGroup(ProcessGroupModel processGroupModel) {
@@ -105,9 +110,11 @@ class ProcessModel extends Model {
   }
 
 
-  public NodeGroupModel getNodeGroup() {
-    return nodeGroupModel;
+  public String getNodeGroup() {
+    return nodeGroup;
   }
+
+  public String getNode(){return  node;}
 
   public String getDomainId() {
     return domainId;
