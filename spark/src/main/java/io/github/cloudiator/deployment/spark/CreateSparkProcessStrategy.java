@@ -10,6 +10,7 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -55,9 +56,9 @@ public class CreateSparkProcessStrategy {
   }
 
 
-  private void installSparkWorkers(String userId, List<Node> nodes){
+  private void installSparkWorkers(String userId, NodeGroup nodeGroup){
 
-    for (Node node: nodes) {
+    for (Node node: nodeGroup.getNodes()) {
 
       //TODO: trigger sync install request and check if installation was successfull
       LOGGER.debug("Installing Docker and Spark Worker on node: " + node.id());
@@ -261,26 +262,24 @@ public class CreateSparkProcessStrategy {
 
 
 
-  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, List<Node> nodes) {
-
-    //TODO: pass list of nodes, the nodeGroupId and get the NodeGroup object here? Because the nodegroup Id is required for creating the CloudiatorProcess
+  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup) {
 
     LOGGER.info(String
         .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
-            userId, schedule, task, nodes));
+            userId, schedule, task, nodeGroup));
 
     try{
 
 
     LOGGER.debug("Triggering Spark Worker installations...");
-    this.installSparkWorkers(userId, nodes);
+    this.installSparkWorkers(userId, nodeGroup);
 
 
     LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
     this.submitSparkProcessToLivy(task);
 
     return CloudiatorProcessBuilder.newBuilder().id("spark-dummy-id").type(Type.SPARK)
-        .nodeGroup("dummynodegroupId")
+        .nodeGroup(nodeGroup.id())
         .taskName(task.name()).scheduleId(schedule).build();
 
     } catch (Exception e) {

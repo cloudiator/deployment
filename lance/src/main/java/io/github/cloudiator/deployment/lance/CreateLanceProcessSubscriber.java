@@ -21,8 +21,8 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
-import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.LanceProcessCreatedResponse;
 import org.cloudiator.messaging.MessageInterface;
@@ -33,7 +33,8 @@ import org.slf4j.LoggerFactory;
 public class CreateLanceProcessSubscriber implements Runnable {
 
   private final ProcessService processService;
-  private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
+
+  private static final NodeGroupMessageToNodeGroup NODE_GROUP_MESSAGE_TO_NODE_GROUP = new NodeGroupMessageToNodeGroup();
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private final CreateLanceProcessStrategy createLanceProcessStrategy;
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessSubscriber.class);
@@ -60,13 +61,13 @@ public class CreateLanceProcessSubscriber implements Runnable {
             final String userId = content.getUserId();
             final Job job = JOB_CONVERTER.apply(content.getLance().getJob());
             final String task = content.getLance().getTask();
-            final Node node = nodeMessageToNodeConverter.applyBack(content.getLance().getNode());
+            final NodeGroup nodeGroup = NODE_GROUP_MESSAGE_TO_NODE_GROUP.apply(content.getLance().getNodeGroup());
             final String schedule = content.getLance().getSchedule();
 
             final CloudiatorProcess cloudiatorProcess = createLanceProcessStrategy
                 .execute(userId, schedule, job, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
-                        String.format("Job %s does not contain task %s", job, task))), node);
+                        String.format("Job %s does not contain task %s", job, task))), nodeGroup);
 
             final LanceProcessCreatedResponse lanceProcessCreatedResponse = LanceProcessCreatedResponse
                 .newBuilder()

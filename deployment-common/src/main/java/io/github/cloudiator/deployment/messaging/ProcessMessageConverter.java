@@ -20,7 +20,6 @@ import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
-import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessType;
@@ -30,7 +29,6 @@ public class ProcessMessageConverter implements
 
   public static final ProcessMessageConverter INSTANCE = new ProcessMessageConverter();
 
-  private static final NodeGroupMessageToNodeGroup NODE_GROUP_MESSAGE_TO_NODE_GROUP = new NodeGroupMessageToNodeGroup();
 
   private ProcessMessageConverter() {
 
