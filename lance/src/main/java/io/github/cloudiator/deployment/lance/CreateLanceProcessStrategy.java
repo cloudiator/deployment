@@ -32,7 +32,7 @@ import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
-import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
@@ -86,7 +86,7 @@ public class CreateLanceProcessStrategy {
   }
 
 
-  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup) {
+  public CloudiatorSingleProcess execute(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup) {
 
     if(nodeGroup.getNodes().size()>1){
       throw  new IllegalStateException("NodeGroup for LanceProcess contains more than one node: " + nodeGroup.getNodes().size() + " nodes! This should never happen!");

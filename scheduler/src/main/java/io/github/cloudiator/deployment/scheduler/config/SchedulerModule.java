@@ -29,6 +29,7 @@ import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstanti
 import io.github.cloudiator.deployment.scheduler.instantiation.CompositeInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.*;
 
 public class SchedulerModule extends AbstractModule {
 
@@ -48,6 +49,7 @@ public class SchedulerModule extends AbstractModule {
         .newSetBinder(binder(), ProcessSpawner.class);
     processSpawnerMultibinder.addBinding().to(LanceProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(SparkProcessSpawnerImpl.class);
+    processSpawnerMultibinder.addBinding().to(FaasProcessSpawnerImpl.class);
 
     bind(ProcessSpawner.class).to(CompositeProcessSpawnerImpl.class);
 

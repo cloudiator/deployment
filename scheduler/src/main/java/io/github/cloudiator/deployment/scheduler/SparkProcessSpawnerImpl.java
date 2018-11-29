@@ -76,7 +76,7 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
       final SparkProcess sparkProcess = SparkProcess.newBuilder()
           .setSchedule(schedule)
           .setJob(JOB_CONVERTER.applyBack(job))
-          .addAllNode(NODE_GROUP_MESSAGE_TO_NODE_GROUP.applyBack(nodeGroup).getNodesList())
+          .setNodeGroup(NODE_GROUP_MESSAGE_TO_NODE_GROUP.applyBack(nodeGroup))
           .setTask(task.name()).build();
       final CreateSparkProcessRequest processRequest = CreateSparkProcessRequest.newBuilder()
           .setSpark(sparkProcess).setUserId(userId).build();

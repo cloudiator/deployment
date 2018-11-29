@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.StreamUtil;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
@@ -41,6 +42,9 @@ import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+import java.util.Set;
 
 public class ProcessRequestSubscriber implements Runnable {
 
@@ -193,7 +197,6 @@ public class ProcessRequestSubscriber implements Runnable {
           //todo handle correctly type of task, currently we only assume lance
           final ProcessGroup processGroup = processSpawner
               .spawn(userId, scheduleId, job, task, nodeGroup);
-
 
 
           //persist processes via process group

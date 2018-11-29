@@ -19,20 +19,15 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.MoreObjects;
-import java.util.Objects;
+abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
-class CloudiatorProcessImpl implements CloudiatorProcess {
+  protected final String id;
+  protected final String scheduleId;
+  protected final String taskName;
+  protected final CloudiatorProcess.State state;
+  protected final Type type;
 
-  private final String id;
-  private final String scheduleId;
-  private final String taskName;
-  private final String nodeGroup;
-  private final CloudiatorProcess.State state;
-  private final Type type;
-
-  CloudiatorProcessImpl(String id, String scheduleId, String taskName, String nodeGroup,
-      State state, Type type) {
+  CloudiatorProcessImpl(String id, String scheduleId, String taskName, State state, Type type) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
@@ -46,9 +41,6 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
 
-    checkNotNull(nodeGroup, "nodeGroup is null");
-    checkArgument(!nodeGroup.isEmpty(), "nodeGroup is empty");
-    this.nodeGroup = nodeGroup;
 
     //todo implement state, currently we simply ignore it
     //checkNotNull(state, "state is null");
@@ -73,10 +65,6 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     return state;
   }
 
-  @Override
-  public String nodeGroup() {
-    return nodeGroup;
-  }
 
 
   @Override
@@ -89,31 +77,7 @@ class CloudiatorProcessImpl implements CloudiatorProcess {
     return id;
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CloudiatorProcessImpl that = (CloudiatorProcessImpl) o;
-    return Objects.equals(id, that.id) &&
-        Objects.equals(scheduleId, that.scheduleId) &&
-        Objects.equals(taskName, that.taskName) &&
-        Objects.equals(nodeGroup, that.nodeGroup);
-  }
 
-  @Override
-  public int hashCode() {
 
-    return Objects.hash(id, scheduleId, taskName, nodeGroup);
-  }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("id", id).add("scheduleId", scheduleId)
-        .add("task", taskName)
-        .add("nodes", nodeGroup).add("state", state).toString();
-  }
 }

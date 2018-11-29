@@ -18,7 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 
-public class CloudiatorProcessBuilder {
+public class CloudiatorClusterProcessBuilder {
 
   private String id;
   private String scheduleId;
@@ -27,45 +27,45 @@ public class CloudiatorProcessBuilder {
   private String nodeGroup;
   private Type type;
 
-  private CloudiatorProcessBuilder() {
+  private CloudiatorClusterProcessBuilder() {
   }
 
-  public static CloudiatorProcessBuilder newBuilder() {
-    return new CloudiatorProcessBuilder();
+  public static CloudiatorClusterProcessBuilder newBuilder() {
+    return new CloudiatorClusterProcessBuilder();
   }
 
-  public CloudiatorProcessBuilder id(String id) {
+  public CloudiatorClusterProcessBuilder id(String id) {
     this.id = id;
     return this;
   }
 
-  public CloudiatorProcessBuilder taskName(String taskName) {
+  public CloudiatorClusterProcessBuilder taskName(String taskName) {
     this.taskName = taskName;
     return this;
   }
 
-  public CloudiatorProcessBuilder scheduleId(String scheduleId) {
+  public CloudiatorClusterProcessBuilder scheduleId(String scheduleId) {
     this.scheduleId = scheduleId;
     return this;
   }
 
-  public CloudiatorProcessBuilder nodeGroup(String nodeGroup) {
+  public CloudiatorClusterProcessBuilder nodeGroup(String nodeGroup) {
     this.nodeGroup = nodeGroup;
     return this;
   }
 
-  public CloudiatorProcessBuilder state(CloudiatorProcess.State state) {
+  public CloudiatorClusterProcessBuilder state(CloudiatorProcess.State state) {
     this.state = state;
     return this;
   }
 
-  public CloudiatorProcessBuilder type(Type type) {
+  public CloudiatorClusterProcessBuilder type(Type type) {
     this.type = type;
     return this;
   }
 
-  public CloudiatorProcess build() {
-    return new CloudiatorProcessImpl(id, scheduleId, taskName, nodeGroup, state, type);
+  public CloudiatorClusterProcess build() {
+    return new CloudiatorClusterProcessImpl(id, scheduleId, taskName,  state, type, nodeGroup);
   }
 
 }

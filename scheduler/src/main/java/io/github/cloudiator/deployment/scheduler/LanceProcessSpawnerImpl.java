@@ -29,8 +29,6 @@ import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeGroup;
-import io.github.cloudiator.domain.NodeGroupBuilder;
-import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +46,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
   private final ProcessService processService;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
-  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
-  private static final NodeGroupMessageToNodeGroup NODE_GROUP_MESSAGE_TO_NODE_GROUP = new NodeGroupMessageToNodeGroup();
+  private static final NodeToNodeMessageConverter NODE_TO_NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(LanceProcessSpawnerImpl.class);
@@ -86,7 +83,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
     List<Future<CloudiatorProcess>> futures = new ArrayList<>();
 
     for(Node node : nodeGroup.getNodes()){
-      futures.add(spawn(userId,schedule,job,task, node, nodeGroup.id()));
+      futures.add(spawn(userId,schedule,job,task, node));
     }
 
     //wait until all processes are spawned
@@ -94,6 +91,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
       List<CloudiatorProcess> spawnedLanceProcesses = waitForFutures(futures);
 
       ProcessGroup processGroup = ProcessGroups.of(spawnedLanceProcesses);
+
 
       return processGroup;
 
@@ -108,23 +106,20 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
 
   private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
-      Node node, String nodeGroupId) {
+      Node node) {
 
 
     LOGGER.info(String
         .format("%s is spawning a new process for user: %s, Schedule %s, Task %s on Node %s", this,
             userId, schedule, task, node));
 
-    List<Node> singleNodeListForProcess = new ArrayList<>();
-    singleNodeListForProcess.add(node);
-    NodeGroup nodeGroupForSingleProcess = NodeGroupBuilder.newBuilder().id(nodeGroupId).nodes(singleNodeListForProcess).build();
 
 
     final LanceProcess lanceProcess = LanceProcess.newBuilder()
         .setSchedule(schedule)
         .setTask(task.name())
         .setJob(JOB_CONVERTER.applyBack(job))
-        .setNodeGroup(NODE_GROUP_MESSAGE_TO_NODE_GROUP.applyBack(nodeGroupForSingleProcess)).build();
+        .setNode(NODE_TO_NODE_MESSAGE_CONVERTER.apply(node)).build();
     final CreateLanceProcessRequest processRequest = CreateLanceProcessRequest.newBuilder()
         .setLance(lanceProcess).setUserId(userId).build();
 

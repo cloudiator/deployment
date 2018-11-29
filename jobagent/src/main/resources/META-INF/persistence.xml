@@ -15,6 +15,9 @@
     <class>io.github.cloudiator.persistance.TaskModel</class>
     <class>io.github.cloudiator.persistance.TaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.LanceTaskInterfaceModel</class>
+    <class>io.github.cloudiator.persistance.FaasTaskInterfaceModel</class>
+    <class>io.github.cloudiator.persistance.TriggerModel</class>
+    <class>io.github.cloudiator.persistance.HttpTriggerModel</class>
     <class>io.github.cloudiator.persistance.SparkTaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.DockerTaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.OptimizationModel</class>

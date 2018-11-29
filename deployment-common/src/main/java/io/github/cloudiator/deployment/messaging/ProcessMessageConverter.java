@@ -17,9 +17,12 @@
 package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
-import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessType;
@@ -37,23 +40,52 @@ public class ProcessMessageConverter implements
   @Override
   public Process applyBack(CloudiatorProcess cloudiatorProcess) {
 
-    return Process.newBuilder().setId(cloudiatorProcess.id())
-        .setSchedule(cloudiatorProcess.scheduleId())
-        .setNodeGroup(cloudiatorProcess.nodeGroup())
-        .setTask(cloudiatorProcess.taskId())
-        .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
+
+    if(cloudiatorProcess instanceof CloudiatorSingleProcess){
+      //Lance, Docker and FaaS processes
+
+      return Process.newBuilder().setId(cloudiatorProcess.id())
+          .setSchedule(cloudiatorProcess.scheduleId())
+          .setNode(((CloudiatorSingleProcess) cloudiatorProcess).node())
+          .setTask(cloudiatorProcess.taskId())
+          .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
+
+    }else if (cloudiatorProcess instanceof CloudiatorClusterProcess){
+      //Spark processes
+      return Process.newBuilder().setId(cloudiatorProcess.id())
+          .setSchedule(cloudiatorProcess.scheduleId())
+          .setNodeGroup(((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup())
+          .setTask(cloudiatorProcess.taskId())
+          .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
+    }else{
+      throw  new IllegalStateException("Unknown CloudiatorProcess interface: " + cloudiatorProcess.getClass().getName());
+    }
   }
 
   @Override
   public CloudiatorProcess apply(Process process) {
 
 
-    return CloudiatorProcessBuilder.newBuilder()
-        .id(process.getId())
-        .scheduleId(process.getSchedule())
-        .taskName(process.getTask())
-        .nodeGroup(process.getNodeGroup())
-        .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
+    switch (process.getRunsOnCase()){
+      case NODE: return  CloudiatorSingleProcessBuilder.newBuilder()
+          .id(process.getId())
+          .scheduleId(process.getSchedule())
+          .taskName(process.getTask())
+          .node(process.getNode())
+          .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
+      case NODEGROUP: return  CloudiatorClusterProcessBuilder.newBuilder()
+          .id(process.getId())
+          .scheduleId(process.getSchedule())
+          .taskName(process.getTask())
+          .nodeGroup(process.getNodeGroup())
+          .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
+      case RUNSON_NOT_SET: throw  new IllegalStateException("RunsOn parameter not set for process: " + process.getId());
+
+      default: throw new AssertionError("Unknown process: " + process);
+    }
+
+
+
   }
 
   private static class ProcessTypeConverter implements

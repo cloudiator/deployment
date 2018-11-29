@@ -44,6 +44,7 @@ public class ProcessDomainRepository {
     this.scheduleModelRepository = scheduleModelRepository;
     this.processGroupModelRepository = processGroupModelRepository;
     this.nodeGroupModelRepository = nodeGroupModelRepository;
+    //TODO: get NodeGroup via Messages and not via DB
   }
 
 
