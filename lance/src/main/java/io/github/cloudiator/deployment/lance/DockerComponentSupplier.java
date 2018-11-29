@@ -37,18 +37,6 @@ abstract class DockerComponentSupplier {
     add("us");
     add("co.uk");
   }};
-  /*private final String name;
-  private final ComponentId myId;
-  private final List<InPort> inPorts;
-  private final List<OutPort> outPorts;
-  private final HashMap<String, Class<?>> properties;
-  private final HashMap<String, ? extends Serializable> defaultValues;
-  private final EntireDockerCommands entireDockerCommands;
-  private final String imageName;
-  private final String imageFolder;
-  private final String tag;
-  private final String digestSHA256;
-  private String containerName;*/
 
   public DockerComponentSupplier(Job job, Task task) {
     checkNotNull(task, "task is null");

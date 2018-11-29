@@ -9,6 +9,7 @@ import io.github.cloudiator.deployment.domain.PortRequired;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.function.Supplier;
 
+//dockerhub
 public class PublicDockerComponentSupplier extends DockerComponentSupplier implements Supplier<DockerComponent> {
 
   PublicDockerComponentSupplier(Job job, Task task) {

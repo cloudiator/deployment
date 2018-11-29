@@ -1,7 +1,6 @@
 package io.github.cloudiator.deployment.lance;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 import de.uniulm.omi.cloudiator.lance.application.component.RemoteDockerComponent;
 import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand;

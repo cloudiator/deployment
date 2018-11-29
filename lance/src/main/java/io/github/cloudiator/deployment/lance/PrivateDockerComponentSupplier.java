@@ -10,6 +10,7 @@ import io.github.cloudiator.deployment.domain.PortRequired;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.function.Supplier;
 
+//For all repos that aren't dockerhub
 public class PrivateDockerComponentSupplier extends DockerComponentSupplier implements
     Supplier<RemoteDockerComponent> {
 
