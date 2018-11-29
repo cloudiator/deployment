@@ -11,6 +11,7 @@ after_success:
 - lance/ci/publish_docker.sh
 - yaml/ci/publish_docker.sh
 - spark/ci/publish_docker.sh
+- faasagent/ci/publish_docker.sh
 branches:
   except:
   - gh-pages
