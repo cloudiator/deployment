@@ -6,13 +6,16 @@ public class FunctionImpl implements Function {
   private final String cloudId;
   private final String locationId;
   private final int memory;
+  private final String runtime;
   private final String stackId;
 
-  FunctionImpl(String id, String cloudId, String locationId, int memory, String stackId) {
+  FunctionImpl(String id, String cloudId, String locationId,
+      int memory, String runtime, String stackId) {
     this.id = id;
     this.cloudId = cloudId;
     this.locationId = locationId;
     this.memory = memory;
+    this.runtime = runtime;
     this.stackId = stackId;
   }
 
@@ -34,6 +37,11 @@ public class FunctionImpl implements Function {
   @Override
   public int memory() {
     return memory;
+  }
+
+  @Override
+  public String runtime() {
+    return runtime;
   }
 
   @Override

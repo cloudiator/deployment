@@ -12,10 +12,8 @@ public class FaasInterfaceImpl implements FaasInterface {
   private final String functionName;
   private final String sourceCodeUrl;
   private final String handler;
-  private final String runtime;
   private final Set<Trigger> triggers;
   private final int timeout;
-  private final int memory;
   private Map<String, String> functionEnvironment;
 
 
@@ -23,25 +21,20 @@ public class FaasInterfaceImpl implements FaasInterface {
       String functionName,
       String sourceCodeUrl,
       String handler,
-      String runtime,
       Set<Trigger> triggers,
       int timeout,
-      int memory,
       Map<String, String> functionEnvironment
   ) {
     checkNotNull(functionName, "functionName is null");
     checkNotNull(sourceCodeUrl, "sourceCodeUrl is null");
     checkNotNull(handler, "handler is null");
-    checkNotNull(runtime, "runtime is null");
     checkNotNull(triggers, "triggers is null");
     checkNotNull(functionEnvironment, "Function environment is null");
     this.functionName = functionName;
     this.sourceCodeUrl = sourceCodeUrl;
     this.handler = handler;
-    this.runtime = runtime;
     this.triggers = triggers;
     this.timeout = timeout;
-    this.memory = memory;
     this.functionEnvironment = functionEnvironment;
   }
 
@@ -61,11 +54,6 @@ public class FaasInterfaceImpl implements FaasInterface {
   }
 
   @Override
-  public String runtime() {
-    return runtime;
-  }
-
-  @Override
   public Set<Trigger> triggers() {
     return triggers;
   }
@@ -73,11 +61,6 @@ public class FaasInterfaceImpl implements FaasInterface {
   @Override
   public int timeout() {
     return timeout;
-  }
-
-  @Override
-  public int memory() {
-    return memory;
   }
 
   @Override
@@ -98,17 +81,15 @@ public class FaasInterfaceImpl implements FaasInterface {
         Objects.equals(functionName, that.functionName) &&
         Objects.equals(sourceCodeUrl, that.sourceCodeUrl) &&
         Objects.equals(handler, that.handler) &&
-        Objects.equals(runtime, that.runtime) &&
         Objects.equals(triggers, that.triggers) &&
         Objects.equals(timeout, that.timeout) &&
-        Objects.equals(memory, that.memory) &&
         Objects.equals(functionEnvironment, that.functionEnvironment);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(functionName, sourceCodeUrl,
-        handler, runtime, triggers, timeout, memory, functionEnvironment);
+        handler, triggers, timeout, functionEnvironment);
   }
 
   @Override
@@ -117,10 +98,8 @@ public class FaasInterfaceImpl implements FaasInterface {
         "functionName='" + functionName + '\'' +
         ", sourceCodeUrl='" + sourceCodeUrl + '\'' +
         ", handler='" + handler + '\'' +
-        ", runtime='" + runtime + '\'' +
         ", triggers=" + triggers +
         ", timeout=" + timeout +
-        ", memory=" + memory +
         ", functionEnvironment=" + functionEnvironment +
         '}';
   }

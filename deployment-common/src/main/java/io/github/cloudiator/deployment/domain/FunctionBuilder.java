@@ -10,6 +10,7 @@ public class FunctionBuilder {
   private String cloudId;
   private String locationId;
   private int memory;
+  private String runtime;
   private String stackId;
 
   private FunctionBuilder() {
@@ -53,12 +54,17 @@ public class FunctionBuilder {
     return this;
   }
 
+  public FunctionBuilder runtime(String runtime) {
+    this.runtime = runtime;
+    return this;
+  }
+
   public FunctionBuilder stackId(String stackId) {
     this.stackId = stackId;
     return this;
   }
 
   public Function build() {
-    return new FunctionImpl(id, cloudId, locationId, memory, stackId);
+    return new FunctionImpl(id, cloudId, locationId, memory, runtime, stackId);
   }
 }

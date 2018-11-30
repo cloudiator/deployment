@@ -135,8 +135,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
         lambda.handler = faasInterface.handler();
         lambda.memorySize = function.memory();
         lambda.timeout = faasInterface.timeout();
-        // TODO get runtime from node
-        lambda.runtime = convertRuntime(faasInterface.runtime());
+        lambda.runtime = convertRuntime(function.runtime());
         lambda.env = faasInterface.functionEnvironment();
         applicationTemplate.functions.add(lambda);
       }
@@ -151,7 +150,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
         "java", "java8",
         "dotnet", "dotnetcore2.1",
         "go", "go1.x"
-    ).computeIfAbsent(runtime, rt -> {
+    ).computeIfAbsent(runtime.toLowerCase(), rt -> {
       throw new IllegalStateException("unknown runtime " + rt);
     });
   }

@@ -62,6 +62,7 @@ public class FunctionDomainRepository {
         function.cloudId(),
         function.locationId(),
         function.memory(),
+        function.runtime(),
         function.stackId());
   }
 
