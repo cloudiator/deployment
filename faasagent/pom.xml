@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>faasagent</artifactId>
+  <artifactId>faas-agent</artifactId>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -104,7 +104,7 @@
         <artifactId>jib-maven-plugin</artifactId>
         <configuration>
           <to>
-            registry.hub.docker.com/cloudiator/faasagent:${docker.tag}
+            registry.hub.docker.com/cloudiator/faas-agent:${docker.tag}
           </to>
         </configuration>
       </plugin>
@@ -115,7 +115,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>faasagent</finalName>
+          <finalName>faas-agent</finalName>
           <appendAssemblyId>false</appendAssemblyId>
           <archive>
             <manifest>
