@@ -32,16 +32,14 @@ import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
-import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 public class CreateLanceProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
@@ -188,10 +186,10 @@ public class CreateLanceProcessStrategy {
   }
 
   private CloudiatorProcess deployPrivateDockerComponent(Task task, Job job, DeploymentContext deploymentContext,
-    LifecycleClient lifecycleClient, String schedule, Node node) {
+      LifecycleClient lifecycleClient, String schedule, Node node) {
     LOGGER.debug(String
-          .format("Creating Private Docker component for task %s.",
-        task));
+        .format("Creating Private Docker component for task %s.",
+            task));
 
     final RemoteDockerComponent remoteDockerComponent = new PrivateDockerComponentSupplier(job, task).get();
     LOGGER.debug(
@@ -245,8 +243,8 @@ public class CreateLanceProcessStrategy {
             "Client deployed the process of task %s with component instance id %s successfully",
             task, cId));
 
-    return CloudiatorProcessBuilder.newBuilder().id(cId.toString())
-        .nodeId(node.id())
+    return CloudiatorSingleProcessBuilder.newBuilder().id(cId.toString())
+        .node(node.id())
         .type(Type.LANCE)
         .taskName(task.name()).scheduleId(schedule).build();
   }

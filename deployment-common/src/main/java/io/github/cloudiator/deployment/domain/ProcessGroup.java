@@ -16,8 +16,11 @@
 
 package io.github.cloudiator.deployment.domain;
 
-public interface ProcessGroup {
+import de.uniulm.omi.cloudiator.domain.Identifiable;
+import java.util.List;
 
-  Iterable<CloudiatorProcess> processes();
+public interface ProcessGroup extends Identifiable {
+
+  List<CloudiatorProcess> cloudiatorProcesses();
 
 }

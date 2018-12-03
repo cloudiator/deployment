@@ -52,8 +52,10 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
   @Override
   public DeployableComponent get() {
 
+
     final DeployableComponent.Builder builder = DeployableComponent.Builder
         .createBuilder(task.name(), ComponentId.fromString(job.id() + "/" + task.name()));
+
 
     // add all ingoing ports / provided ports
     for (PortProvided provided : task.providedPorts()) {
@@ -70,5 +72,6 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
     builder.addLifecycleStore(LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE.apply(lanceInterface()));
 
     return builder.build();
+
   }
 }

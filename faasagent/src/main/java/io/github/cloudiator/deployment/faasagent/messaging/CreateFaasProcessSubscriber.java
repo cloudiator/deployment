@@ -82,6 +82,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
                     .setProcess(Process.newBuilder()
                         .setId(apiId)
                         .setSchedule(content.getFaas().getSchedule())
+                        //TODO: add refactor to nodegroup here
                         .setNode(content.getFaas().getNode().getId())
                         .setTask(content.getFaas().getTask()))
                     .build();

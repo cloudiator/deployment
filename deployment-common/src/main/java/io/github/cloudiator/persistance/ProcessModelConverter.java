@@ -17,13 +17,16 @@
 package io.github.cloudiator.persistance;
 
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.CloudiatorProcessBuilder;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import javax.annotation.Nullable;
 
 class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorProcess> {
 
   static final ProcessModelConverter INSTANCE = new ProcessModelConverter();
+
+  NodeGroupConverter nodeGroupConverter = new NodeGroupConverter();
 
   private ProcessModelConverter() {
   }
@@ -36,9 +39,30 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
       return null;
     }
 
-    return CloudiatorProcessBuilder.newBuilder().scheduleId(processModel.getSchedule().domainId())
-        .type(processModel.getType())
-        .id(processModel.getDomainId()).nodeId(processModel.getNode())
-        .taskName(processModel.getTask()).state(processModel.getState()).build();
+    if (processModel.getNodeGroup() == null && processModel.getNode() == null) {
+      throw new IllegalStateException(
+          "Persistence ProcessModel does not contain a nodeModel nor a nodeGroupModel!");
+    }
+
+    if (processModel.getNode() != null) {
+      return CloudiatorSingleProcessBuilder.newBuilder()
+          .scheduleId(processModel.getSchedule().domainId())
+          .type(processModel.getType())
+          .id(processModel.getDomainId())
+          .node(processModel.getNode())
+          .taskName(processModel.getTask())
+          .state(processModel.getState()).build();
+    } else {
+
+      return CloudiatorClusterProcessBuilder.newBuilder()
+          .scheduleId(processModel.getSchedule().domainId())
+          .type(processModel.getType())
+          .id(processModel.getDomainId())
+          .nodeGroup(processModel.getNodeGroup())
+          .taskName(processModel.getTask())
+          .state(processModel.getState()).build();
+    }
   }
+
+
 }
