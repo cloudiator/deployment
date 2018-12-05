@@ -1,7 +1,6 @@
 package io.github.cloudiator.deployment.lance;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 import de.uniulm.omi.cloudiator.lance.application.component.RemoteDockerComponent;
 import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand;
@@ -31,6 +30,7 @@ public class PrivateDockerComponentSupplierTest {
   private static String tag;
   private static String absoluteImageNameNoPort, absoluteImageNamePort;
   private static String username, password;
+  private static String containerPort;
   private static String taskNoCredName, taskCredName;
   private static String jobNoCredName, jobCredName;
   private static String dockerCreateOptionsString, dockerCreateOsCommandString, dockerCreateArgsString;
@@ -78,14 +78,16 @@ public class PrivateDockerComponentSupplierTest {
     absoluteImageNamePort = hostName + ":" + Integer.toString(port) + "/" + imageNameSpace + "/" + imageName + ":" + tag;
     username = "john-doe";
     password = "top-secret";
+    containerPort = "8000:8001";
     envMapNoCred = new HashMap<>();
     envMapNoCred.put("foo","bar");
     envMapNoCred.put("john","doe");
+    envMapNoCred.put("port",containerPort);
     envMapCred = new HashMap<>();
     envMapCred.putAll(envMapNoCred);
     envMapCred.put("username", username);
     envMapCred.put("password", password);
-    dockerCreateOptionsString = "--env foo=bar --env john=doe --interactive  --restart no";
+    dockerCreateOptionsString = "--publish 8000:8001 --interactive  --restart no --env foo=bar --env john=doe";
     dockerCreateOsCommandString = "bash";
     dockerCreateArgsString = "--noediting";
     dockerStartOptionsString = "--interactive";

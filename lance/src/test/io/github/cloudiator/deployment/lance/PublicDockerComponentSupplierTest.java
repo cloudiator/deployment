@@ -30,6 +30,7 @@ public class PublicDockerComponentSupplierTest {
   private static String jobSimpleName, jobExtendedName;
   private static String dockerCreateOptionsString, dockerCreateOsCommandString, dockerCreateArgsString;
   private static String dockerStartOptionsString;
+  private static String containerPort;
   private static Map<String,String> envMap;
   private static Task taskSimple, taskExtended;
   private static Job jobSimple, jobExtended;
@@ -64,10 +65,12 @@ public class PublicDockerComponentSupplierTest {
     imageNameSpace = "root/subDir";
     imageNameRelative = "imagename";
     imageTag = "latest";
+    containerPort = "8000:8001";
     envMap = new HashMap<>();
     envMap.put("foo","bar");
     envMap.put("john","doe");
-    dockerCreateOptionsString = "--restart no --interactive  --env foo=bar --env john=doe";
+    envMap.put("port",containerPort);
+    dockerCreateOptionsString = "--publish 8000:8001 --interactive  --restart no --env foo=bar --env john=doe";
     dockerCreateOsCommandString = "bash";
     dockerCreateArgsString = "--noediting";
     dockerStartOptionsString = "--interactive";
