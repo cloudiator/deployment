@@ -97,8 +97,8 @@ public class ProcessRequestSubscriber implements Runnable {
 
   @SuppressWarnings("WeakerAccess")
   @Transactional
-  void persistProcessGroup(ProcessGroup processGroup, String userId, String nodeGroupId) {
-    processDomainRepository.save(processGroup, userId, nodeGroupId);
+  void persistProcessGroup(ProcessGroup processGroup, String userId) {
+    processDomainRepository.save(processGroup, userId);
   }
 
   @Override
@@ -200,7 +200,7 @@ public class ProcessRequestSubscriber implements Runnable {
 
 
           //persist processes via process group
-          persistProcessGroup(processGroup, userId, nodeGroupId);
+          persistProcessGroup(processGroup, userId);
 
 
           final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()
