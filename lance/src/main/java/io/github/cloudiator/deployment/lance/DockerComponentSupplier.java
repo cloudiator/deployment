@@ -170,6 +170,49 @@ abstract class DockerComponentSupplier {
     return creds;
   }
 
+  protected String getMappedPorts() {
+    DockerInterface dIface = dockerInterface();
+    Map<String,String> envMap = dIface.environment();
+    String port = "";
+    for (Map.Entry<String, String> entry : envMap.entrySet()) {
+      if(entry.getKey()=="port") {
+        if (checkPortFormat(entry.getValue())) {
+          port = entry.getValue();
+        }
+      }
+    }
+
+    return port;
+  }
+
+  private static boolean checkPortFormat(String portsString) {
+    String[] ports = portsString.split(":");
+    List<String> portsList = new ArrayList<>(Arrays.asList(ports));
+
+    if(portsList.size() == 0 || portsList.size()>2) {
+      LOGGER.error("Wrong port option format!");
+      return false;
+    }
+
+    try {
+      Integer.parseInt(portsList.get(0));
+    } catch (NumberFormatException ex) {
+      LOGGER.error("Host port is not a number!");
+      return false;
+    }
+
+    if (portsList.size() == 2) {
+      try {
+        Integer.parseInt(portsList.get(1));
+      } catch (NumberFormatException ex) {
+        LOGGER.error("Container port is not a number!");
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   public static boolean usePrivateRegistry(DockerInterface dockerIface ) {
     final String hostName = getStaticHostName(dockerIface);
     if(hostName.equals("")) {
@@ -206,7 +249,7 @@ abstract class DockerComponentSupplier {
     return splitName.get(0);
   }
 
-  private static Map<Option,List<String>> createOptionMap(Map<String,String> envMap) {
+  private Map<Option,List<String>> createOptionMap(Map<String, String> envMap) {
     Map<Option,List<String>> createOptionMap = new HashMap<>();
     List<String> setEnvVars = new ArrayList<>();
     Map<String,String> actualEnv = getActualEnv(envMap);
@@ -217,6 +260,7 @@ abstract class DockerComponentSupplier {
     createOptionMap.put(Option.ENVIRONMENT, setEnvVars);
     createOptionMap.put(Option.RESTART, new ArrayList<>(Arrays.asList("no")));
     createOptionMap.put(Option.INTERACTIVE, new ArrayList<>(Arrays.asList("")));
+    createOptionMap.put(Option.PORT, new ArrayList<>(Arrays.asList(getMappedPorts())));
 
     return createOptionMap;
   }
@@ -245,7 +289,7 @@ abstract class DockerComponentSupplier {
   private static Map<String,String> getActualEnv(Map<String,String> envMap) {
     Map<String,String> env = new HashMap<>();
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey()=="username" || entry.getKey()=="password") {
+      if(entry.getKey()=="username" || entry.getKey()=="password" || entry.getKey()=="port") {
         continue;
       }
       env.put(entry.getKey(),entry.getValue());
