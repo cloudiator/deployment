@@ -5,8 +5,8 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
-import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
 import org.cloudiator.messaging.MessageInterface;
@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class CreateSparkProcessSubscriber implements Runnable {
 
   private final ProcessService processService;
-  private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
+  private final NodeGroupMessageToNodeGroup nodeGroupMessageToNodeGroup = new NodeGroupMessageToNodeGroup();
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private final CreateSparkProcessStrategy createSparkProcessStrategy;
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateSparkProcessSubscriber.class);
@@ -52,8 +52,10 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final Job job = JOB_CONVERTER.apply(content.getSpark().getJob());
             final String task = content.getSpark().getTask();
 
-            //TODO: this should be a list of nodes
-            final Node node = nodeMessageToNodeConverter.applyBack(content.getSpark().getNode());
+
+            NodeGroup nodeGroupDomain = nodeGroupMessageToNodeGroup
+                .apply(content.getSpark().getNodeGroup());
+
 
 
             final String schedule = content.getSpark().getSchedule();
@@ -61,7 +63,7 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final CloudiatorProcess cloudiatorProcess = createSparkProcessStrategy
                 .execute(userId, schedule, job, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
-                        String.format("Job %s does not contain task %s", job, task))), node);
+                        String.format("Job %s does not contain task %s", job, task))), nodeGroupDomain);
 
 
             final SparkProcessCreatedResponse sparkProcessCreatedResponse = SparkProcessCreatedResponse

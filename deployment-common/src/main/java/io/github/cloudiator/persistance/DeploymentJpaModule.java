@@ -51,7 +51,10 @@ public class DeploymentJpaModule extends AbstractModule {
     bind(TriggerModelRepository.class).to(TriggerModelRepositoryJpa.class);
     bind(ScheduleModelRepository.class).to(ScheduleModelRepositoryJpa.class);
     bind(ProcessModelRepository.class).to(ProcessModelRepositoryJpa.class);
+    bind(NodeGroupModelRepository.class).to(NodeGroupModelRepositoryJpa.class);
+    bind(ProcessGroupModelRepository.class).to(ProcessGroupModelRepositoryJpa.class);
     bind(FunctionModelRepository.class).to(FunctionModelRepositoryJpa.class);
+
   }
 
   private JpaPersistModule buildPersistModule() {

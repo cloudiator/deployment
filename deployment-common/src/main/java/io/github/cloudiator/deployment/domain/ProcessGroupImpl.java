@@ -16,19 +16,51 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import java.util.Collection;
+import java.util.List;
 
 public class ProcessGroupImpl implements ProcessGroup {
 
-  private final Iterable<CloudiatorProcess> processes;
+  private final List<CloudiatorProcess> cloudiatorProcesses;
+  private final String id;
 
-  public ProcessGroupImpl(
-      Iterable<CloudiatorProcess> processes) {
-    this.processes = ImmutableList.copyOf(processes);
+  ProcessGroupImpl(String id, Collection<CloudiatorProcess> cloudiatorProcesses) {
+    checkNotNull(id, "id is null");
+    checkNotNull(cloudiatorProcesses, "cloudiatorProcesses is null");
+    this.cloudiatorProcesses = ImmutableList.copyOf(cloudiatorProcesses);
+    this.id = id;
+  }
+
+  ProcessGroupImpl(String id, CloudiatorProcess cloudiatorProcess) {
+    checkNotNull(id, "id is null");
+    checkNotNull(cloudiatorProcess, "cloudiatorProcess is null");
+    this.cloudiatorProcesses = ImmutableList.of(cloudiatorProcess);
+    this.id = id;
+  }
+
+
+  @Override
+  public List<CloudiatorProcess> cloudiatorProcesses() {
+    return cloudiatorProcesses;
   }
 
   @Override
-  public Iterable<CloudiatorProcess> processes() {
-    return processes;
+  public String id() {
+    return id;
   }
+
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("id", id)
+        .add("cloudiatorProcesses", Joiner.on(",").join(cloudiatorProcesses))
+        .toString();
+  }
+
 }
+

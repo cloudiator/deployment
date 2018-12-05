@@ -2,12 +2,11 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.common.base.Joiner;
 import com.google.inject.Inject;
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.ProcessGroup;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
 import java.util.Set;
-import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +32,8 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
-      Node node) {
+  public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
+      NodeGroup nodeGroup) {
 
     LOGGER.debug("Using CompositeProcessSpawner to determine correct ProcessSpawner");
 
@@ -43,7 +42,7 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
         LOGGER.info(String.format("Using processSpawner %s to spawn task %s.",
             processSpawner, task));
 
-        return processSpawner.spawn(userId, schedule, job, task, node);
+        return processSpawner.spawn(userId, schedule, job, task, nodeGroup);
       }
     }
     throw new IllegalStateException(String

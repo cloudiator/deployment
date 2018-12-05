@@ -33,7 +33,8 @@ import org.slf4j.LoggerFactory;
 public class CreateLanceProcessSubscriber implements Runnable {
 
   private final ProcessService processService;
-  private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
+
+  private static final NodeToNodeMessageConverter NODE_TO_NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private final CreateLanceProcessStrategy createLanceProcessStrategy;
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessSubscriber.class);
@@ -57,10 +58,11 @@ public class CreateLanceProcessSubscriber implements Runnable {
 
           try {
 
+
             final String userId = content.getUserId();
             final Job job = JOB_CONVERTER.apply(content.getLance().getJob());
             final String task = content.getLance().getTask();
-            final Node node = nodeMessageToNodeConverter.applyBack(content.getLance().getNode());
+            final Node node = NODE_TO_NODE_MESSAGE_CONVERTER.applyBack(content.getLance().getNode());
             final String schedule = content.getLance().getSchedule();
 
             final CloudiatorProcess cloudiatorProcess = createLanceProcessStrategy

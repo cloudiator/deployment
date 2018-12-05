@@ -38,7 +38,7 @@ public interface CloudiatorProcess extends Identifiable {
 
   State state();
 
-  String nodeId();
 
   Type type();
+
 }

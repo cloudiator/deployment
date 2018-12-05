@@ -42,7 +42,9 @@ import org.jgrapht.graph.DirectedPseudograph;
 /**
  * Created by daniel on 15.07.16.
  */
+@Deprecated
 public class ScheduleGraph {
+  //TODO: Refactor graph to distinguish between CloudiatorSingleProcess and CloudiatorClusterProcess for getting the node or nodeGroup
 
   private final DirectedPseudograph<CloudiatorProcess, CommunicationInstanceEdge> scheduleGraph;
   private final Set<Node> nodes;
@@ -71,11 +73,12 @@ public class ScheduleGraph {
     return nodes.stream().filter(new Predicate<Node>() {
       @Override
       public boolean test(Node node) {
-        return node.id().equals(cloudiatorProcess.nodeId());
+
+        return node.id().equals(cloudiatorProcess.id());
       }
     }).collect(StreamUtil.getOnly()).orElseThrow(() -> new IllegalStateException(String.format(
         "Node set %s does not contain the node with id %s required for cloudiator process %s.",
-        this.nodes, cloudiatorProcess.nodeId(), cloudiatorProcess)));
+        this.nodes, cloudiatorProcess.id(), cloudiatorProcess)));
   }
 
   public JsonNode toJson() {
@@ -85,8 +88,8 @@ public class ScheduleGraph {
       final ObjectNode vertex = nodes.addObject();
       vertex.with("data").put("id", process.id()).put("type", "INSTANCE")
           .put("name", process.taskId())
-          .put("state", process.state().toString())
-          .put("parent", process.nodeId());
+          .put("state", process.state().toString());
+          //.put("parent", process.nodeGroup());
     });
     //add virtual machines as compound nodes
     this.scheduleGraph.vertexSet().stream().map(this::nodeFor).distinct()

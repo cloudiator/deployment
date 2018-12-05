@@ -20,7 +20,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
+import io.github.cloudiator.deployment.domain.ProcessGroup;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,29 +32,53 @@ public class ProcessDomainRepository {
   private final ProcessModelRepository processModelRepository;
   private final ScheduleModelRepository scheduleModelRepository;
   private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
+  private static  final NodeGroupConverter NODE_GROUP_CONVERTER = new NodeGroupConverter();
+  private final ProcessGroupModelRepository processGroupModelRepository;
 
   @Inject
   ProcessDomainRepository(
       ProcessModelRepository processModelRepository,
-      ScheduleModelRepository scheduleModelRepository) {
+      ScheduleModelRepository scheduleModelRepository,
+      ProcessGroupModelRepository processGroupModelRepository) {
     this.processModelRepository = processModelRepository;
     this.scheduleModelRepository = scheduleModelRepository;
+    this.processGroupModelRepository = processGroupModelRepository;
+
   }
 
-  public void save(CloudiatorProcess domain, String userId) {
 
-    checkNotNull(domain, "domain is null");
+  public void save(ProcessGroup processGroup, String userId, String nodeGroupId) {
+
+    checkNotNull(processGroup, "domain is null");
     checkNotNull(userId, "userId is null");
     checkArgument(!userId.isEmpty(), "userId is empty");
 
-    final ScheduleModel scheduleModel = scheduleModelRepository
-        .findByIdAndUser(domain.scheduleId(), userId);
-    if (scheduleModel == null) {
-      throw new IllegalStateException(
-          String.format("Schedule with id %s does not exist.", domain.scheduleId()));
+
+
+    //persist processes
+    for(CloudiatorProcess cloudiatorProcess : processGroup.cloudiatorProcesses()){
+
+      final ScheduleModel scheduleModel = scheduleModelRepository
+          .findByIdAndUser(cloudiatorProcess.scheduleId(), userId);
+      if (scheduleModel == null) {
+        throw new IllegalStateException(
+            String.format("Schedule with id %s does not exist.", cloudiatorProcess.scheduleId()));
+      }
+      //persist processGroup
+      final ProcessGroupModel processGroupModel = new ProcessGroupModel(processGroup.id(), scheduleModel);
+
+      final ProcessModel processModel = saveAndGet(cloudiatorProcess,scheduleModel, processGroupModel);
+      processGroupModel.addProcess(processModel);
+      processModel.assignGroup(processGroupModel);
+      processModelRepository.save(processModel);
+
+      processGroupModelRepository.save(processGroupModel);
     }
 
-    save(domain, scheduleModel);
+
+
+
+
   }
 
   public void delete(String processId, String userId) {
@@ -80,21 +107,43 @@ public class ProcessDomainRepository {
         Collectors.toList());
   }
 
-  void save(CloudiatorProcess domain, ScheduleModel scheduleModel) {
-    saveAndGet(domain, scheduleModel);
+  /*
+  void save(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel ) {
+    saveAndGet(domain, scheduleModel, processGroupModel);
+  }
+  */
+
+
+  ProcessModel saveAndGet(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel) {
+    return createProcessModel(domain, scheduleModel, processGroupModel);
   }
 
-  ProcessModel saveAndGet(CloudiatorProcess domain, ScheduleModel scheduleModel) {
-    return createProcessModel(domain, scheduleModel);
-  }
+  private ProcessModel createProcessModel(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel) {
 
-  private ProcessModel createProcessModel(CloudiatorProcess domain, ScheduleModel scheduleModel) {
+    //TODO: fetch this by the message!?
 
-    final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(),
-        domain.nodeId(), domain.state(), domain.type());
-    processModelRepository.save(processModel);
 
-    return processModel;
+    if(domain instanceof CloudiatorSingleProcess){
+
+      final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(),
+          ((CloudiatorSingleProcess) domain).node(),
+          null, domain.state(), domain.type(), processGroupModel);
+      processModelRepository.save(processModel);
+
+      return processModel;
+
+    }else if(domain instanceof CloudiatorClusterProcess){
+
+      final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(), null,
+          ((CloudiatorClusterProcess) domain).nodeGroup(), domain.state(), domain.type(), processGroupModel);
+      processModelRepository.save(processModel);
+
+      return processModel;
+    }else{
+      throw  new IllegalStateException("Unknown CloudiatorProcess interface for persisting CloudiatorProcess: " + domain.getClass().getName());
+    }
+
+
   }
 
 }
