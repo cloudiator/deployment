@@ -103,6 +103,7 @@ class ProcessModel extends Model {
         .add("task", task).add("state", state).add("nodeGroup", nodeGroup).add("node", node);
   }
 
+  @Deprecated
   public ProcessModel assignGroup(ProcessGroupModel processGroupModel) {
     checkState(this.processGroupModel == null, "Process Group was already assigned.");
     this.processGroupModel = processGroupModel;
