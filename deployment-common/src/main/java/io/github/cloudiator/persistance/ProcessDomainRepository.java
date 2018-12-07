@@ -69,7 +69,6 @@ public class ProcessDomainRepository {
 
       final ProcessModel processModel = saveAndGet(cloudiatorProcess,scheduleModel, processGroupModel);
       processGroupModel.addProcess(processModel);
-      processModel.assignGroup(processGroupModel);
       processModelRepository.save(processModel);
 
       processGroupModelRepository.save(processGroupModel);
