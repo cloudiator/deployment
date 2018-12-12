@@ -260,7 +260,10 @@ abstract class DockerComponentSupplier {
     createOptionMap.put(Option.ENVIRONMENT, setEnvVars);
     createOptionMap.put(Option.RESTART, new ArrayList<>(Arrays.asList("no")));
     createOptionMap.put(Option.INTERACTIVE, new ArrayList<>(Arrays.asList("")));
-    createOptionMap.put(Option.PORT, new ArrayList<>(Arrays.asList(getMappedPorts())));
+
+    if (!getMappedPorts().equals("")) {
+      createOptionMap.put(Option.PORT, new ArrayList<>(Arrays.asList(getMappedPorts())));
+    }
 
     return createOptionMap;
   }
