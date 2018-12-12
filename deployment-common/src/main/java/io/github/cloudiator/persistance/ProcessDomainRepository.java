@@ -47,12 +47,11 @@ public class ProcessDomainRepository {
   }
 
 
-  public void save(ProcessGroup processGroup, String userId, String nodeGroupId) {
+  public void save(ProcessGroup processGroup, String userId) {
 
     checkNotNull(processGroup, "domain is null");
     checkNotNull(userId, "userId is null");
     checkArgument(!userId.isEmpty(), "userId is empty");
-
 
 
     //persist processes
@@ -66,10 +65,10 @@ public class ProcessDomainRepository {
       }
       //persist processGroup
       final ProcessGroupModel processGroupModel = new ProcessGroupModel(processGroup.id(), scheduleModel);
+      processGroupModelRepository.save(processGroupModel);
 
       final ProcessModel processModel = saveAndGet(cloudiatorProcess,scheduleModel, processGroupModel);
       processGroupModel.addProcess(processModel);
-      processModel.assignGroup(processGroupModel);
       processModelRepository.save(processModel);
 
       processGroupModelRepository.save(processGroupModel);
