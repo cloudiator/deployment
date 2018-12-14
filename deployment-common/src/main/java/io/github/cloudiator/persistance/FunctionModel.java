@@ -1,8 +1,8 @@
 package io.github.cloudiator.persistance;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
+import io.github.cloudiator.domain.Runtime;
+
+import javax.persistence.*;
 
 @Entity
 public class FunctionModel extends Model {
@@ -22,8 +22,8 @@ public class FunctionModel extends Model {
   @Column
   private Integer memory;
 
-  @Column
-  private String runtime;
+  @Enumerated(EnumType.STRING)
+  private Runtime runtime;
 
   @Column
   private String stackId;
@@ -32,7 +32,7 @@ public class FunctionModel extends Model {
   }
 
   public FunctionModel(String functionId, TenantModel tenantModel, String cloudId,
-      String locationId, Integer memory, String runtime, String stackId) {
+      String locationId, Integer memory, Runtime runtime, String stackId) {
     this.functionId = functionId;
     this.tenantModel = tenantModel;
     this.cloudId = cloudId;
@@ -62,7 +62,7 @@ public class FunctionModel extends Model {
     return memory;
   }
 
-  public String getRuntime() {
+  public Runtime getRuntime() {
     return runtime;
   }
 

@@ -1,6 +1,7 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import io.github.cloudiator.domain.Runtime;
 
 public interface Function extends Identifiable {
 
@@ -10,7 +11,7 @@ public interface Function extends Identifiable {
 
   int memory();
 
-  String runtime();
+  Runtime runtime();
 
   String stackId();
 
