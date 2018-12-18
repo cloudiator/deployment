@@ -17,6 +17,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -278,7 +279,12 @@ public class CreateSparkProcessStrategy {
     LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
     this.submitSparkProcessToLivy(task);
 
-    return CloudiatorClusterProcessBuilder.newBuilder().id("spark-dummy-id").type(Type.SPARK)
+    //TODO: get Livy Batch ID from Livy Server as soon as this is fixed in Livy or YARN is enabled
+    //using temporary UUID meanwhile
+      UUID uuid = UUID.randomUUID();
+      String temporarySparkProcessUid = uuid.toString();
+
+    return CloudiatorClusterProcessBuilder.newBuilder().id(temporarySparkProcessUid).type(Type.SPARK)
         .nodeGroup(nodeGroup.id())
         .taskName(task.name()).scheduleId(schedule).build();
 
