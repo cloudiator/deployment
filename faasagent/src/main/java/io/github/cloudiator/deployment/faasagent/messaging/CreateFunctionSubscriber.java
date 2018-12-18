@@ -5,6 +5,7 @@ import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Function;
 import io.github.cloudiator.deployment.domain.FunctionBuilder;
 import io.github.cloudiator.deployment.messaging.FunctionConverter;
+import io.github.cloudiator.messaging.RuntimeConverter;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
 import org.cloudiator.messages.Function.CreateFunctionRequestMessage;
 import org.cloudiator.messages.Function.FunctionCreatedResponse;
@@ -20,6 +21,7 @@ public class CreateFunctionSubscriber implements Runnable {
   private final MessageInterface messageInterface;
   private final FunctionDomainRepository functionDomainRepository;
   private final FunctionConverter functionConverter = new FunctionConverter();
+  private final RuntimeConverter runtimeConverter = RuntimeConverter.INSTANCE;
 
   @Inject
   public CreateFunctionSubscriber(MessageInterface messageInterface,
@@ -64,6 +66,7 @@ public class CreateFunctionSubscriber implements Runnable {
         .cloudId(request.getCloudId())
         .locationId(request.getLocationId())
         .memory(request.getMemory())
+        .runtime(runtimeConverter.apply(request.getRuntime()))
         .stackId("")
         .build();
   }

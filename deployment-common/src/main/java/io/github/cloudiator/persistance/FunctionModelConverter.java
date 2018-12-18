@@ -23,6 +23,7 @@ public class FunctionModelConverter implements
         .cloudId(functionModel.getCloudId())
         .locationId(functionModel.getLocationId())
         .memory(functionModel.getMemory())
+        .runtime(functionModel.getRuntime())
         .stackId(functionModel.getStackId())
         .build();
   }

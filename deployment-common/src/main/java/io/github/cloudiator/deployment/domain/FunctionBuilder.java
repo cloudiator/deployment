@@ -1,6 +1,7 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.sword.domain.Location;
+import io.github.cloudiator.domain.Runtime;
 
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ public class FunctionBuilder {
   private String cloudId;
   private String locationId;
   private int memory;
+  private Runtime runtime;
   private String stackId;
 
   private FunctionBuilder() {
@@ -25,6 +27,7 @@ public class FunctionBuilder {
         .cloudId(function.cloudId())
         .locationId(function.locationId())
         .memory(function.memory())
+        .runtime(function.runtime())
         .stackId(function.stackId());
   }
 
@@ -53,12 +56,17 @@ public class FunctionBuilder {
     return this;
   }
 
+  public FunctionBuilder runtime(Runtime runtime) {
+    this.runtime = runtime;
+    return this;
+  }
+
   public FunctionBuilder stackId(String stackId) {
     this.stackId = stackId;
     return this;
   }
 
   public Function build() {
-    return new FunctionImpl(id, cloudId, locationId, memory, stackId);
+    return new FunctionImpl(id, cloudId, locationId, memory, runtime, stackId);
   }
 }

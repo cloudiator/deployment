@@ -12,13 +12,9 @@ public interface FaasInterface extends TaskInterface {
 
   String handler();
 
-  String runtime();
-
   Set<Trigger> triggers();
 
   int timeout();
-
-  int memory();
 
   Map<String, String> functionEnvironment();
 

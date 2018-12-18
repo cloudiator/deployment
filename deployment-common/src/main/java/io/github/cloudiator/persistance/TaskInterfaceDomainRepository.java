@@ -80,9 +80,7 @@ public class TaskInterfaceDomainRepository {
         domain.functionName(),
         domain.sourceCodeUrl(),
         domain.handler(),
-        domain.runtime(),
         domain.timeout(),
-        domain.memory(),
         domain.functionEnvironment());
 
     taskInterfaceModelRepository.save(faasInterfaceModel);

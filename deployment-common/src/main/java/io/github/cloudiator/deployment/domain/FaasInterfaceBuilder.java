@@ -9,10 +9,8 @@ public class FaasInterfaceBuilder {
   private String functionName;
   private String sourceCodeUrl;
   private String handler;
-  private String runtime;
   private Set<Trigger> triggers;
   private int timeout;
-  private int memory;
   private Map<String, String> functionEnvironment;
 
   private FaasInterfaceBuilder() {
@@ -37,11 +35,6 @@ public class FaasInterfaceBuilder {
     return this;
   }
 
-  public FaasInterfaceBuilder runtime(String runtime) {
-    this.runtime = runtime;
-    return this;
-  }
-
   public FaasInterfaceBuilder triggers(Set<Trigger> triggers) {
     this.triggers = triggers;
     return this;
@@ -49,11 +42,6 @@ public class FaasInterfaceBuilder {
 
   public FaasInterfaceBuilder timeout(int timeout) {
     this.timeout = timeout;
-    return this;
-  }
-
-  public FaasInterfaceBuilder memory(int memory) {
-    this.memory = memory;
     return this;
   }
 
@@ -67,10 +55,8 @@ public class FaasInterfaceBuilder {
         functionName,
         sourceCodeUrl,
         handler,
-        runtime,
         triggers,
         timeout,
-        memory,
         functionEnvironment
     );
   }

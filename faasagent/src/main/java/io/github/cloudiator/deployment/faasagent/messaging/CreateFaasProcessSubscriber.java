@@ -12,6 +12,7 @@ import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTem
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
 import io.github.cloudiator.deployment.messaging.JobConverter;
+import io.github.cloudiator.domain.Runtime;
 import io.github.cloudiator.messaging.CloudMessageRepository;
 import io.github.cloudiator.messaging.LocationMessageRepository;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
@@ -135,8 +136,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
         lambda.handler = faasInterface.handler();
         lambda.memorySize = function.memory();
         lambda.timeout = faasInterface.timeout();
-        // TODO get runtime from node
-        lambda.runtime = convertRuntime(faasInterface.runtime());
+        lambda.runtime = convertRuntime(function.runtime());
         lambda.env = faasInterface.functionEnvironment();
         applicationTemplate.functions.add(lambda);
       }
@@ -144,13 +144,14 @@ public class CreateFaasProcessSubscriber implements Runnable {
     return applicationTemplate;
   }
 
-  private String convertRuntime(String runtime) {
+  // Get AWS compatible runtime string
+  private String convertRuntime(Runtime runtime) {
     return ImmutableMap.of(
-        "nodejs", "nodejs8.10",
-        "python", "python2.7",
-        "java", "java8",
-        "dotnet", "dotnetcore2.1",
-        "go", "go1.x"
+        Runtime.NODEJS, "nodejs8.10",
+        Runtime.PYTHON, "python2.7",
+        Runtime.JAVA, "java8",
+        Runtime.DOTNET, "dotnetcore2.1",
+        Runtime.GO, "go1.x"
     ).computeIfAbsent(runtime, rt -> {
       throw new IllegalStateException("unknown runtime " + rt);
     });
