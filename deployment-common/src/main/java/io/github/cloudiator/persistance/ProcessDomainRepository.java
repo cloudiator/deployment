@@ -32,7 +32,7 @@ public class ProcessDomainRepository {
   private final ProcessModelRepository processModelRepository;
   private final ScheduleModelRepository scheduleModelRepository;
   private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
-  private static  final NodeGroupConverter NODE_GROUP_CONVERTER = new NodeGroupConverter();
+  private static  final ProcessGroupConverter PROCESS_GROUP_CONVERTER = new ProcessGroupConverter();
   private final ProcessGroupModelRepository processGroupModelRepository;
 
   @Inject
@@ -73,9 +73,6 @@ public class ProcessDomainRepository {
 
       processGroupModelRepository.save(processGroupModel);
     }
-
-
-
 
 
   }
@@ -144,5 +141,16 @@ public class ProcessDomainRepository {
 
 
   }
+
+  public List<ProcessGroup> findGroupsByTenant(String userId) {
+    return processGroupModelRepository.findByTenant(userId).stream().map(PROCESS_GROUP_CONVERTER)
+        .collect(Collectors.toList());
+  }
+
+  public ProcessGroup findGroupByTenantAndId(String userId, String processGroupId) {
+    return PROCESS_GROUP_CONVERTER
+        .apply(processGroupModelRepository.findByTenantAndDomainId(userId, processGroupId));
+  }
+
 
 }
