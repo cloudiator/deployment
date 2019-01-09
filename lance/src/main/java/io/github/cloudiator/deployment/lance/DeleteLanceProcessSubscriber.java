@@ -32,7 +32,7 @@ public class DeleteLanceProcessSubscriber implements Runnable {
   private static final Logger LOGGER = LoggerFactory.getLogger(DeleteLanceProcessSubscriber.class);
   private final ProcessService processService;
   private final DeleteLanceProcessStrategy deleteLanceProcessStrategy;
-  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
+  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
   private final MessageInterface messageInterface;
 
   @Inject

@@ -22,7 +22,6 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.concurrent.ExecutionException;
@@ -39,15 +38,13 @@ public class LanceProcessKillerImpl implements ProcessKiller {
       .getLogger(LanceProcessKillerImpl.class);
   private final ProcessService processService;
   private final NodeMessageRepository nodeMessageRepository;
-  private final NodeGroupMessageRepository nodeGroupMessageRepository;
-  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
+  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
 
   @Inject
   public LanceProcessKillerImpl(ProcessService processService,
-      NodeMessageRepository nodeMessageRepository, NodeGroupMessageRepository nodeGroupMessageRepository) {
+      NodeMessageRepository nodeMessageRepository) {
     this.processService = processService;
     this.nodeMessageRepository = nodeMessageRepository;
-    this.nodeGroupMessageRepository = nodeGroupMessageRepository;
   }
 
   @Override
@@ -62,45 +59,39 @@ public class LanceProcessKillerImpl implements ProcessKiller {
         .format("%s is killing the process %s for user: %s", this,
             cloudiatorProcess, userId));
 
-    if(cloudiatorProcess instanceof CloudiatorClusterProcess)
-      throw  new IllegalStateException("Trying to kill a SparkClusterProcess in of Lance, this should never happen!");
-    //NodeGroup nodeGroup = nodeGroupMessageRepository
-     //   .getById(userId, cloudiatorProcess.nodeGroup());
+    if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
+      throw new IllegalStateException(
+          "Trying to kill a SparkClusterProcess in of Lance, this should never happen!");
+    }
 
+    final Node byId = nodeMessageRepository
+        .getById(userId, ((CloudiatorSingleProcess) cloudiatorProcess).node());
 
-      CloudiatorSingleProcess cloudiatorSingleProcess = (CloudiatorSingleProcess)cloudiatorProcess;
+    if (byId == null) {
+      throw new IllegalStateException(
+          String.format("Could not find node for process %s.", cloudiatorProcess));
+    }
 
+    final DeleteLanceProcessRequest deleteLanceProcessRequest = DeleteLanceProcessRequest
+        .newBuilder()
+        .setProcessId(cloudiatorProcess.id()).setUserId(userId)
+        .setNode(NODE_MESSAGE_CONVERTER.apply(byId))
+        .build();
 
-      final Node byId = nodeMessageRepository.getById(userId,((CloudiatorSingleProcess) cloudiatorProcess).node());
+    SettableFutureResponseCallback<LanceProcessDeletedResponse, LanceProcessDeletedResponse> futureResponseCallback = SettableFutureResponseCallback
+        .create();
 
-      if (byId == null) {
-        throw new IllegalStateException(
-            String.format("Could not find node for process %s.", cloudiatorProcess));
-      }
+    processService.deleteLanceProcessAsync(deleteLanceProcessRequest, futureResponseCallback);
 
-      final DeleteLanceProcessRequest deleteLanceProcessRequest = DeleteLanceProcessRequest
-          .newBuilder()
-          .setProcessId(cloudiatorProcess.id()).setUserId(userId)
-          .setNode(NODE_MESSAGE_CONVERTER.apply(byId))
-          .build();
+    try {
+      futureResponseCallback.get();
 
-      SettableFutureResponseCallback<LanceProcessDeletedResponse, LanceProcessDeletedResponse> futureResponseCallback = SettableFutureResponseCallback
-          .create();
-
-      processService.deleteLanceProcessAsync(deleteLanceProcessRequest, futureResponseCallback);
-
-      try {
-        futureResponseCallback.get();
-
-        LOGGER.info("%s successfully killed the process %s.", this, cloudiatorProcess, userId);
-      } catch (InterruptedException e) {
-        throw new IllegalStateException("Got interrupted while waiting for lance process deletion.");
-      } catch (ExecutionException e) {
-        throw new IllegalStateException("Error while deleting lance process.", e.getCause());
-      }
-
-
-
+      LOGGER.info("%s successfully killed the process %s.", this, cloudiatorProcess, userId);
+    } catch (InterruptedException e) {
+      throw new IllegalStateException("Got interrupted while waiting for lance process deletion.");
+    } catch (ExecutionException e) {
+      throw new IllegalStateException("Error while deleting lance process.", e.getCause());
+    }
 
 
   }

@@ -29,7 +29,6 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
   private final ProcessService processService;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
-  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
   private static final NodeGroupMessageToNodeGroup NODE_GROUP_MESSAGE_TO_NODE_GROUP = new NodeGroupMessageToNodeGroup();
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory

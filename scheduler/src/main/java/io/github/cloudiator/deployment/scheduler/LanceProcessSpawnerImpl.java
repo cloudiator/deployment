@@ -46,7 +46,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
   private final ProcessService processService;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
-  private static final NodeToNodeMessageConverter NODE_TO_NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
+  private static final NodeToNodeMessageConverter NODE_TO_NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(LanceProcessSpawnerImpl.class);

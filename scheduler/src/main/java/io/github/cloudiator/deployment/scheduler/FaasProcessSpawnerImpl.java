@@ -28,7 +28,7 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
 
   private final ProcessService processService;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
-  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
+  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(FaasProcessSpawnerImpl.class);
@@ -50,8 +50,8 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
     //Create all Lance processes of for the nodegroup
     List<Future<CloudiatorProcess>> futures = new ArrayList<>();
 
-    for(Node node : nodeGroup.getNodes()){
-      futures.add(spawn(userId,schedule,job,task, node, nodeGroup.id()));
+    for (Node node : nodeGroup.getNodes()) {
+      futures.add(spawn(userId, schedule, job, task, node, nodeGroup.id()));
     }
 
     //wait until all processes are spawned
@@ -64,12 +64,13 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
 
 
     } catch (ExecutionException e) {
-      LOGGER.error("Error while waiting for FaaSProcess to spawn!" ,e);
-      throw  new IllegalStateException(e);
+      LOGGER.error("Error while waiting for FaaSProcess to spawn!", e);
+      throw new IllegalStateException(e);
     }
   }
 
-  private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task, Node node, String nodeGroupId) {
+  private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
+      Node node, String nodeGroupId) {
     final FaasProcess faasProcess = FaasProcess.newBuilder()
         .setSchedule(schedule)
         .setJob(JOB_CONVERTER.applyBack(job))

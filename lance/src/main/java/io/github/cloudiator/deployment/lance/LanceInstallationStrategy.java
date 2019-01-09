@@ -32,7 +32,7 @@ import org.cloudiator.messaging.services.InstallationRequestService;
 public class LanceInstallationStrategy {
 
   private final InstallationRequestService installationRequestService;
-  private final NodeToNodeMessageConverter nodeToNodeMessageConverter = new NodeToNodeMessageConverter();
+  private static final NodeToNodeMessageConverter nodeToNodeMessageConverter = NodeToNodeMessageConverter.INSTANCE;
 
   @Inject
   public LanceInstallationStrategy(
