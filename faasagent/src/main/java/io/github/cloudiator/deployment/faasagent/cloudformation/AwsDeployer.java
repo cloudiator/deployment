@@ -58,7 +58,7 @@ public class AwsDeployer implements FaasDeployer {
   private String physicalApiId;
   private String physicalBucketId;
 
-  public AwsDeployer(String region, String keyId, String accessKey) {
+  private AwsDeployer(String region, String keyId, String accessKey) {
     this.region = region;
     AWSCredentialsProvider credentials = getCredentials(keyId, accessKey);
     this.cfApi = AmazonCloudFormationClientBuilder.standard()
