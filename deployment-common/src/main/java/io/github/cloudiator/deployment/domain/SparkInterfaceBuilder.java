@@ -2,22 +2,22 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class SparkInterfaceBuilder {
 
   private String file;
   private String className;
-  private Set<String> arguments;
+  private List<String> arguments;
   private Map<String, String> sparkArguments;
   private Map<String, String> sparkConfiguration;
 
   private SparkInterfaceBuilder() {
-    arguments = new HashSet<>();
+    arguments = new LinkedList<>();
     sparkArguments = new HashMap<>();
     sparkConfiguration = new HashMap<>();
   }
@@ -37,7 +37,7 @@ public class SparkInterfaceBuilder {
   }
 
   public SparkInterfaceBuilder arguments(Iterable<String> arguments) {
-    this.arguments = Sets.newHashSet(arguments);
+    this.arguments = Lists.newLinkedList(arguments);
     return this;
   }
 
