@@ -1,8 +1,8 @@
 package io.github.cloudiator.deployment.domain;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 public interface SparkInterface extends TaskInterface {
 
@@ -10,7 +10,7 @@ public interface SparkInterface extends TaskInterface {
 
   Optional<String> className();
 
-  Set<String> arguments();
+  List<String> arguments();
 
   Map<String, String> sparkArguments();
 
