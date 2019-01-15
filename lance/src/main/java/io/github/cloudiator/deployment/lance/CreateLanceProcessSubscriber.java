@@ -34,7 +34,7 @@ public class CreateLanceProcessSubscriber implements Runnable {
 
   private final ProcessService processService;
 
-  private static final NodeToNodeMessageConverter NODE_TO_NODE_MESSAGE_CONVERTER = new NodeToNodeMessageConverter();
+  private static final NodeToNodeMessageConverter NODE_TO_NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private final CreateLanceProcessStrategy createLanceProcessStrategy;
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessSubscriber.class);

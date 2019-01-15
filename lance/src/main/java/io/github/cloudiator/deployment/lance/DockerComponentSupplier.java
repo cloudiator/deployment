@@ -156,11 +156,11 @@ abstract class DockerComponentSupplier {
     String username = "";
     String password = "";
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey()=="username") {
+      if(entry.getKey().equals("username")) {
         checkDoubleSet("username", username);
         username = entry.getValue();
       }
-      if(entry.getKey()=="password") {
+      if(entry.getKey().equals("password")) {
         checkDoubleSet("password", password);
         password = entry.getValue();
       }
@@ -175,7 +175,7 @@ abstract class DockerComponentSupplier {
     Map<String,String> envMap = dIface.environment();
     String port = "";
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey()=="port") {
+      if(entry.getKey().equals("port")) {
         if (checkPortFormat(entry.getValue())) {
           port = entry.getValue();
         }
@@ -292,7 +292,7 @@ abstract class DockerComponentSupplier {
   private static Map<String,String> getActualEnv(Map<String,String> envMap) {
     Map<String,String> env = new HashMap<>();
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey()=="username" || entry.getKey()=="password" || entry.getKey()=="port") {
+      if(entry.getKey().equals("username") || entry.getKey().equals("password") || entry.getKey().equals("port")) {
         continue;
       }
       env.put(entry.getKey(),entry.getValue());

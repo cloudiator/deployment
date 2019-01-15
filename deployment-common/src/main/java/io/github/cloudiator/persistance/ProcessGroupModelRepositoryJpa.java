@@ -28,7 +28,7 @@ public class ProcessGroupModelRepositoryJpa extends BaseModelRepositoryJpa<Proce
     checkNotNull(userId, "userId is null");
     checkNotNull(domainId, "domainId is null");
     String queryString = String.format(
-        "select processGroup from %s processGroup inner join processGroup.scheduleModel schedule inner join schedule.tenantModel tenant where tenant.userId = :userId and processGroup.domainId = :domainId",
+        "select processGroup from %s processGroup inner join processGroup.scheduleModel as schedule inner join schedule.tenant as tenant where tenant.userId = :userId and processGroup.domainId = :domainId",
         type.getName());
     Query query = em().createQuery(queryString).setParameter("userId", userId)
         .setParameter("domainId", domainId);
@@ -41,7 +41,7 @@ public class ProcessGroupModelRepositoryJpa extends BaseModelRepositoryJpa<Proce
     checkNotNull(userId, "userId is null");
     String queryString = String
         .format(
-            "select processGroup from %s processGroup inner join processGroup.scheduleModel schedule inner join schedule.tenantModel tenant where tenant.userId = :userId",
+            "select processGroup from %s processGroup inner join processGroup.scheduleModel as schedule inner join schedule.tenant as tenant where tenant.userId = :userId",
             type.getName());
     Query query = em().createQuery(queryString).setParameter("userId", userId);
     //noinspection unchecked

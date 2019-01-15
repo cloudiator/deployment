@@ -14,9 +14,9 @@ import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -44,7 +44,7 @@ public class CreateSparkProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateSparkProcessStrategy.class);
 
-  private final NodeToNodeMessageConverter nodeMessageToNodeConverter = new NodeToNodeMessageConverter();
+  private final NodeToNodeMessageConverter nodeMessageToNodeConverter = NodeToNodeMessageConverter.INSTANCE;
 
   private static final String SPARK_ARGUMENT_DELIMITER = ",";
 
@@ -56,9 +56,9 @@ public class CreateSparkProcessStrategy {
   }
 
 
-  private void installSparkWorkers(String userId, NodeGroup nodeGroup){
+  private void installSparkWorkers(String userId, NodeGroup nodeGroup) {
 
-    for (Node node: nodeGroup.getNodes()) {
+    for (Node node : nodeGroup.getNodes()) {
 
       //TODO: trigger sync install request and check if installation was successfull
       LOGGER.debug("Installing Docker and Spark Worker on node: " + node.id());
@@ -80,38 +80,40 @@ public class CreateSparkProcessStrategy {
         futureResponseCallback.get();
       } catch (InterruptedException e) {
         throw new IllegalStateException(
-            "Docker and Spark Worker  installation was interrupted during installation request.", e);
+            "Docker and Spark Worker  installation was interrupted during installation request.",
+            e);
       } catch (ExecutionException e) {
-        throw new IllegalStateException("Error during Docker and Spark Worker installation", e.getCause());
+        throw new IllegalStateException("Error during Docker and Spark Worker installation",
+            e.getCause());
       }
 
       LOGGER.debug("Finished Docker and Spark Worker installation on node: " + node.id());
     }
 
 
-
   }
 
 
-  private void submitSparkProcessToLivy(Task task){
-
+  private void submitSparkProcessToLivy(Task task) {
 
     //find SparkInterface
     LOGGER.debug("Submitting Spark process to Livy Server...");
     SparkInterface sparkInterface = task.interfaceOfType(SparkInterface.class);
 
-    if(sparkInterface == null) throw  new IllegalStateException("No SparkInterface in TaskInterface set was found! Aborting Spark Process submission!");
-
+    if (sparkInterface == null) {
+      throw new IllegalStateException(
+          "No SparkInterface in TaskInterface set was found! Aborting Spark Process submission!");
+    }
 
     //execute HTTP POST call to Livy Server
     ResponseHandler<String> handler = new BasicResponseHandler();
 
-
     CloseableHttpClient client = HttpClients.createDefault();
 
-    HttpPost httpPost = new HttpPost("http://" + Configuration.conf().getString("livy.server") + "/batches");
+    HttpPost httpPost = new HttpPost(
+        "http://" + Configuration.conf().getString("livy.server") + "/batches");
 
-    LivyBatch livyBatch =buildLivyBatch(sparkInterface);
+    LivyBatch livyBatch = buildLivyBatch(sparkInterface);
 
     Gson gson = new Gson();
 
@@ -124,7 +126,6 @@ public class CreateSparkProcessStrategy {
       httpPost.setEntity(entity);
       httpPost.setHeader("Content-type", "application/json");
 
-
       LOGGER.debug("HttpPost: " + httpPost.toString());
       LOGGER.debug("Submit Spark process payload: " + payload);
 
@@ -132,8 +133,9 @@ public class CreateSparkProcessStrategy {
 
       int code = response.getStatusLine().getStatusCode();
 
-      if(code != HttpStatus.SC_CREATED){
-        throw new IllegalStateException("Submission of Spark process to livy faild with response code: " + code);
+      if (code != HttpStatus.SC_CREATED) {
+        throw new IllegalStateException(
+            "Submission of Spark process to livy faild with response code: " + code);
       }
 
       //TODO: get appId from response (as soon as Livy bug is fixed and appId is properly set)
@@ -144,21 +146,20 @@ public class CreateSparkProcessStrategy {
 
 
     } catch (UnsupportedEncodingException e) {
-      LOGGER.error("Error while creating HTTP Post payload for Livy Server call!",e);
+      LOGGER.error("Error while creating HTTP Post payload for Livy Server call!", e);
       throw new IllegalStateException("Error while submitting Spark Process to Livy Server!");
     } catch (ClientProtocolException e) {
-      LOGGER.error("Error while executing HTTP Post call to Livy Server!",e);
+      LOGGER.error("Error while executing HTTP Post call to Livy Server!", e);
       throw new IllegalStateException("Error while submitting Spark Process to Livy Server!");
     } catch (IOException e) {
-      LOGGER.error("Error while handling HTTP Post response from Livy Server!",e);
+      LOGGER.error("Error while handling HTTP Post response from Livy Server!", e);
       throw new IllegalStateException("Error while submitting Spark Process to Livy Server!");
     }
 
 
   }
 
-  private static LivyBatch buildLivyBatch(SparkInterface sparkInterface){
-
+  private static LivyBatch buildLivyBatch(SparkInterface sparkInterface) {
 
     LivyBatch livyBatch = new LivyBatch();
 
@@ -170,25 +171,23 @@ public class CreateSparkProcessStrategy {
     /**
      * add optional class name
      */
-    if(sparkInterface.className().isPresent() && !sparkInterface.className().get().isEmpty()){
+    if (sparkInterface.className().isPresent() && !sparkInterface.className().get().isEmpty()) {
       livyBatch.setClassName(sparkInterface.className().get());
     }
 
     /**
      * add optional argument list
      */
-    List<String> args = new ArrayList<>();
-    sparkInterface.arguments().forEach(args::add);
-    livyBatch.setArgs(args);
+    livyBatch.setArgs(sparkInterface.arguments());
 
     /**
      * add optional Spark arguments
      */
-    if(sparkInterface.sparkArguments().containsKey("proxyUser")){
+    if (sparkInterface.sparkArguments().containsKey("proxyUser")) {
       livyBatch.setProxyUser(sparkInterface.sparkArguments().get("proxyUser"));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("jars")){
+    if (sparkInterface.sparkArguments().containsKey("jars")) {
 
       String jarsConcatenated = sparkInterface.sparkArguments().get("jars");
       List<String> jarsList = Arrays.asList(jarsConcatenated.split(SPARK_ARGUMENT_DELIMITER));
@@ -197,7 +196,7 @@ public class CreateSparkProcessStrategy {
 
     }
 
-    if(sparkInterface.sparkArguments().containsKey("pyFiles")){
+    if (sparkInterface.sparkArguments().containsKey("pyFiles")) {
 
       String pyFilesConcatenated = sparkInterface.sparkArguments().get("pyFiles");
       List<String> pyFilesList = Arrays.asList(pyFilesConcatenated.split(SPARK_ARGUMENT_DELIMITER));
@@ -205,7 +204,7 @@ public class CreateSparkProcessStrategy {
       livyBatch.setPyFiles(pyFilesList);
     }
 
-    if(sparkInterface.sparkArguments().containsKey("files")){
+    if (sparkInterface.sparkArguments().containsKey("files")) {
 
       String filesConcatenated = sparkInterface.sparkArguments().get("files");
       List<String> filesList = Arrays.asList(filesConcatenated.split(SPARK_ARGUMENT_DELIMITER));
@@ -214,76 +213,85 @@ public class CreateSparkProcessStrategy {
 
     }
 
-    if(sparkInterface.sparkArguments().containsKey("driverMemory")){
+    if (sparkInterface.sparkArguments().containsKey("driverMemory")) {
       livyBatch.setDriverMemory(sparkInterface.sparkArguments().get("driverMemory"));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("driverCores")  && Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")) > 0  ){
-      livyBatch.setDriverCores(Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")));
+    if (sparkInterface.sparkArguments().containsKey("driverCores")
+        && Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")) > 0) {
+      livyBatch
+          .setDriverCores(Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("executorMemory")){
+    if (sparkInterface.sparkArguments().containsKey("executorMemory")) {
       livyBatch.setExecutorMemory(sparkInterface.sparkArguments().get("executorMemory"));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("executorCores") && Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")) > 0){
-      livyBatch.setExecutorCores(Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")));
+    if (sparkInterface.sparkArguments().containsKey("executorCores")
+        && Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")) > 0) {
+      livyBatch
+          .setExecutorCores(Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("numExecutors") && Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")) > 0 ){
-      livyBatch.setNumExecutors(Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")));
+    if (sparkInterface.sparkArguments().containsKey("numExecutors")
+        && Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")) > 0) {
+      livyBatch
+          .setNumExecutors(Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("archives")){
+    if (sparkInterface.sparkArguments().containsKey("archives")) {
 
       String archivesConcatenated = sparkInterface.sparkArguments().get("archives");
-      List<String> archivesList = Arrays.asList(archivesConcatenated.split(SPARK_ARGUMENT_DELIMITER));
+      List<String> archivesList = Arrays
+          .asList(archivesConcatenated.split(SPARK_ARGUMENT_DELIMITER));
 
       livyBatch.setPyFiles(archivesList);
     }
 
-    if(sparkInterface.sparkArguments().containsKey("queue")){
+    if (sparkInterface.sparkArguments().containsKey("queue")) {
       livyBatch.setQueue(sparkInterface.sparkArguments().get("queue"));
     }
 
-    if(sparkInterface.sparkArguments().containsKey("name")){
+    if (sparkInterface.sparkArguments().containsKey("name")) {
       livyBatch.setName(sparkInterface.sparkArguments().get("name"));
     }
-
 
     /**
      * add optional Spark configurations
      */
     livyBatch.setConf(sparkInterface.sparkConfiguration());
 
-
     return livyBatch;
   }
 
 
-
-  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup) {
+  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task,
+      NodeGroup nodeGroup) {
 
     LOGGER.info(String
         .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
             userId, schedule, task, nodeGroup));
 
-    try{
+    try {
 
+      LOGGER.debug("Triggering Spark Worker installations...");
+      this.installSparkWorkers(userId, nodeGroup);
 
-    LOGGER.debug("Triggering Spark Worker installations...");
-    this.installSparkWorkers(userId, nodeGroup);
+      LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
+      this.submitSparkProcessToLivy(task);
 
+      //TODO: get Livy Batch ID from Livy Server as soon as this is fixed in Livy or YARN is enabled
+      //using temporary UUID meanwhile
+      UUID uuid = UUID.randomUUID();
+      String temporarySparkProcessUid = uuid.toString();
 
-    LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
-    this.submitSparkProcessToLivy(task);
-
-    return CloudiatorClusterProcessBuilder.newBuilder().id("spark-dummy-id").type(Type.SPARK)
-        .nodeGroup(nodeGroup.id())
-        .taskName(task.name()).scheduleId(schedule).build();
+      return CloudiatorClusterProcessBuilder.newBuilder().id(temporarySparkProcessUid)
+          .type(Type.SPARK)
+          .nodeGroup(nodeGroup.id())
+          .taskName(task.name()).scheduleId(schedule).build();
 
     } catch (Exception e) {
-        throw new IllegalStateException("Could not deploy task " + task, e);
+      throw new IllegalStateException("Could not deploy task " + task, e);
     }
 
   }

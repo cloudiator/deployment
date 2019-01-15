@@ -2,16 +2,17 @@ package io.github.cloudiator.persistance;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.OrderColumn;
 
 @Entity
 public class SparkTaskInterfaceModel extends TaskInterfaceModel {
@@ -22,8 +23,9 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
   @Nullable
   private String className;
 
+  @OrderColumn
   @ElementCollection
-  private Set<String> arguments = new HashSet<>();
+  private List<String> arguments = new LinkedList<>();
 
   @ElementCollection
   private Map<String, String> sparkArguments = new HashMap<>();
@@ -36,8 +38,8 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
     return className;
   }
 
-  public Set<String> getArguments() {
-    return ImmutableSet.copyOf(arguments);
+  public List<String> getArguments() {
+    return ImmutableList.copyOf(arguments);
   }
 
   public SparkTaskInterfaceModel addArgument(String argument) {
@@ -80,7 +82,7 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
   }
 
   SparkTaskInterfaceModel(TaskModel taskModel, String file, @Nullable String className,
-      Set<String> arguments, Map<String, String> sparkArguments,
+      List<String> arguments, Map<String, String> sparkArguments,
       Map<String, String> sparkConfiguration) {
     super(taskModel);
     checkNotNull(file, "file is null");
