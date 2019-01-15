@@ -163,6 +163,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       Thread.currentThread().interrupt();
     } catch (ExecutionException e) {
       LOGGER.error("Exception during instantiation.", e);
+      throw new InstantiationException("Exception during instantiation.", e);
     }
 
     LOGGER.info(String.format("Finished instantiation of job %s.", job));
