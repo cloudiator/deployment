@@ -156,11 +156,11 @@ abstract class DockerComponentSupplier {
     String username = "";
     String password = "";
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey()=="username") {
+      if(entry.getKey().equals("username")) {
         checkDoubleSet("username", username);
         username = entry.getValue();
       }
-      if(entry.getKey()=="password") {
+      if(entry.getKey().equals("password")) {
         checkDoubleSet("password", password);
         password = entry.getValue();
       }
