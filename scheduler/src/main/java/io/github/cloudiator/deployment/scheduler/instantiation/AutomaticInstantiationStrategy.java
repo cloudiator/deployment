@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import de.uniulm.omi.cloudiator.util.execution.LoggingThreadPoolExecutor;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
@@ -99,8 +101,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       final ListenableFuture<NodeGroup> allocateFuture = resourcePool
           .allocate(userId, task.requirements(), task.name());
 
-
-
       Futures.addCallback(allocateFuture, new FutureCallback<NodeGroup>() {
         @Override
         public void onSuccess(@Nullable NodeGroup result) {
@@ -112,25 +112,24 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
           //for (Node node : result.getNodes()) {
 
           LOGGER.info(String
-               .format("Requesting new process for schedule %s, task %s on node group %s.", schedule,
-                    task, result.id()));
+              .format("Requesting new process for schedule %s, task %s on node group %s.", schedule,
+                  task, result.id()));
 
+          final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
+              schedule.id()).setTask(task.name())
+              .setNodeGroup(result.id())
+              .build();
+          final CreateProcessRequest createProcessRequest = CreateProcessRequest
+              .newBuilder()
+              .setUserId(userId).setProcess(newProcess).build();
 
-           final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
-               schedule.id()).setTask(task.name())
-               .setNodeGroup(result.id())
-               .build();
-           final CreateProcessRequest createProcessRequest = CreateProcessRequest
-               .newBuilder()
-               .setUserId(userId).setProcess(newProcess).build();
+          final SettableFutureResponseCallback<ProcessCreatedResponse, ProcessGroup> processGroupFuture = SettableFutureResponseCallback
+              .create(processCreatedResponse -> PROCESS_GROUP_MESSAGE_CONVERTER
+                  .apply(processCreatedResponse.getProcessGroup()));
 
-           final SettableFutureResponseCallback<ProcessCreatedResponse, ProcessGroup> processGroupFuture = SettableFutureResponseCallback
-               .create(processCreatedResponse -> PROCESS_GROUP_MESSAGE_CONVERTER
-                   .apply(processCreatedResponse.getProcessGroup()));
+          processService.createProcessAsync(createProcessRequest, processGroupFuture);
 
-           processService.createProcessAsync(createProcessRequest, processGroupFuture);
-
-           processGroupFutures.add(processGroupFuture);
+          processGroupFutures.add(processGroupFuture);
 
           //}
 
@@ -156,11 +155,14 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       LOGGER.info("Waiting for knowledge about final process sizes.");
       countDownLatch.await();
 
+      CloudiatorFutures.waitForFutures(processGroupFutures);
 
 
     } catch (InterruptedException e) {
       LOGGER.error("Execution got interrupted. Stopping.");
       Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      LOGGER.error("Exception during instantiation.", e);
     }
 
     LOGGER.info(String.format("Finished instantiation of job %s.", job));

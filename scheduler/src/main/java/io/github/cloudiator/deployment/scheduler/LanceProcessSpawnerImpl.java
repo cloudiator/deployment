@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
@@ -63,14 +64,16 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
       return true;
     } catch (IllegalArgumentException e) {
       LOGGER
-          .debug("Provided task does not contain a LanceInterface. Checking for DockerInterface...");
+          .debug(
+              "Provided task does not contain a LanceInterface. Checking for DockerInterface...");
     }
     try {
       task.interfaceOfType(DockerInterface.class);
       return true;
     } catch (IllegalArgumentException e) {
       LOGGER
-          .debug("Provided task does neither contain a LanceInterface nor DockerInterface! Skipping LanceProcessSpawner!");
+          .debug(
+              "Provided task does neither contain a LanceInterface nor DockerInterface! Skipping LanceProcessSpawner!");
       return false;
     }
   }
@@ -82,23 +85,26 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
     //Create all Lance processes of for the nodegroup
     List<Future<CloudiatorProcess>> futures = new ArrayList<>();
 
-    for(Node node : nodeGroup.getNodes()){
-      futures.add(spawn(userId,schedule,job,task, node));
+    for (Node node : nodeGroup.getNodes()) {
+      futures.add(spawn(userId, schedule, job, task, node));
     }
 
     //wait until all processes are spawned
     try {
-      List<CloudiatorProcess> spawnedLanceProcesses = waitForFutures(futures);
+      List<CloudiatorProcess> spawnedLanceProcesses = null;
+      try {
+        spawnedLanceProcesses = CloudiatorFutures.waitForFutures(futures);
+      } catch (InterruptedException e) {
+        LOGGER.error("Interrupted while waiting for processes to spawn", e);
+        Thread.currentThread().interrupt();
+      }
 
-      ProcessGroup processGroup = ProcessGroups.of(spawnedLanceProcesses);
-
-
-      return processGroup;
+      return ProcessGroups.of(spawnedLanceProcesses);
 
 
     } catch (ExecutionException e) {
-      LOGGER.error("Error while waiting for LanceProcess to spawn!" ,e);
-      throw  new IllegalStateException(e);
+      LOGGER.error("Error while waiting for LanceProcess to spawn!", e);
+      throw new IllegalStateException(e);
     }
 
 
@@ -108,12 +114,9 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
   private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
       Node node) {
 
-
     LOGGER.info(String
         .format("%s is spawning a new process for user: %s, Schedule %s, Task %s on Node %s", this,
             userId, schedule, task, node));
-
-
 
     final LanceProcess lanceProcess = LanceProcess.newBuilder()
         .setSchedule(schedule)
@@ -132,33 +135,6 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
     return futureResponseCallback;
 
-  }
-
-  private List<CloudiatorProcess> waitForFutures(List<Future<CloudiatorProcess>> futures)
-      throws ExecutionException {
-
-    final int size = futures.size();
-    List<CloudiatorProcess> results = new ArrayList<>(size);
-
-    LOGGER.debug(String.format("Waiting for a total amount of %s processes", size));
-
-    for (int i = 0; i < size; i++) {
-
-      Future<CloudiatorProcess> future = futures.get(i);
-
-      try {
-        LOGGER.debug(String
-            .format("Waiting for process %s of %s. Number of completed processes: %s", i, size,
-                results.size()));
-        final CloudiatorProcess cloudiatorProcess = future.get();
-        results.add(cloudiatorProcess);
-      } catch (InterruptedException e) {
-        LOGGER.error("Interrupted while waiting for  Lance processes to complete. Stopping.");
-        Thread.currentThread().interrupt();
-      }
-    }
-
-    return results;
   }
 
   @Override

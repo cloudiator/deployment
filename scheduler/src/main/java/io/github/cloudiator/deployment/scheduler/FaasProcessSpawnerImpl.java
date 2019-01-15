@@ -1,6 +1,7 @@
 package io.github.cloudiator.deployment.scheduler;
 
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.Job;
@@ -51,16 +52,20 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
     List<Future<CloudiatorProcess>> futures = new ArrayList<>();
 
     for (Node node : nodeGroup.getNodes()) {
-      futures.add(spawn(userId, schedule, job, task, node, nodeGroup.id()));
+      futures.add(spawn(userId, schedule, job, task, node));
     }
 
     //wait until all processes are spawned
     try {
-      List<CloudiatorProcess> spawnedFaaSProcesses = waitForFutures(futures);
+      List<CloudiatorProcess> spawnedFaaSProcesses = null;
+      try {
+        spawnedFaaSProcesses = CloudiatorFutures.waitForFutures(futures);
+      } catch (InterruptedException e) {
+        LOGGER.error("Interrupted while waiting for processes to spawn.", e);
+        Thread.currentThread().interrupt();
+      }
 
-      ProcessGroup processGroup = ProcessGroups.of(spawnedFaaSProcesses);
-
-      return processGroup;
+      return ProcessGroups.of(spawnedFaaSProcesses);
 
 
     } catch (ExecutionException e) {
@@ -70,7 +75,7 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
   }
 
   private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
-      Node node, String nodeGroupId) {
+      Node node) {
     final FaasProcess faasProcess = FaasProcess.newBuilder()
         .setSchedule(schedule)
         .setJob(JOB_CONVERTER.applyBack(job))
@@ -89,31 +94,4 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
     return futureResponseCallback;
   }
 
-  //TODO: refactor to have this method at a common class
-  private List<CloudiatorProcess> waitForFutures(List<Future<CloudiatorProcess>> futures)
-      throws ExecutionException {
-
-    final int size = futures.size();
-    List<CloudiatorProcess> results = new ArrayList<>(size);
-
-    LOGGER.debug(String.format("Waiting for a total amount of %s processes", size));
-
-    for (int i = 0; i < size; i++) {
-
-      Future<CloudiatorProcess> future = futures.get(i);
-
-      try {
-        LOGGER.debug(String
-            .format("Waiting for process %s of %s. Number of completed processes: %s", i, size,
-                results.size()));
-        final CloudiatorProcess cloudiatorProcess = future.get();
-        results.add(cloudiatorProcess);
-      } catch (InterruptedException e) {
-        LOGGER.error("Interrupted while waiting for  Lance processes to complete. Stopping.");
-        Thread.currentThread().interrupt();
-      }
-    }
-
-    return results;
-  }
 }
