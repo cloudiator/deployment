@@ -14,7 +14,6 @@ import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -179,9 +178,7 @@ public class CreateSparkProcessStrategy {
     /**
      * add optional argument list
      */
-    List<String> args = new ArrayList<>();
-    sparkInterface.arguments().forEach(args::add);
-    livyBatch.setArgs(args);
+    livyBatch.setArgs(sparkInterface.arguments());
 
     /**
      * add optional Spark arguments
