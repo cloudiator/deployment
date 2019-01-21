@@ -18,18 +18,22 @@ package io.github.cloudiator.deployment.scheduler.config;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
+import io.github.cloudiator.deployment.scheduler.CompositeProcessKiller;
 import io.github.cloudiator.deployment.scheduler.CompositeProcessSpawnerImpl;
+import io.github.cloudiator.deployment.scheduler.FaasProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.Init;
+import io.github.cloudiator.deployment.scheduler.LanceProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.LanceProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.OnDemandResourcePool;
+import io.github.cloudiator.deployment.scheduler.ProcessKiller;
 import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
 import io.github.cloudiator.deployment.scheduler.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.SparkProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.SparkProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.CompositeInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
-import io.github.cloudiator.deployment.scheduler.*;
 
 public class SchedulerModule extends AbstractModule {
 
@@ -45,13 +49,20 @@ public class SchedulerModule extends AbstractModule {
 
     bind(InstantiationStrategy.class).to(CompositeInstantiationStrategy.class);
 
+    //multi binder for process spawners
     Multibinder<ProcessSpawner> processSpawnerMultibinder = Multibinder
         .newSetBinder(binder(), ProcessSpawner.class);
     processSpawnerMultibinder.addBinding().to(LanceProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(SparkProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(FaasProcessSpawnerImpl.class);
-
     bind(ProcessSpawner.class).to(CompositeProcessSpawnerImpl.class);
 
+    //multi binder for process killers
+    Multibinder<ProcessKiller> processKillerMultibinder = Multibinder
+        .newSetBinder(binder(), ProcessKiller.class);
+    processKillerMultibinder.addBinding().to(LanceProcessKillerImpl.class);
+    processKillerMultibinder.addBinding().to(SparkProcessKillerImpl.class);
+    //todo: implement process killer for FaaS. Probably also no-op?
+    bind(ProcessKiller.class).to(CompositeProcessKiller.class);
   }
 }

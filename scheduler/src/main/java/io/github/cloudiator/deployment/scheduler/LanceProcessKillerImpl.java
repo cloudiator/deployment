@@ -61,7 +61,9 @@ public class LanceProcessKillerImpl implements ProcessKiller {
 
     if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
       throw new IllegalStateException(
-          "Trying to kill a SparkClusterProcess in of Lance, this should never happen!");
+          String.format(
+              "CloudiatorProcess %s is of type CloudiatorClusterProcess. This is not supported by LANCE.",
+              cloudiatorProcess));
     }
 
     final Node byId = nodeMessageRepository

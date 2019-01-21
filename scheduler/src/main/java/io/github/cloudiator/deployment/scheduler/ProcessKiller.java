@@ -16,10 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler;
 
-import com.google.inject.ImplementedBy;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 
-@ImplementedBy(LanceProcessKillerImpl.class)
 public interface ProcessKiller {
 
   boolean supports(CloudiatorProcess cloudiatorProcess);

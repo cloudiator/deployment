@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.scheduler;
 
-import de.uniulm.omi.cloudiator.domain.Identifiable;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 
-/**
- * Created by daniel on 13.02.17.
- */
-public interface CloudiatorProcess extends Identifiable {
+public class SparkProcessKillerImpl extends NoOpProcessKiller {
 
-  enum State {
-
+  @Override
+  public boolean supports(CloudiatorProcess cloudiatorProcess) {
+    return cloudiatorProcess.type().equals(Type.SPARK);
   }
-
-  enum Type {
-    LANCE,
-    SPARK
-  }
-
-  String scheduleId();
-
-  String taskId();
-
-  State state();
-
-  Type type();
-
 }
