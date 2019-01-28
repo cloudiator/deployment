@@ -17,14 +17,20 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import de.uniulm.omi.cloudiator.util.stateMachine.State;
+import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
 
 /**
  * Created by daniel on 13.02.17.
  */
-public interface CloudiatorProcess extends Identifiable {
+public interface CloudiatorProcess extends Identifiable, Stateful {
 
-  enum State {
-
+  enum ProcessState implements State {
+    CREATED,
+    FAILED,
+    RUNNING,
+    ERROR,
+    DELETED
   }
 
   enum Type {
@@ -36,7 +42,7 @@ public interface CloudiatorProcess extends Identifiable {
 
   String taskId();
 
-  State state();
+  ProcessState state();
 
   Type type();
 

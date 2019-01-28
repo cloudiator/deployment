@@ -16,7 +16,7 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
   private final String node;
 
   CloudiatorSingleProcessImpl(String id, String scheduleId, String taskName,
-      State state, Type type, String node) {
+      ProcessState state, Type type, String node) {
     super(id, scheduleId, taskName, state, type);
 
     checkNotNull(node, "node is null");

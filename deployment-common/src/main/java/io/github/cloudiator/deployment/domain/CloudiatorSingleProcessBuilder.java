@@ -23,7 +23,7 @@ public class CloudiatorSingleProcessBuilder {
   private String id;
   private String scheduleId;
   private String taskName;
-  private CloudiatorProcess.State state;
+  private CloudiatorProcess.ProcessState state;
   private String node;
   private Type type;
 
@@ -54,7 +54,7 @@ public class CloudiatorSingleProcessBuilder {
     return this;
   }
 
-  public CloudiatorSingleProcessBuilder state(CloudiatorProcess.State state) {
+  public CloudiatorSingleProcessBuilder state(CloudiatorProcess.ProcessState state) {
     this.state = state;
     return this;
   }

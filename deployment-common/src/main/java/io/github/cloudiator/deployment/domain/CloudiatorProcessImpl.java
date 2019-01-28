@@ -26,10 +26,10 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   protected final String id;
   protected final String scheduleId;
   protected final String taskName;
-  protected final CloudiatorProcess.State state;
+  protected final CloudiatorProcess.ProcessState state;
   protected final Type type;
 
-  CloudiatorProcessImpl(String id, String scheduleId, String taskName, State state, Type type) {
+  CloudiatorProcessImpl(String id, String scheduleId, String taskName, CloudiatorProcess.ProcessState state, Type type) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
@@ -62,7 +62,7 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   }
 
   @Override
-  public State state() {
+  public CloudiatorProcess.ProcessState state() {
     return state;
   }
 

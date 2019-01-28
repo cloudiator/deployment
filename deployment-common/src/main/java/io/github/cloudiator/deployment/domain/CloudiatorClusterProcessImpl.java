@@ -16,7 +16,7 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
 
 
   CloudiatorClusterProcessImpl(String id, String scheduleId, String taskName,
-      State state, Type type, String nodeGroup) {
+      CloudiatorProcess.ProcessState state, Type type, String nodeGroup) {
     super(id, scheduleId, taskName, state, type);
 
     checkNotNull(nodeGroup, "nodeGroup is null");

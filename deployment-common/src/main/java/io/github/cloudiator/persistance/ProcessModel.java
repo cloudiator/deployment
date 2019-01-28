@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.CloudiatorProcess.State;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -58,7 +58,7 @@ class ProcessModel extends Model {
   private CloudiatorProcess.Type type;
 
   @Enumerated(EnumType.STRING)
-  private CloudiatorProcess.State state;
+  private CloudiatorProcess.ProcessState state;
 
   @ManyToOne
   @Nullable
@@ -70,8 +70,10 @@ class ProcessModel extends Model {
   protected ProcessModel() {
   }
 
-  public ProcessModel(String domainId, ScheduleModel schedule, String task, @Nullable String node, @Nullable String nodeGroup,
-      CloudiatorProcess.State state, CloudiatorProcess.Type type, @Nullable ProcessGroupModel processGroupModel) {
+  public ProcessModel(String domainId, ScheduleModel schedule, String task, @Nullable String node,
+      @Nullable String nodeGroup,
+      CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
+      @Nullable ProcessGroupModel processGroupModel) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -115,7 +117,9 @@ class ProcessModel extends Model {
     return nodeGroup;
   }
 
-  public String getNode(){return  node;}
+  public String getNode() {
+    return node;
+  }
 
   public String getDomainId() {
     return domainId;
@@ -129,7 +133,7 @@ class ProcessModel extends Model {
     return task;
   }
 
-  public State getState() {
+  public ProcessState getState() {
     return state;
   }
 
