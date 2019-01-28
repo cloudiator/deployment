@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -27,7 +28,12 @@ import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeGroupMessageRepository;
+import io.github.cloudiator.messaging.NodeMessageRepository;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +53,7 @@ public class ScheduleDeletionStrategy {
   private final ProcessService processService;
   private final NodeService nodeService;
   private final NodeGroupMessageRepository nodeGroupMessageRepository;
+  private final NodeMessageRepository nodeMessageRepository;
   private static final LoggingScheduledThreadPoolExecutor EXECUTOR = new LoggingScheduledThreadPoolExecutor(
       5);
   private static final Logger LOGGER = LoggerFactory
@@ -58,11 +65,15 @@ public class ScheduleDeletionStrategy {
 
   @Inject
   public ScheduleDeletionStrategy(ProcessService processService,
-      NodeService nodeService, NodeGroupMessageRepository nodeGroupMessageRepository) {
+      NodeService nodeService, NodeGroupMessageRepository nodeGroupMessageRepository,
+      NodeMessageRepository nodeMessageRepository) {
     this.processService = processService;
     this.nodeService = nodeService;
     this.nodeGroupMessageRepository = nodeGroupMessageRepository;
+    this.nodeMessageRepository = nodeMessageRepository;
   }
+
+
 
   public void delete(Schedule schedule, String userId) {
 
@@ -78,12 +89,28 @@ public class ScheduleDeletionStrategy {
     //delete all processes
     for (CloudiatorProcess cloudiatorProcess : schedule.processes()) {
 
-      if(cloudiatorProcess instanceof CloudiatorClusterProcess){
-        throw  new IllegalStateException("Trying to schedule the deletion of the CloudiatorClusterProcess for Lance, this should never happen!");
+      //all nodes that are orphaned by deleting the process
+      Set<Node> orphanedNodes = new HashSet<>();
+
+      if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
+        Node node = nodeMessageRepository
+            .getById(userId, ((CloudiatorSingleProcess) cloudiatorProcess).node());
+        checkState(node != null, String
+            .format("Process reference to node is invalid. Node with id %s does not exist.",
+                ((CloudiatorSingleProcess) cloudiatorProcess).node()));
+        orphanedNodes.add(node);
+      } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
+        NodeGroup nodeGroup = nodeGroupMessageRepository
+            .getById(userId, ((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup());
+        checkState(nodeGroup != null,
+            "Process reference to node group is invalid. NodeGroup with id %s does not exist.");
+        orphanedNodes.addAll(nodeGroup.getNodes());
+      } else {
+        throw new IllegalStateException(
+            "Unknown process type" + cloudiatorProcess.getClass().getSimpleName());
       }
 
-      final CloudiatorSingleProcess cloudiatorSingleProcess = (CloudiatorSingleProcess) cloudiatorProcess;
-
+      //issue the process delete request
       final DeleteProcessRequest deleteProcessRequest = DeleteProcessRequest.newBuilder()
           .setProcessId(cloudiatorProcess.id())
           .setUserId(userId).build();
@@ -100,13 +127,13 @@ public class ScheduleDeletionStrategy {
         public void onSuccess(@Nullable ProcessDeletedResponse result) {
           //delete the node
           LOGGER.info(String.format(
-              "Successfully deleted the process %s. Starting the deletion of the corresponding nodes on nodegroup %s.",
-              cloudiatorSingleProcess.id(), cloudiatorSingleProcess.node()));
+              "Successfully deleted the process %s. Starting the deletion of the corresponding nodes %s.",
+              cloudiatorProcess.id(), orphanedNodes));
 
-
+          for (Node node : orphanedNodes) {
 
             final NodeDeleteMessage nodeDeleteMessage = NodeDeleteMessage.newBuilder()
-                .setNodeId(((CloudiatorSingleProcess) cloudiatorProcess).node()).setUserId(userId)
+                .setNodeId(node.id()).setUserId(userId)
                 .build();
 
             SettableFutureResponseCallback<NodeDeleteResponseMessage, NodeDeleteResponseMessage> nodeFuture = SettableFutureResponseCallback
@@ -118,23 +145,24 @@ public class ScheduleDeletionStrategy {
               nodeFuture.get();
             } catch (InterruptedException e) {
               throw new IllegalStateException(String
-                  .format("Interrupted while deleting node with id %s.", cloudiatorSingleProcess.node()),
+                  .format("Interrupted while deleting node with id %s.",
+                      node),
                   e);
             } catch (ExecutionException e) {
               throw new IllegalStateException(String
-                  .format("Error while deleting node %s of process %s.", cloudiatorSingleProcess.node(),
+                  .format("Error while deleting node %s of process %s.",
+                      node,
                       cloudiatorProcess), e);
-            } finally {
-              countDownLatch.countDown();
             }
 
-            LOGGER.debug(String
-                .format("Deleted process %s. %s processes remaining.", cloudiatorProcess,
-                    countDownLatch.getCount()));
           }
 
+          countDownLatch.countDown();
 
-
+          LOGGER.debug(String
+              .format("Deleted process %s. %s processes remaining.", cloudiatorProcess,
+                  countDownLatch.getCount()));
+        }
 
 
         @Override

@@ -52,6 +52,9 @@ public class DeleteLanceProcessSubscriber implements Runnable {
           @Override
           public void accept(String id, DeleteLanceProcessRequest content) {
 
+            LOGGER.info(String
+                .format("Receiving request to delete process with id %s.", content.getProcessId()));
+
             try {
               deleteLanceProcessStrategy.execute(content.getProcessId(),
                   NODE_MESSAGE_CONVERTER.applyBack(content.getNode()));

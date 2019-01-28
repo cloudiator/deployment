@@ -37,6 +37,8 @@ public class DeleteLanceProcessStrategy {
 
   public void execute(String processId, Node node) {
 
+    LOGGER.debug(String.format("Connecting to lance agent on node %s.", node));
+
     final LifecycleClient lifecycleClient = lanceClientConnector
         .getLifecycleClient(node.connectTo().ip());
 

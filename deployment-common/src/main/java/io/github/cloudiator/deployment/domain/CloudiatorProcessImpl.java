@@ -19,15 +19,17 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
+
 abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
   protected final String id;
   protected final String scheduleId;
   protected final String taskName;
-  protected final CloudiatorProcess.State state;
+  protected final CloudiatorProcess.ProcessState state;
   protected final Type type;
 
-  CloudiatorProcessImpl(String id, String scheduleId, String taskName, State state, Type type) {
+  CloudiatorProcessImpl(String id, String scheduleId, String taskName, CloudiatorProcess.ProcessState state, Type type) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
@@ -40,7 +42,6 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     checkNotNull(taskName, "taskName is null");
     checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
-
 
     //todo implement state, currently we simply ignore it
     //checkNotNull(state, "state is null");
@@ -61,10 +62,9 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   }
 
   @Override
-  public State state() {
+  public CloudiatorProcess.ProcessState state() {
     return state;
   }
-
 
 
   @Override
@@ -77,7 +77,13 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     return id;
   }
 
+  protected MoreObjects.ToStringHelper stringHelper() {
+    return MoreObjects.toStringHelper(this).add("id", id).add("scheduleId", scheduleId)
+        .add("taskName", taskName).add("state", state).add("type", type);
+  }
 
-
-
+  @Override
+  public String toString() {
+    return stringHelper().toString();
+  }
 }

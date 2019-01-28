@@ -3,21 +3,21 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.base.MoreObjects.ToStringHelper;
 import java.util.Objects;
 
 /**
  * Created by Daniel Seybold on 29.11.2018.
  */
-public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implements CloudiatorSingleProcess {
+public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implements
+    CloudiatorSingleProcess {
 
 
   private final String node;
 
   CloudiatorSingleProcessImpl(String id, String scheduleId, String taskName,
-      State state, Type type, String node) {
+      ProcessState state, Type type, String node) {
     super(id, scheduleId, taskName, state, type);
-
 
     checkNotNull(node, "node is null");
     checkArgument(!node.isEmpty(), "node is empty");
@@ -53,14 +53,8 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
         Objects.equals(node, that.node);
   }
 
-
-
   @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("id", id).add("scheduleId", scheduleId)
-        .add("task", taskName)
-        .add("node", node).add("state", state).toString();
+  protected ToStringHelper stringHelper() {
+    return super.stringHelper().add("node", node);
   }
-
-
 }
