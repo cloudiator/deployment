@@ -3,10 +3,9 @@ package io.github.cloudiator.deployment.faasagent.config;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 import io.github.cloudiator.deployment.faasagent.Init;
-import io.github.cloudiator.deployment.faasagent.cloudformation.AwsDeployer;
+import io.github.cloudiator.deployment.faasagent.azure.AzureDeployer.AzureDeployerFactory;
 import io.github.cloudiator.deployment.faasagent.cloudformation.AwsDeployer.AwsDeployerFactory;
 import io.github.cloudiator.deployment.faasagent.deployment.CompositeFaasDeployerFactory;
-import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
 
 public class FaasAgentModule extends AbstractModule {
@@ -19,5 +18,6 @@ public class FaasAgentModule extends AbstractModule {
     Multibinder<FaasDeployerFactory> faasDeployerMultibinder =
         Multibinder.newSetBinder(binder(), FaasDeployerFactory.class);
     faasDeployerMultibinder.addBinding().to(AwsDeployerFactory.class);
+    faasDeployerMultibinder.addBinding().to(AzureDeployerFactory.class);
   }
 }

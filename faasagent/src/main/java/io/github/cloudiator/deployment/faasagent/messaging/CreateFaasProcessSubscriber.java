@@ -3,6 +3,7 @@ package io.github.cloudiator.deployment.faasagent.messaging;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
 import de.uniulm.omi.cloudiator.sword.domain.Cloud;
 import de.uniulm.omi.cloudiator.sword.domain.CloudCredential;
 import io.github.cloudiator.deployment.domain.*;
@@ -32,6 +33,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateFaasProcessSubscriber.class);
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
+  private static final int RANDOM_LEN = 8;
 
   private final ProcessService processService;
   private final MessageInterface messageInterface;
@@ -90,7 +92,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
             messageInterface.reply(id, faasProcessCreatedResponse);
           } catch (Exception e) {
             final String errorMessage = MessageFormat.format(
-                "Exception {0} while processing request {1}.with id {2}.",
+                "Exception {0} while processing request {1} with id {2}.",
                 e.getMessage(), // 0
                 content, // 1
                 id); // 2
@@ -116,7 +118,9 @@ public class CreateFaasProcessSubscriber implements Runnable {
             MessageFormat.format("Job {0} does not contain task {1}", job, taskName)));
 
     ApplicationTemplate applicationTemplate = new ApplicationTemplate();
-    applicationTemplate.name = task.name();
+    // Generate app name in format TaskName-RandomString
+    applicationTemplate.name = SdkContext.randomResourceName(
+        task.name() + '-', taskName.length() + 1 + RANDOM_LEN);
     applicationTemplate.region = locationMessageRepository
         .getRegionName(request.getUserId(), function.locationId());
     applicationTemplate.functions = new ArrayList<>();
