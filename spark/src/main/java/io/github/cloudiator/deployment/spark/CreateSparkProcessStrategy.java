@@ -285,7 +285,7 @@ public class CreateSparkProcessStrategy {
       UUID uuid = UUID.randomUUID();
       String temporarySparkProcessUid = uuid.toString();
 
-      return CloudiatorClusterProcessBuilder.newBuilder().id(temporarySparkProcessUid)
+      return CloudiatorClusterProcessBuilder.create().id(temporarySparkProcessUid)
           .type(Type.SPARK)
           .nodeGroup(nodeGroup.id())
           .taskName(task.name()).scheduleId(schedule).build();

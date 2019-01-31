@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * Created by Daniel Seybold on 29.11.2018.
@@ -15,9 +16,10 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
   private final String nodeGroup;
 
 
-  CloudiatorClusterProcessImpl(String id, String scheduleId, String taskName,
-      CloudiatorProcess.ProcessState state, Type type, String nodeGroup) {
-    super(id, scheduleId, taskName, state, type);
+  CloudiatorClusterProcessImpl(String id, String userId, String scheduleId, String taskName,
+      CloudiatorProcess.ProcessState state, Type type, String nodeGroup,
+      @Nullable String diagnostic, @Nullable String reason) {
+    super(id, userId, scheduleId, taskName, state, type, diagnostic, reason);
 
     checkNotNull(nodeGroup, "nodeGroup is null");
     checkArgument(!nodeGroup.isEmpty(), "nodeGroup is empty");
@@ -33,7 +35,7 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
   @Override
   public int hashCode() {
 
-    return Objects.hash(id, scheduleId, taskName, nodeGroup);
+    return Objects.hash(id, userId, scheduleId, taskName, nodeGroup);
   }
 
 
@@ -47,6 +49,7 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
     }
     CloudiatorClusterProcessImpl that = (CloudiatorClusterProcessImpl) o;
     return Objects.equals(id, that.id) &&
+        Objects.equals(userId, that.userId) &&
         Objects.equals(scheduleId, that.scheduleId) &&
         Objects.equals(taskName, that.taskName) &&
         Objects.equals(nodeGroup, that.nodeGroup);

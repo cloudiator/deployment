@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.messaging;
 
+import com.google.common.base.Strings;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
@@ -25,12 +26,15 @@ import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
+import org.cloudiator.messages.entities.ProcessEntities.Process.Builder;
+import org.cloudiator.messages.entities.ProcessEntities.ProcessState;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessType;
 
 public class ProcessMessageConverter implements
     TwoWayConverter<ProcessEntities.Process, CloudiatorProcess> {
 
   public static final ProcessMessageConverter INSTANCE = new ProcessMessageConverter();
+  public static final ProcessStateConverter PROCESS_STATE_CONVERTER = ProcessStateConverter.INSTANCE;
 
 
   private ProcessMessageConverter() {
@@ -40,52 +44,147 @@ public class ProcessMessageConverter implements
   @Override
   public Process applyBack(CloudiatorProcess cloudiatorProcess) {
 
-
-    if(cloudiatorProcess instanceof CloudiatorSingleProcess){
+    if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
       //Lance, Docker and FaaS processes
 
-      return Process.newBuilder().setId(cloudiatorProcess.id())
-          .setSchedule(cloudiatorProcess.scheduleId())
-          .setNode(((CloudiatorSingleProcess) cloudiatorProcess).node())
-          .setTask(cloudiatorProcess.taskId())
-          .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
+      final Builder builder = Process.newBuilder()
+          .setNode(((CloudiatorSingleProcess) cloudiatorProcess).node());
 
-    }else if (cloudiatorProcess instanceof CloudiatorClusterProcess){
+      return finishBuilding(cloudiatorProcess, builder);
+
+
+    } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
       //Spark processes
-      return Process.newBuilder().setId(cloudiatorProcess.id())
-          .setSchedule(cloudiatorProcess.scheduleId())
-          .setNodeGroup(((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup())
-          .setTask(cloudiatorProcess.taskId())
-          .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type())).build();
-    }else{
-      throw  new IllegalStateException("Unknown CloudiatorProcess interface: " + cloudiatorProcess.getClass().getName());
+      final Builder builder = Process.newBuilder()
+          .setNodeGroup(((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup());
+
+      return finishBuilding(cloudiatorProcess, builder);
+
+    } else {
+      throw new IllegalStateException(
+          "Unknown CloudiatorProcess interface: " + cloudiatorProcess.getClass().getName());
     }
+  }
+
+  private Process finishBuilding(CloudiatorProcess cloudiatorProcess, Builder builder) {
+    builder.setId(cloudiatorProcess.id())
+        .setSchedule(cloudiatorProcess.scheduleId()).setTask(cloudiatorProcess.taskId())
+        .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type()));
+
+    if (cloudiatorProcess.reason().isPresent()) {
+      builder.setReason(cloudiatorProcess.reason().get());
+    }
+
+    if (cloudiatorProcess.diagnostic().isPresent()) {
+      builder.setDiagnostic(cloudiatorProcess.diagnostic().get());
+    }
+
+    return builder.build();
   }
 
   @Override
   public CloudiatorProcess apply(Process process) {
 
+    switch (process.getRunsOnCase()) {
+      case NODE:
+        final CloudiatorSingleProcessBuilder cloudiatorSingleProcessBuilder = CloudiatorSingleProcessBuilder
+            .create()
+            .id(process.getId())
+            .userId(process.getUserId())
+            .scheduleId(process.getSchedule())
+            .taskName(process.getTask())
+            .node(process.getNode())
+            .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
 
-    switch (process.getRunsOnCase()){
-      case NODE: return  CloudiatorSingleProcessBuilder.newBuilder()
-          .id(process.getId())
-          .scheduleId(process.getSchedule())
-          .taskName(process.getTask())
-          .node(process.getNode())
-          .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
-      case NODEGROUP: return  CloudiatorClusterProcessBuilder.newBuilder()
-          .id(process.getId())
-          .scheduleId(process.getSchedule())
-          .taskName(process.getTask())
-          .nodeGroup(process.getNodeGroup())
-          .type(ProcessTypeConverter.INSTANCE.apply(process.getType())).build();
-      case RUNSON_NOT_SET: throw  new IllegalStateException("RunsOn parameter not set for process: " + process.getId());
+        if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
+          cloudiatorSingleProcessBuilder.diagnostic(process.getDiagnostic());
+        }
 
-      default: throw new AssertionError("Unknown process: " + process);
+        if (Strings.isNullOrEmpty(process.getReason())) {
+          cloudiatorSingleProcessBuilder.reason(process.getReason());
+        }
+
+        return cloudiatorSingleProcessBuilder.build();
+
+      case NODEGROUP:
+        final CloudiatorClusterProcessBuilder cloudiatorClusterProcessBuilder = CloudiatorClusterProcessBuilder
+            .create()
+            .id(process.getId())
+            .userId(process.getUserId())
+            .scheduleId(process.getSchedule())
+            .taskName(process.getTask())
+            .nodeGroup(process.getNodeGroup())
+            .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
+
+        if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
+          cloudiatorClusterProcessBuilder.diagnostic(process.getDiagnostic());
+        }
+
+        if (Strings.isNullOrEmpty(process.getReason())) {
+          cloudiatorClusterProcessBuilder.reason(process.getReason());
+        }
+
+        return cloudiatorClusterProcessBuilder.build();
+
+      case RUNSON_NOT_SET:
+        throw new IllegalStateException("RunsOn parameter not set for process: " + process.getId());
+
+      default:
+        throw new AssertionError("Unknown process: " + process);
     }
 
 
+  }
 
+  public static class ProcessStateConverter implements
+      TwoWayConverter<ProcessEntities.ProcessState, CloudiatorProcess.ProcessState> {
+
+    private static final ProcessStateConverter INSTANCE = new ProcessStateConverter();
+
+    private ProcessStateConverter() {
+
+    }
+
+    @Override
+    public ProcessState applyBack(CloudiatorProcess.ProcessState processState) {
+      switch (processState) {
+        case DELETED:
+          return ProcessState.PROCESS_STATE_DELETED;
+        case CREATED:
+          return ProcessState.PROCESS_STATE_CREATED;
+        case ERROR:
+          return ProcessState.PROCESS_STATE_ERROR;
+        case RUNNING:
+          return ProcessState.PROCESS_STATE_FAILED;
+        case FAILED:
+          return ProcessState.PROCESS_STATE_FAILED;
+        case FINISHED:
+          return ProcessState.PROCESS_STATE_FINISHED;
+        default:
+          throw new AssertionError("Unknown processState: " + processState);
+      }
+    }
+
+    @Override
+    public CloudiatorProcess.ProcessState apply(ProcessState processState) {
+      switch (processState) {
+        case PROCESS_STATE_FAILED:
+          return CloudiatorProcess.ProcessState.FAILED;
+        case PROCESS_STATE_ERROR:
+          return CloudiatorProcess.ProcessState.ERROR;
+        case PROCESS_STATE_CREATED:
+          return CloudiatorProcess.ProcessState.CREATED;
+        case PROCESS_STATE_DELETED:
+          return CloudiatorProcess.ProcessState.DELETED;
+        case PROCESS_STATE_RUNNING:
+          return CloudiatorProcess.ProcessState.RUNNING;
+        case PROCESS_STATE_FINISHED:
+          return CloudiatorProcess.ProcessState.FINISHED;
+        case UNRECOGNIZED:
+        default:
+          throw new AssertionError("Unknown or illegal process state " + processState);
+      }
+    }
   }
 
   private static class ProcessTypeConverter implements

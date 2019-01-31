@@ -16,26 +16,54 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 
 public class CloudiatorClusterProcessBuilder {
 
   private String id;
+  private String userId;
   private String scheduleId;
   private String taskName;
   private CloudiatorProcess.ProcessState state;
   private String nodeGroup;
   private Type type;
+  private String reason;
+  private String diagnostic;
 
   private CloudiatorClusterProcessBuilder() {
   }
 
-  public static CloudiatorClusterProcessBuilder newBuilder() {
+  private CloudiatorClusterProcessBuilder(CloudiatorClusterProcess cloudiatorClusterProcess) {
+    this.id = cloudiatorClusterProcess.id();
+    this.userId = cloudiatorClusterProcess.userId();
+    this.scheduleId = cloudiatorClusterProcess.scheduleId();
+    this.taskName = cloudiatorClusterProcess.taskId();
+    this.state = cloudiatorClusterProcess.state();
+    this.nodeGroup = cloudiatorClusterProcess.nodeGroup();
+    this.type = cloudiatorClusterProcess.type();
+    this.reason = cloudiatorClusterProcess.reason().orElse(null);
+    this.diagnostic = cloudiatorClusterProcess.diagnostic().orElse(null);
+  }
+
+  public static CloudiatorClusterProcessBuilder create() {
     return new CloudiatorClusterProcessBuilder();
+  }
+
+  public static CloudiatorClusterProcessBuilder of(
+      CloudiatorClusterProcess cloudiatorClusterProcess) {
+    checkNotNull(cloudiatorClusterProcess, "cloudiatorClusterProcess is null");
+    return new CloudiatorClusterProcessBuilder(cloudiatorClusterProcess);
   }
 
   public CloudiatorClusterProcessBuilder id(String id) {
     this.id = id;
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder userId(String userId) {
+    this.userId = userId;
     return this;
   }
 
@@ -64,8 +92,19 @@ public class CloudiatorClusterProcessBuilder {
     return this;
   }
 
+  public CloudiatorClusterProcessBuilder reason(String reason) {
+    this.reason = reason;
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder diagnostic(String diagnostic) {
+    this.diagnostic = diagnostic;
+    return this;
+  }
+
   public CloudiatorClusterProcess build() {
-    return new CloudiatorClusterProcessImpl(id, scheduleId, taskName,  state, type, nodeGroup);
+    return new CloudiatorClusterProcessImpl(id, userId, scheduleId, taskName, state, type,
+        nodeGroup, diagnostic, reason);
   }
 
 }

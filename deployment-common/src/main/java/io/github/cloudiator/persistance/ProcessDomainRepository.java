@@ -16,8 +16,8 @@
 
 package io.github.cloudiator.persistance;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
@@ -32,7 +32,7 @@ public class ProcessDomainRepository {
   private final ProcessModelRepository processModelRepository;
   private final ScheduleModelRepository scheduleModelRepository;
   private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
-  private static  final ProcessGroupConverter PROCESS_GROUP_CONVERTER = new ProcessGroupConverter();
+  private static final ProcessGroupConverter PROCESS_GROUP_CONVERTER = new ProcessGroupConverter();
   private final ProcessGroupModelRepository processGroupModelRepository;
 
   @Inject
@@ -46,38 +46,30 @@ public class ProcessDomainRepository {
 
   }
 
+  public void save(ProcessGroup processGroup) {
+    checkNotNull(processGroup, "processGroup is null");
 
-  public void save(ProcessGroup processGroup, String userId) {
+    final ScheduleModel scheduleModel = getScheduleModel(processGroup.scheduleId(),
+        processGroup.userId());
 
-    checkNotNull(processGroup, "domain is null");
-    checkNotNull(userId, "userId is null");
-    checkArgument(!userId.isEmpty(), "userId is empty");
+    final ProcessGroupModel processGroupModel = new ProcessGroupModel(processGroup.id(),
+        scheduleModel);
+    processGroupModelRepository.save(processGroupModel);
 
-
-    //persist processes
-    for(CloudiatorProcess cloudiatorProcess : processGroup.cloudiatorProcesses()){
-
-      final ScheduleModel scheduleModel = scheduleModelRepository
-          .findByIdAndUser(cloudiatorProcess.scheduleId(), userId);
-      if (scheduleModel == null) {
-        throw new IllegalStateException(
-            String.format("Schedule with id %s does not exist.", cloudiatorProcess.scheduleId()));
-      }
-      //persist processGroup
-      final ProcessGroupModel processGroupModel = new ProcessGroupModel(processGroup.id(), scheduleModel);
-      processGroupModelRepository.save(processGroupModel);
-
-      final ProcessModel processModel = saveAndGet(cloudiatorProcess,scheduleModel, processGroupModel);
+    for (CloudiatorProcess cloudiatorProcess : processGroup.cloudiatorProcesses()) {
+      final ProcessModel processModel = saveAndGet(cloudiatorProcess);
       processGroupModel.addProcess(processModel);
+      processModel.assignGroup(processGroupModel);
       processModelRepository.save(processModel);
-
-      processGroupModelRepository.save(processGroupModel);
     }
 
-
+    processGroupModelRepository.save(processGroupModel);
   }
 
   public void delete(String processId, String userId) {
+
+    //todo: check if we can delete an empty group model
+
     final ProcessModel processModel = processModelRepository.findByIdAndUser(processId, userId);
     if (processModel == null) {
       throw new IllegalStateException(String
@@ -109,34 +101,73 @@ public class ProcessDomainRepository {
   }
   */
 
-
-  ProcessModel saveAndGet(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel) {
-    return createProcessModel(domain, scheduleModel, processGroupModel);
+  public void save(CloudiatorProcess domain) {
+    checkNotNull(domain, "domain is null");
+    saveAndGet(domain);
   }
 
-  private ProcessModel createProcessModel(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel) {
+
+  ProcessModel saveAndGet(CloudiatorProcess domain) {
+
+    //check if exists
+    ProcessModel processModel = processModelRepository
+        .findByIdAndUser(domain.id(), domain.userId());
+
+    if (processModel == null) {
+      processModel = createProcessModel(domain);
+    } else {
+      processModel = updateProcessModel(domain, processModel);
+    }
+
+    processModelRepository.save(processModel);
+
+    return processModel;
+  }
+
+  private ScheduleModel getScheduleModel(String scheduleId, String userId) {
+    final ScheduleModel scheduleModel = scheduleModelRepository
+        .findByIdAndUser(scheduleId, userId);
+    if (scheduleModel == null) {
+      throw new IllegalStateException(
+          String.format("Schedule with id %s does not exist for user %s.", scheduleId, userId));
+    }
+    return scheduleModel;
+  }
+
+  private ProcessModel updateProcessModel(CloudiatorProcess domain, ProcessModel processModel) {
+
+    checkState(processModel.getDomainId().equals(domain.id()), "domain id is not equal");
+
+    processModel.setState(domain.state());
+
+    return processModel;
+
+  }
+
+  private ProcessModel createProcessModel(CloudiatorProcess domain) {
 
     //TODO: fetch this by the message!?
 
+    //get the schedule model
+    final ScheduleModel scheduleModel = getScheduleModel(domain.scheduleId(), domain.userId());
 
-    if(domain instanceof CloudiatorSingleProcess){
+    if (domain instanceof CloudiatorSingleProcess) {
 
-      final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(),
+      return new ProcessModel(domain.id(), scheduleModel,
+          domain.taskId(),
           ((CloudiatorSingleProcess) domain).node(),
-          null, domain.state(), domain.type(), processGroupModel);
-      processModelRepository.save(processModel);
+          null, domain.state(), domain.type(), null);
 
-      return processModel;
+    } else if (domain instanceof CloudiatorClusterProcess) {
 
-    }else if(domain instanceof CloudiatorClusterProcess){
-
-      final ProcessModel processModel = new ProcessModel(domain.id(), scheduleModel, domain.taskId(), null,
-          ((CloudiatorClusterProcess) domain).nodeGroup(), domain.state(), domain.type(), processGroupModel);
-      processModelRepository.save(processModel);
-
-      return processModel;
-    }else{
-      throw  new IllegalStateException("Unknown CloudiatorProcess interface for persisting CloudiatorProcess: " + domain.getClass().getName());
+      return new ProcessModel(domain.id(), scheduleModel,
+          domain.taskId(), null,
+          ((CloudiatorClusterProcess) domain).nodeGroup(), domain.state(), domain.type(),
+          null);
+    } else {
+      throw new IllegalStateException(
+          "Unknown CloudiatorProcess interface for persisting CloudiatorProcess: " + domain
+              .getClass().getName());
     }
 
 

@@ -42,6 +42,14 @@ class ProcessGroupModel extends Model {
     return domainId;
   }
 
+  public TenantModel getTenant() {
+    return scheduleModel.tenant();
+  }
+
+  public ScheduleModel getScheduleModel() {
+    return scheduleModel;
+  }
+
   public List<ProcessModel> getProcesses() {
     return ImmutableList.copyOf(processes);
   }
@@ -50,7 +58,6 @@ class ProcessGroupModel extends Model {
     if (processes == null) {
       processes = new ArrayList<>();
     }
-
 
     processes.add(process);
     return this;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler;
+package io.github.cloudiator.deployment.scheduler.processes;
 
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
@@ -43,11 +43,11 @@ public class CompositeProcessKiller implements ProcessKiller {
   }
 
   @Override
-  public void kill(String userId, CloudiatorProcess cloudiatorProcess) {
+  public void kill(CloudiatorProcess cloudiatorProcess) {
 
     for (ProcessKiller processKiller : processKillers) {
       if (processKiller.supports(cloudiatorProcess)) {
-        processKiller.kill(userId, cloudiatorProcess);
+        processKiller.kill(cloudiatorProcess);
       }
     }
 

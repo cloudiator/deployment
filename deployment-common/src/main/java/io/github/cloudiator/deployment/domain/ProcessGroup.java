@@ -21,6 +21,10 @@ import java.util.List;
 
 public interface ProcessGroup extends Identifiable {
 
+  String userId();
+
+  String scheduleId();
+
   List<CloudiatorProcess> cloudiatorProcesses();
 
 }

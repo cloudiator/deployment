@@ -104,8 +104,7 @@ class ProcessModel extends Model {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
         .add("task", task).add("state", state).add("nodeGroup", nodeGroup).add("node", node);
   }
-
-  @Deprecated
+  
   public ProcessModel assignGroup(ProcessGroupModel processGroupModel) {
     checkState(this.processGroupModel == null, "Process Group was already assigned.");
     this.processGroupModel = processGroupModel;
@@ -139,5 +138,15 @@ class ProcessModel extends Model {
 
   public Type getType() {
     return type;
+  }
+
+  public TenantModel getTenant() {
+    return schedule.tenant();
+  }
+
+  public ProcessModel setState(
+      ProcessState state) {
+    this.state = state;
+    return this;
   }
 }

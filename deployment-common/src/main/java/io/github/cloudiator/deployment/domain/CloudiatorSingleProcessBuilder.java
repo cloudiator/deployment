@@ -16,26 +16,53 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 
 public class CloudiatorSingleProcessBuilder {
 
   private String id;
+  private String userId;
   private String scheduleId;
   private String taskName;
   private CloudiatorProcess.ProcessState state;
   private String node;
   private Type type;
+  private String reason;
+  private String diagnostic;
 
   private CloudiatorSingleProcessBuilder() {
   }
 
-  public static CloudiatorSingleProcessBuilder newBuilder() {
+  private CloudiatorSingleProcessBuilder(CloudiatorSingleProcess cloudiatorSingleProcess) {
+    this.id = cloudiatorSingleProcess.id();
+    this.userId = cloudiatorSingleProcess.userId();
+    this.scheduleId = cloudiatorSingleProcess.scheduleId();
+    this.taskName = cloudiatorSingleProcess.taskId();
+    this.state = cloudiatorSingleProcess.state();
+    this.node = cloudiatorSingleProcess.node();
+    this.type = cloudiatorSingleProcess.type();
+    this.reason = cloudiatorSingleProcess.reason().orElse(null);
+    this.diagnostic = cloudiatorSingleProcess.diagnostic().orElse(null);
+  }
+
+  public static CloudiatorSingleProcessBuilder create() {
     return new CloudiatorSingleProcessBuilder();
+  }
+
+  public static CloudiatorSingleProcessBuilder of(CloudiatorSingleProcess cloudiatorSingleProcess) {
+    checkNotNull(cloudiatorSingleProcess, "cloudiatorSingleProcess is null");
+    return new CloudiatorSingleProcessBuilder(cloudiatorSingleProcess);
   }
 
   public CloudiatorSingleProcessBuilder id(String id) {
     this.id = id;
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder userId(String userId) {
+    this.userId = userId;
     return this;
   }
 
@@ -64,8 +91,19 @@ public class CloudiatorSingleProcessBuilder {
     return this;
   }
 
+  public CloudiatorSingleProcessBuilder reason(String reason) {
+    this.reason = reason;
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder diagnostic(String diagnostic) {
+    this.diagnostic = diagnostic;
+    return this;
+  }
+
   public CloudiatorSingleProcess build() {
-    return new CloudiatorSingleProcessImpl(id, scheduleId, taskName,  state, type, node);
+    return new CloudiatorSingleProcessImpl(id, userId, scheduleId, taskName, state, type, node,
+        diagnostic, reason);
   }
 
 }

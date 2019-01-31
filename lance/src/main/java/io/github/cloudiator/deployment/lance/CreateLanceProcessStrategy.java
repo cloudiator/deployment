@@ -40,6 +40,7 @@ import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 public class CreateLanceProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
@@ -93,13 +94,16 @@ public class CreateLanceProcessStrategy {
     if (usesLanceInterface(task)) {
       containerType =
           deriveContainerType(task.interfaceOfType(LanceInterface.class), node);
-      LOGGER.debug("Executing lance installation strategy for a process connected with a LanceInterface");
+      LOGGER.debug(
+          "Executing lance installation strategy for a process connected with a LanceInterface");
       lanceInstallationStrategy.execute(userId, node, containerType);
     } else if (usesDockerInterface(task)) {
-      LOGGER.debug("Executing lance installation strategy for a process connected with a DockerInterface");
+      LOGGER.debug(
+          "Executing lance installation strategy for a process connected with a DockerInterface");
       lanceInstallationStrategy.execute(userId, node);
     } else {
-      throw new IllegalStateException("Wrong task interface submitted. Must be either LanceInterface or DockerInterface");
+      throw new IllegalStateException(
+          "Wrong task interface submitted. Must be either LanceInterface or DockerInterface");
     }
 
     final LifecycleClient lifecycleClient = lanceClientConnector.getLifecycleClient(
@@ -141,13 +145,15 @@ public class CreateLanceProcessStrategy {
     DeploymentInfo deplInfo = new DeploymentInfo(task, job, deploymentContext, schedule);
 
     if (usesLanceInterface(task)) {
-      LOGGER.debug("Deploying a LifecycleComponent for a " + containerType + " container connected with a LanceInterface");
+      LOGGER.debug("Deploying a LifecycleComponent for a " + containerType
+          + " container connected with a LanceInterface");
       return deployLifecycleComponent(deplInfo, lifecycleClient, containerType, node);
     } else if (usesDockerInterface(task)) {
       LOGGER.debug("Deploying a DockerComponent for a container connected with a DockerInterface");
       return deployDockerComponent(deplInfo, lifecycleClient, node);
     } else {
-      throw new IllegalStateException("Wrong task interface submitted. Must be either LanceInterface or DockerInterface");
+      throw new IllegalStateException(
+          "Wrong task interface submitted. Must be either LanceInterface or DockerInterface");
     }
   }
 
@@ -172,7 +178,8 @@ public class CreateLanceProcessStrategy {
       ComponentInstanceId componentInstanceId = lifecycleClient
           .deploy(deployInfo.deploymentContext, deployableComponent, OperatingSystem.UBUNTU_14_04,
               containerType);
-      return waitForDeployment(lifecycleClient, componentInstanceId, deployInfo.task, node, deployInfo.schedule);
+      return waitForDeployment(lifecycleClient, componentInstanceId, deployInfo.task, node,
+          deployInfo.schedule);
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + deployInfo.task, e);
     }
@@ -180,7 +187,8 @@ public class CreateLanceProcessStrategy {
 
   private CloudiatorProcess deployDockerComponent(DeploymentInfo deployInfo,
       LifecycleClient lifecycleClient, Node node) {
-    if(DockerComponentSupplier.usePrivateRegistry(deployInfo.task.interfaceOfType(DockerInterface.class))) {
+    if (DockerComponentSupplier
+        .usePrivateRegistry(deployInfo.task.interfaceOfType(DockerInterface.class))) {
       return deployPrivateDockerComponent(deployInfo, lifecycleClient, node);
     } else {
       return deployPublicDockerComponent(deployInfo, lifecycleClient, node);
@@ -193,7 +201,8 @@ public class CreateLanceProcessStrategy {
         .format("Creating Private Docker component for task %s.",
             deployInfo.task));
 
-    final RemoteDockerComponent remoteDockerComponent = new PrivateDockerComponentSupplier(deployInfo.job, deployInfo.task).get();
+    final RemoteDockerComponent remoteDockerComponent = new PrivateDockerComponentSupplier(
+        deployInfo.job, deployInfo.task).get();
     LOGGER.debug(
         String.format("Successfully build Private Docker component %s", remoteDockerComponent));
 
@@ -205,8 +214,10 @@ public class CreateLanceProcessStrategy {
         lifecycleClient, deployInfo.deploymentContext, remoteDockerComponent));
 
     try {
-      ComponentInstanceId componentInstanceId = lifecycleClient.deploy(deployInfo.deploymentContext, remoteDockerComponent);
-      return waitForDeployment(lifecycleClient, componentInstanceId, deployInfo.task, node, deployInfo.schedule);
+      ComponentInstanceId componentInstanceId = lifecycleClient
+          .deploy(deployInfo.deploymentContext, remoteDockerComponent);
+      return waitForDeployment(lifecycleClient, componentInstanceId, deployInfo.task, node,
+          deployInfo.schedule);
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + deployInfo.task, e);
     }
@@ -218,7 +229,8 @@ public class CreateLanceProcessStrategy {
         .format("Creating Public Docker component for task %s.",
             deployInfo.task));
 
-    final DockerComponent dockerComponent = new PublicDockerComponentSupplier(deployInfo.job, deployInfo.task).get();
+    final DockerComponent dockerComponent = new PublicDockerComponentSupplier(deployInfo.job,
+        deployInfo.task).get();
     LOGGER.debug(
         String.format("Successfully build Public Docker component %s", dockerComponent));
 
@@ -230,14 +242,17 @@ public class CreateLanceProcessStrategy {
         lifecycleClient, deployInfo.deploymentContext, dockerComponent));
 
     try {
-      ComponentInstanceId componentInstanceId = lifecycleClient.deploy(deployInfo.deploymentContext, dockerComponent);
-      return waitForDeployment(lifecycleClient, componentInstanceId, deployInfo.task, node, deployInfo.schedule);
+      ComponentInstanceId componentInstanceId = lifecycleClient
+          .deploy(deployInfo.deploymentContext, dockerComponent);
+      return waitForDeployment(lifecycleClient, componentInstanceId, deployInfo.task, node,
+          deployInfo.schedule);
     } catch (DeploymentException e) {
       throw new IllegalStateException("Could not deploy task " + deployInfo.task, e);
     }
   }
 
-  private CloudiatorProcess waitForDeployment(LifecycleClient client, ComponentInstanceId cId, Task task, Node node, String schedule) {
+  private CloudiatorProcess waitForDeployment(LifecycleClient client, ComponentInstanceId cId,
+      Task task, Node node, String schedule) {
     client.waitForDeployment(cId);
 
     LOGGER.debug(String
@@ -245,7 +260,8 @@ public class CreateLanceProcessStrategy {
             "Client deployed the process of task %s with component instance id %s successfully",
             task, cId));
 
-    return CloudiatorSingleProcessBuilder.newBuilder().id(cId.toString())
+    //todo: currently misses the userId
+    return CloudiatorSingleProcessBuilder.create().id(cId.toString())
         .node(node.id())
         .type(Type.LANCE)
         .taskName(task.name()).scheduleId(schedule).build();
@@ -281,7 +297,8 @@ public class CreateLanceProcessStrategy {
       return true;
     } catch (IllegalArgumentException e) {
       LOGGER
-          .debug("Provided task does not contain a LanceInterface. Skip creating a process for a task supporting a LanceInterface...");
+          .debug(
+              "Provided task does not contain a LanceInterface. Skip creating a process for a task supporting a LanceInterface...");
       return false;
     }
   }
@@ -292,18 +309,21 @@ public class CreateLanceProcessStrategy {
       return true;
     } catch (IllegalArgumentException e) {
       LOGGER
-          .debug("Provided task does not contain a DockerInterface. Skip creating a process for a task supporting a DockerInterface...");
+          .debug(
+              "Provided task does not contain a DockerInterface. Skip creating a process for a task supporting a DockerInterface...");
       return false;
     }
   }
 
   private static class DeploymentInfo {
+
     private final Task task;
     private final Job job;
     private final DeploymentContext deploymentContext;
     private final String schedule;
 
-    private DeploymentInfo(Task task, Job job, DeploymentContext deploymentContext, String schedule) {
+    private DeploymentInfo(Task task, Job job, DeploymentContext deploymentContext,
+        String schedule) {
       this.task = task;
       this.job = job;
       this.deploymentContext = deploymentContext;

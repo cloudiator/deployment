@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler;
+package io.github.cloudiator.deployment.scheduler.processes;
 
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 
-public abstract class NoOpProcessKiller implements ProcessKiller {
+public class SparkProcessKillerImpl extends NoOpProcessKiller {
 
   @Override
-  public void kill(String userId, CloudiatorProcess cloudiatorProcess) {
-    //no op
+  public boolean supports(CloudiatorProcess cloudiatorProcess) {
+    return cloudiatorProcess.type().equals(Type.SPARK);
   }
 }

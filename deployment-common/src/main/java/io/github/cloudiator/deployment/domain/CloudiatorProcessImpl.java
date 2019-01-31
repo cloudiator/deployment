@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
@@ -28,12 +30,23 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   protected final String taskName;
   protected final CloudiatorProcess.ProcessState state;
   protected final Type type;
+  protected final String userId;
+  @Nullable
+  private final String diagnostic;
+  @Nullable
+  private final String reason;
 
-  CloudiatorProcessImpl(String id, String scheduleId, String taskName, CloudiatorProcess.ProcessState state, Type type) {
+  CloudiatorProcessImpl(String id, String userId, String scheduleId, String taskName,
+      CloudiatorProcess.ProcessState state, Type type, @Nullable String diagnostic,
+      @Nullable String reason) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
     this.id = id;
+
+    checkNotNull(userId, "userId is null");
+    checkArgument(!userId.isEmpty(), "userId is empty");
+    this.userId = userId;
 
     checkNotNull(scheduleId, "scheduleId is null");
     checkArgument(!scheduleId.isEmpty(), "scheduleId is empty");
@@ -43,12 +56,14 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
 
-    //todo implement state, currently we simply ignore it
-    //checkNotNull(state, "state is null");
+    checkNotNull(state, "state is null");
     this.state = state;
 
     checkNotNull(type, "type is null");
     this.type = type;
+
+    this.diagnostic = diagnostic;
+    this.reason = reason;
   }
 
   @Override
@@ -77,9 +92,26 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     return id;
   }
 
+  @Override
+  public String userId() {
+    return null;
+  }
+
+  @Override
+  public Optional<String> diagnostic() {
+    return Optional.ofNullable(diagnostic);
+  }
+
+  @Override
+  public Optional<String> reason() {
+    return Optional.ofNullable(reason);
+  }
+
   protected MoreObjects.ToStringHelper stringHelper() {
-    return MoreObjects.toStringHelper(this).add("id", id).add("scheduleId", scheduleId)
-        .add("taskName", taskName).add("state", state).add("type", type);
+    return MoreObjects.toStringHelper(this).add("id", id).add("userId", userId)
+        .add("scheduleId", scheduleId)
+        .add("taskName", taskName).add("state", state).add("type", type)
+        .add("diagnostic", diagnostic).add("reason", reason);
   }
 
   @Override

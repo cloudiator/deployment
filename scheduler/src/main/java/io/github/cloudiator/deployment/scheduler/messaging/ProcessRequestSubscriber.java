@@ -17,7 +17,6 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
-import de.uniulm.omi.cloudiator.util.StreamUtil;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
@@ -26,7 +25,7 @@ import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessGroupMessageConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
-import io.github.cloudiator.deployment.scheduler.ProcessSpawner;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessSpawner;
 import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
@@ -42,9 +41,6 @@ import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-import java.util.Set;
 
 public class ProcessRequestSubscriber implements Runnable {
 
@@ -97,8 +93,8 @@ public class ProcessRequestSubscriber implements Runnable {
 
   @SuppressWarnings("WeakerAccess")
   @Transactional
-  void persistProcessGroup(ProcessGroup processGroup, String userId) {
-    processDomainRepository.save(processGroup, userId);
+  void persistProcessGroup(ProcessGroup processGroup) {
+    processDomainRepository.save(processGroup);
   }
 
   @Override
@@ -200,7 +196,7 @@ public class ProcessRequestSubscriber implements Runnable {
 
 
           //persist processes via process group
-          persistProcessGroup(processGroup, userId);
+          persistProcessGroup(processGroup);
 
 
           final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()

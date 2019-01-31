@@ -1,18 +1,33 @@
-package io.github.cloudiator.deployment.scheduler;
+/*
+ * Copyright 2014-2019 University of Ulm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.github.cloudiator.deployment.scheduler.processes;
 
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
-import io.github.cloudiator.deployment.domain.ProcessGroups;
+import io.github.cloudiator.deployment.domain.ProcessGroupBuilder;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
-import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.concurrent.ExecutionException;
 import org.cloudiator.messages.Process.CreateSparkProcessRequest;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
@@ -61,16 +76,14 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
     //TODO: check for flag which indicates process mapping, one to one or one to many
     //TODO: for now only one to many is supported until flag is available
 
-
     //wait until all processes are spawned
     try {
 
       LOGGER.info(String
-          .format("%s is spawning a new Spark process for user: %s, Schedule %s, Task %s on Node %s",
+          .format(
+              "%s is spawning a new Spark process for user: %s, Schedule %s, Task %s on Node %s",
               this,
               userId, schedule, task, nodeGroup));
-
-
 
       final SparkProcess sparkProcess = SparkProcess.newBuilder()
           .setSchedule(schedule)
@@ -89,26 +102,20 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
       CloudiatorProcess spawnedSparkProcess = futureResponseCallback.get();
 
-      ProcessGroup processGroup = ProcessGroups.ofSingle(spawnedSparkProcess);
-
-      return processGroup;
+      return ProcessGroupBuilder.create().generateId().userId(userId).scheduleId(schedule)
+          .addProcess(spawnedSparkProcess).build();
 
 
     } catch (InterruptedException e) {
       LOGGER.error("Spawn Spark Process Execution got interrupted. Stopping.");
       Thread.currentThread().interrupt();
     } catch (ExecutionException e) {
-      LOGGER.error("Error while waiting for LanceProcess to spawn!" ,e);
-      throw  new IllegalStateException(e);
+      LOGGER.error("Error while waiting for LanceProcess to spawn!", e);
+      throw new IllegalStateException(e);
     }
 
     return null;
   }
-
-
-
-
-
 
 
   @Override

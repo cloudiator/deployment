@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
+import java.util.Optional;
 
 /**
  * Created by daniel on 13.02.17.
@@ -30,7 +31,8 @@ public interface CloudiatorProcess extends Identifiable, Stateful {
     FAILED,
     RUNNING,
     ERROR,
-    DELETED
+    DELETED,
+    FINISHED
   }
 
   enum Type {
@@ -45,5 +47,11 @@ public interface CloudiatorProcess extends Identifiable, Stateful {
   ProcessState state();
 
   Type type();
+
+  String userId();
+
+  Optional<String> diagnostic();
+
+  Optional<String> reason();
 
 }

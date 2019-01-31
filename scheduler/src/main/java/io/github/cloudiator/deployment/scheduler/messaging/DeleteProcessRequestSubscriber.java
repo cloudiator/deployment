@@ -19,7 +19,7 @@ package io.github.cloudiator.deployment.scheduler.messaging;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.scheduler.ProcessKiller;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.DeleteProcessRequest;
@@ -91,7 +91,7 @@ public class DeleteProcessRequestSubscriber implements Runnable {
             return;
           }
 
-          processKiller.kill(userId, process);
+          processKiller.kill(process);
 
           deleteProcess(process, userId);
 

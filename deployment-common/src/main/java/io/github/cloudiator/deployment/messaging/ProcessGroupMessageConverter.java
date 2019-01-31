@@ -3,9 +3,7 @@ package io.github.cloudiator.deployment.messaging;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
-import io.github.cloudiator.deployment.domain.ProcessGroups;
-import java.util.LinkedList;
-import java.util.List;
+import io.github.cloudiator.deployment.domain.ProcessGroupBuilder;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessGroup.Builder;
 
@@ -15,7 +13,7 @@ import org.cloudiator.messages.entities.ProcessEntities.ProcessGroup.Builder;
 public class ProcessGroupMessageConverter implements
     TwoWayConverter<ProcessEntities.ProcessGroup, ProcessGroup> {
 
-  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER =  ProcessMessageConverter.INSTANCE;
+  private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
 
   @Override
   public ProcessEntities.ProcessGroup applyBack(ProcessGroup processGroup) {
@@ -24,6 +22,8 @@ public class ProcessGroupMessageConverter implements
       builder.addProcess(PROCESS_MESSAGE_CONVERTER.applyBack(cloudiatorProcess));
     }
     builder.setId(processGroup.id());
+    builder.setUserId(processGroup.userId());
+    builder.setScheduleId(processGroup.scheduleId());
 
     return builder.build();
   }
@@ -31,11 +31,15 @@ public class ProcessGroupMessageConverter implements
   @Override
   public ProcessGroup apply(ProcessEntities.ProcessGroup processGroup) {
 
-    List<CloudiatorProcess> processList = new LinkedList<>();
-    for(ProcessEntities.Process process : processGroup.getProcessList()){
-      processList.add(PROCESS_MESSAGE_CONVERTER.apply(process));
+    final ProcessGroupBuilder processGroupBuilder = ProcessGroupBuilder.create();
+    processGroupBuilder.id(processGroup.getId());
+    processGroupBuilder.userId(processGroup.getUserId());
+    processGroupBuilder.scheduleId(processGroup.getScheduleId());
+
+    for (ProcessEntities.Process process : processGroup.getProcessList()) {
+      processGroupBuilder.addProcess(PROCESS_MESSAGE_CONVERTER.apply(process));
     }
 
-    return ProcessGroups.of(processGroup.getId(), processList);
+    return processGroupBuilder.build();
   }
 }

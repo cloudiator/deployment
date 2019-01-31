@@ -45,19 +45,21 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
     }
 
     if (processModel.getNode() != null) {
-      return CloudiatorSingleProcessBuilder.newBuilder()
+      return CloudiatorSingleProcessBuilder.create()
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
+          .userId(processModel.getTenant().getUserId())
           .node(processModel.getNode())
           .taskName(processModel.getTask())
           .state(processModel.getState()).build();
     } else {
 
-      return CloudiatorClusterProcessBuilder.newBuilder()
+      return CloudiatorClusterProcessBuilder.create()
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
+          .userId(processModel.getTenant().getUserId())
           .nodeGroup(processModel.getNodeGroup())
           .taskName(processModel.getTask())
           .state(processModel.getState()).build();

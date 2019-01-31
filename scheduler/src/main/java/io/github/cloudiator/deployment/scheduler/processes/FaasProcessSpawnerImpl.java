@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler;
+package io.github.cloudiator.deployment.scheduler.processes;
 
-import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.DockerInterface;
+import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
-import io.github.cloudiator.deployment.domain.ProcessGroups;
+import io.github.cloudiator.deployment.domain.ProcessGroupBuilder;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
@@ -35,53 +33,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.cloudiator.messages.Process.CreateLanceProcessRequest;
-import org.cloudiator.messages.Process.LanceProcessCreatedResponse;
-import org.cloudiator.messages.entities.ProcessEntities.LanceProcess;
+import org.cloudiator.messages.Process.CreateFaasProcessRequest;
+import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
+import org.cloudiator.messages.entities.ProcessEntities.FaasProcess;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LanceProcessSpawnerImpl implements ProcessSpawner {
+public class FaasProcessSpawnerImpl implements ProcessSpawner {
 
   private final ProcessService processService;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
-  private static final NodeToNodeMessageConverter NODE_TO_NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
+  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory
-      .getLogger(LanceProcessSpawnerImpl.class);
+      .getLogger(FaasProcessSpawnerImpl.class);
 
   @Inject
-  public LanceProcessSpawnerImpl(ProcessService processService) {
+  public FaasProcessSpawnerImpl(ProcessService processService) {
     this.processService = processService;
   }
 
   @Override
   public boolean supports(Task task) {
-    try {
-      task.interfaceOfType(LanceInterface.class);
-      return true;
-    } catch (IllegalArgumentException e) {
-      LOGGER
-          .debug(
-              "Provided task does not contain a LanceInterface. Checking for DockerInterface...");
-    }
-    try {
-      task.interfaceOfType(DockerInterface.class);
-      return true;
-    } catch (IllegalArgumentException e) {
-      LOGGER
-          .debug(
-              "Provided task does neither contain a LanceInterface nor DockerInterface! Skipping LanceProcessSpawner!");
-      return false;
-    }
+    return task.interfaces().stream()
+        .allMatch(iface -> iface instanceof FaasInterface);
   }
 
   @Override
   public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
       NodeGroup nodeGroup) {
-
     //Create all Lance processes of for the nodegroup
     List<Future<CloudiatorProcess>> futures = new ArrayList<>();
 
@@ -91,54 +73,41 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
     //wait until all processes are spawned
     try {
-      List<CloudiatorProcess> spawnedLanceProcesses = null;
+      List<CloudiatorProcess> spawnedFaaSProcesses = null;
       try {
-        spawnedLanceProcesses = CloudiatorFutures.waitForFutures(futures);
+        spawnedFaaSProcesses = CloudiatorFutures.waitForFutures(futures);
       } catch (InterruptedException e) {
-        LOGGER.error("Interrupted while waiting for processes to spawn", e);
+        LOGGER.error("Interrupted while waiting for processes to spawn.", e);
         Thread.currentThread().interrupt();
       }
 
-      return ProcessGroups.of(spawnedLanceProcesses);
-
+      return ProcessGroupBuilder.create().generateId().userId(userId).scheduleId(schedule)
+          .addProcesses(spawnedFaaSProcesses).build();
 
     } catch (ExecutionException e) {
-      LOGGER.error("Error while waiting for LanceProcess to spawn!", e);
+      LOGGER.error("Error while waiting for FaaSProcess to spawn!", e);
       throw new IllegalStateException(e);
     }
-
-
   }
-
 
   private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
       Node node) {
-
-    LOGGER.info(String
-        .format("%s is spawning a new process for user: %s, Schedule %s, Task %s on Node %s", this,
-            userId, schedule, task, node));
-
-    final LanceProcess lanceProcess = LanceProcess.newBuilder()
+    final FaasProcess faasProcess = FaasProcess.newBuilder()
         .setSchedule(schedule)
-        .setTask(task.name())
         .setJob(JOB_CONVERTER.applyBack(job))
-        .setNode(NODE_TO_NODE_MESSAGE_CONVERTER.apply(node)).build();
-    final CreateLanceProcessRequest processRequest = CreateLanceProcessRequest.newBuilder()
-        .setLance(lanceProcess).setUserId(userId).build();
+        .setNode(NODE_MESSAGE_CONVERTER.apply(node)).setTask(task.name()).build();
+    CreateFaasProcessRequest processRequest = CreateFaasProcessRequest.newBuilder()
+        .setFaas(faasProcess)
+        .setUserId(userId).build();
 
-    SettableFutureResponseCallback<LanceProcessCreatedResponse, CloudiatorProcess> futureResponseCallback = SettableFutureResponseCallback
-        .create(
-            lanceProcessCreatedResponse -> PROCESS_MESSAGE_CONVERTER
-                .apply(lanceProcessCreatedResponse.getProcess()));
+    SettableFutureResponseCallback<FaasProcessCreatedResponse, CloudiatorProcess> futureResponseCallback =
+        SettableFutureResponseCallback.create(
+            faasProcessCreatedResponse -> PROCESS_MESSAGE_CONVERTER
+                .apply(faasProcessCreatedResponse.getProcess()));
 
-    processService.createLanceProcessAsync(processRequest, futureResponseCallback);
+    processService.createFaasProcessAsync(processRequest, futureResponseCallback);
 
     return futureResponseCallback;
-
   }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).toString();
-  }
 }
