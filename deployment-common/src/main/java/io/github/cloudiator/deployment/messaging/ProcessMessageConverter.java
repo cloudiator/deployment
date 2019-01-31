@@ -69,7 +69,9 @@ public class ProcessMessageConverter implements
   private Process finishBuilding(CloudiatorProcess cloudiatorProcess, Builder builder) {
     builder.setId(cloudiatorProcess.id()).setUserId(cloudiatorProcess.userId())
         .setSchedule(cloudiatorProcess.scheduleId()).setTask(cloudiatorProcess.taskId())
-        .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type()));
+        .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type()))
+        .setState(PROCESS_STATE_CONVERTER.applyBack(cloudiatorProcess.state()))
+    ;
 
     if (cloudiatorProcess.reason().isPresent()) {
       builder.setReason(cloudiatorProcess.reason().get());
@@ -94,6 +96,7 @@ public class ProcessMessageConverter implements
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
             .node(process.getNode())
+            .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
 
         if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
@@ -114,6 +117,7 @@ public class ProcessMessageConverter implements
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
             .nodeGroup(process.getNodeGroup())
+            .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
 
         if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
