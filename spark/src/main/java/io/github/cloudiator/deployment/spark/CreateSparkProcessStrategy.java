@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.SparkInterface;
@@ -286,7 +287,9 @@ public class CreateSparkProcessStrategy {
       String temporarySparkProcessUid = uuid.toString();
 
       return CloudiatorClusterProcessBuilder.create().id(temporarySparkProcessUid)
+          .userId(userId)
           .type(Type.SPARK)
+          .state(ProcessState.CREATED)
           .nodeGroup(nodeGroup.id())
           .taskName(task.name()).scheduleId(schedule).build();
 

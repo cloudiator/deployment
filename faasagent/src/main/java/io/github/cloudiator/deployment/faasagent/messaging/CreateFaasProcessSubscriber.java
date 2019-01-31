@@ -5,29 +5,33 @@ import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
 import de.uniulm.omi.cloudiator.sword.domain.Cloud;
-import de.uniulm.omi.cloudiator.sword.domain.CloudCredential;
-import io.github.cloudiator.deployment.domain.*;
-import io.github.cloudiator.deployment.faasagent.cloudformation.AwsDeployer;
+import io.github.cloudiator.deployment.domain.FaasInterface;
+import io.github.cloudiator.deployment.domain.Function;
+import io.github.cloudiator.deployment.domain.FunctionBuilder;
+import io.github.cloudiator.deployment.domain.HttpTrigger;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.domain.Trigger;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.ApplicationTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
-import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.domain.Runtime;
 import io.github.cloudiator.messaging.CloudMessageRepository;
 import io.github.cloudiator.messaging.LocationMessageRepository;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import org.cloudiator.messages.General;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
 import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
+import org.cloudiator.messages.entities.ProcessEntities.ProcessState;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
 
 public class CreateFaasProcessSubscriber implements Runnable {
 
@@ -84,6 +88,8 @@ public class CreateFaasProcessSubscriber implements Runnable {
                 FaasProcessCreatedResponse.newBuilder()
                     .setProcess(Process.newBuilder()
                         .setId(apiId)
+                        .setUserId(userId)
+                        .setState(ProcessState.PROCESS_STATE_CREATED)
                         .setSchedule(content.getFaas().getSchedule())
                         //TODO: add refactor to nodegroup here
                         .setNode(content.getFaas().getNode().getId())
@@ -91,6 +97,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
                     .build();
             messageInterface.reply(id, faasProcessCreatedResponse);
           } catch (Exception e) {
+            
             final String errorMessage = MessageFormat.format(
                 "Exception {0} while processing request {1} with id {2}.",
                 e.getMessage(), // 0
@@ -110,7 +117,8 @@ public class CreateFaasProcessSubscriber implements Runnable {
     functionDomainRepository.save(function, userId);
   }
 
-  private ApplicationTemplate convertToTemplate(CreateFaasProcessRequest request, Function function) {
+  private ApplicationTemplate convertToTemplate(CreateFaasProcessRequest request,
+      Function function) {
     final Job job = JOB_CONVERTER.apply(request.getFaas().getJob());
     final String taskName = request.getFaas().getTask();
     final Task task = job.getTask(taskName)
