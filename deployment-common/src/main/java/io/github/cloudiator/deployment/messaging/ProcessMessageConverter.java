@@ -67,7 +67,7 @@ public class ProcessMessageConverter implements
   }
 
   private Process finishBuilding(CloudiatorProcess cloudiatorProcess, Builder builder) {
-    builder.setId(cloudiatorProcess.id())
+    builder.setId(cloudiatorProcess.id()).setUserId(cloudiatorProcess.userId())
         .setSchedule(cloudiatorProcess.scheduleId()).setTask(cloudiatorProcess.taskId())
         .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type()));
 
