@@ -94,7 +94,7 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
   @Override
   public String userId() {
-    return null;
+    return userId;
   }
 
   @Override
