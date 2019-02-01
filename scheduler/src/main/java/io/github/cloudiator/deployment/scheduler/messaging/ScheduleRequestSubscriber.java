@@ -83,6 +83,10 @@ public class ScheduleRequestSubscriber implements Runnable {
               .apply(content.getSchedule().getInstantiation());
           final String userId = content.getUserId();
 
+          LOGGER.info(String.format(
+              "%s is receiving a new schedule request for job %s by user %s. Instantiation will be %s",
+              this, jobId, userId, instantiation));
+
           //retrieve the job
           Job job = jobMessageRepository.getById(userId, jobId);
           if (job == null) {

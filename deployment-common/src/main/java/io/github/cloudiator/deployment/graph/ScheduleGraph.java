@@ -71,7 +71,10 @@ public class ScheduleGraph {
     }).collect(MoreCollectors.toOptional());
   }
 
-  private static class CommunicationInstanceEdge extends DefaultEdge {
+  public static class CommunicationInstanceEdge extends DefaultEdge {
+
+    public CommunicationInstanceEdge() {
+    }
 
     public CloudiatorProcess source() {
       return (CloudiatorProcess) super.getSource();
