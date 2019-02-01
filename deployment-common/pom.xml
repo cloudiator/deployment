@@ -38,11 +38,6 @@
       <artifactId>jsr305</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>21.0</version>
-    </dependency>
-    <dependency>
       <groupId>io.github.cloudiator.common</groupId>
       <artifactId>common-domain</artifactId>
     </dependency>

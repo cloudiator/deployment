@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
-import com.google.common.collect.MoreCollectors;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -40,6 +39,7 @@ import io.github.cloudiator.domain.Node;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
 
@@ -57,8 +57,8 @@ public class ScheduleGraph {
   }
 
   private Optional<Node> nodeFor(CloudiatorProcess cloudiatorProcess) {
-    //noinspection UnstableApiUsage
-    return nodes.stream().filter(new Predicate<Node>() {
+    // replace with MoreCollectors.toOptional() if guava is upgraded
+    final Set<Node> nodes = this.nodes.stream().filter(new Predicate<Node>() {
       @Override
       public boolean test(Node node) {
 
@@ -68,7 +68,13 @@ public class ScheduleGraph {
         }
         return false;
       }
-    }).collect(MoreCollectors.toOptional());
+    }).collect(Collectors.toSet());
+
+    if (nodes.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(nodes.iterator().next());
   }
 
   public static class CommunicationInstanceEdge extends DefaultEdge {
