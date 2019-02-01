@@ -29,29 +29,37 @@ import java.util.UUID;
 public class ScheduleImpl implements Schedule {
 
   private final String id;
+  private final String userId;
   private final String job;
   private final Set<CloudiatorProcess> processes;
   private final Instantiation instantiation;
 
-  private ScheduleImpl(String id, String job,
+  private ScheduleImpl(String id, String userId, String job,
       Instantiation instantiation) {
     this.id = id;
     this.job = job;
+    this.userId = userId;
     this.instantiation = instantiation;
     this.processes = new HashSet<>();
   }
 
   public static Schedule create(Job job, Instantiation instantiation) {
-    return new ScheduleImpl(UUID.randomUUID().toString(), job.id(), instantiation);
+    return new ScheduleImpl(UUID.randomUUID().toString(), job.userId(), job.id(), instantiation);
   }
 
-  public static Schedule create(String id, String jobId, Instantiation instantiation) {
-    return new ScheduleImpl(id, jobId, instantiation);
+  public static Schedule create(String id, String userId, String jobId,
+      Instantiation instantiation) {
+    return new ScheduleImpl(id, userId, jobId, instantiation);
   }
 
   @Override
   public String job() {
     return job;
+  }
+
+  @Override
+  public String userId() {
+    return userId;
   }
 
   @Override
@@ -101,7 +109,7 @@ public class ScheduleImpl implements Schedule {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("id", id).add("job", job)
+    return MoreObjects.toStringHelper(this).add("id", id).add("userId", userId).add("job", job)
         .add("instantiation", instantiation).toString();
   }
 }

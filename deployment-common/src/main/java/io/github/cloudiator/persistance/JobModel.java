@@ -77,6 +77,10 @@ class JobModel extends Model {
     return ImmutableList.copyOf(communications);
   }
 
+  public TenantModel getTenant() {
+    return tenant;
+  }
+
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("uuid", uuid).add("name", name)

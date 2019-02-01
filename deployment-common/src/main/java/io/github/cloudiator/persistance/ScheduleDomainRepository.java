@@ -53,8 +53,8 @@ public class ScheduleDomainRepository {
         .apply(scheduleModelRepository.findByIdAndUser(scheduleId, userId));
   }
 
-  public void save(Schedule domain, String userId) {
-    saveAndGet(domain, userId);
+  public void save(Schedule domain) {
+    saveAndGet(domain);
   }
 
   public void delete(Schedule domain, String userId) {
@@ -69,13 +69,13 @@ public class ScheduleDomainRepository {
     scheduleModelRepository.delete(scheduleModel);
   }
 
-  ScheduleModel saveAndGet(Schedule domain, String userId) {
-    return createScheduleModel(domain, userId);
+  ScheduleModel saveAndGet(Schedule domain) {
+    return createScheduleModel(domain);
   }
 
-  private ScheduleModel createScheduleModel(Schedule domain, String userId) {
+  private ScheduleModel createScheduleModel(Schedule domain) {
 
-    final TenantModel tenantModel = tenantModelRepository.createOrGet(userId);
+    final TenantModel tenantModel = tenantModelRepository.createOrGet(domain.userId());
 
     final ScheduleModel scheduleModel = new ScheduleModel(domain.id(), tenantModel, domain.job(),
         domain.instantiation());

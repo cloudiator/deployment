@@ -57,9 +57,9 @@ public class JobAddedSubscriber implements Runnable {
 
 
   @Transactional
-  void persistJob(Job job, String userId) {
+  void persistJob(Job job) {
     jobDomainRepository
-        .save(job, userId);
+        .save(job);
   }
 
 
@@ -72,6 +72,7 @@ public class JobAddedSubscriber implements Runnable {
         JobNew jobNew = JOB_NEW_CONVERTER.apply(createJobRequest.getJob());
 
         Job job = JobBuilder.newBuilder().generateId().name(jobNew.name())
+            .userId(createJobRequest.getUserId())
             .addCommunications(jobNew.communications())
             .addTasks(jobNew.tasks()).build();
 
@@ -84,7 +85,7 @@ public class JobAddedSubscriber implements Runnable {
           return;
         }
 
-        persistJob(job, createJobRequest.getUserId());
+        persistJob(job);
 
         final JobCreatedResponse jobCreatedResponse = JobCreatedResponse.newBuilder()
             .setJob(JOB_CONVERTER.applyBack(job)).build();

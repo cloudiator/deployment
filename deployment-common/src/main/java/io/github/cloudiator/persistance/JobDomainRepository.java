@@ -50,8 +50,8 @@ public class JobDomainRepository {
     return tenantModelRepository.createOrGet(userId);
   }
 
-  public void save(Job domain, String userId) {
-    createModel(userId, domain);
+  public void save(Job domain) {
+    createModel(domain);
   }
 
   public List<Job> findByUserId(String userId) {
@@ -65,10 +65,10 @@ public class JobDomainRepository {
     return Optional.ofNullable(JOB_MODEL_CONVERTER.apply(byNameAndUser));
   }
 
-  private JobModel createModel(String userId, Job domain) {
+  private JobModel createModel(Job domain) {
 
     //create or get tenant
-    final TenantModel tenantModel = getOrCreateTenantModel(userId);
+    final TenantModel tenantModel = getOrCreateTenantModel(domain.userId());
 
     //create the job
     JobModel jobModel = new JobModel(domain.id(), domain.name(), tenantModel);

@@ -27,6 +27,7 @@ class JobModelConverter implements OneWayConverter<JobModel, Job> {
     JobBuilder jobBuilder = JobBuilder.newBuilder();
     jobBuilder.name(jobModel.getName());
     jobBuilder.id(jobModel.getUuid());
+    jobBuilder.userId(jobModel.getTenant().getUserId());
 
     jobModel.getTasks().stream().map(TASK_MODEL_CONVERTER)
         .forEach(jobBuilder::addTask);

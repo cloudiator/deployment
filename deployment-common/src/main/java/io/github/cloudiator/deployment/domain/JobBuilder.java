@@ -27,6 +27,7 @@ import java.util.UUID;
 public class JobBuilder {
 
   private String id;
+  private String userId;
   private String name;
   private Set<Task> tasks = new HashSet<>();
   private Set<Communication> communications = new HashSet<>();
@@ -46,6 +47,11 @@ public class JobBuilder {
 
   public JobBuilder id(String id) {
     this.id = id;
+    return this;
+  }
+
+  public JobBuilder userId(String userId) {
+    this.userId = userId;
     return this;
   }
 
@@ -76,7 +82,7 @@ public class JobBuilder {
   }
 
   public Job build() {
-    return new JobImpl(id, name, tasks, communications);
+    return new JobImpl(id, userId, name, tasks, communications);
   }
 
 

@@ -65,8 +65,8 @@ public class ScheduleRequestSubscriber implements Runnable {
   }
 
   @Transactional
-  void persistSchedule(Schedule schedule, String userId) {
-    scheduleDomainRepository.save(schedule, userId);
+  void persistSchedule(Schedule schedule) {
+    scheduleDomainRepository.save(schedule);
   }
 
   @Override
@@ -95,7 +95,7 @@ public class ScheduleRequestSubscriber implements Runnable {
           Schedule schedule = ScheduleImpl.create(job, instantiation);
 
           //persist the schedule
-          persistSchedule(schedule, userId);
+          persistSchedule(schedule);
 
           LOGGER.info(String
               .format("Using strategy %s to instantiate schedule %s, job %s for user %s",

@@ -36,18 +36,20 @@ public class JobConverter implements TwoWayConverter<JobEntities.Job, Job> {
   @Override
   public JobEntities.Job applyBack(Job job) {
 
-    return JobEntities.Job.newBuilder().setId(job.id()).setName(job.name()).addAllCommunications(
-        job.communications().stream()
-            .map(communicationConverter::applyBack).collect(
-            Collectors.toList())).addAllTasks(
-        job.tasks().stream().map(taskConverter::applyBack).collect(Collectors.toList()))
+    return JobEntities.Job.newBuilder().setId(job.id()).setUserId(job.userId()).setName(job.name())
+        .addAllCommunications(
+            job.communications().stream()
+                .map(communicationConverter::applyBack).collect(
+                Collectors.toList())).addAllTasks(
+            job.tasks().stream().map(taskConverter::applyBack).collect(Collectors.toList()))
         .build();
   }
 
   @Override
   public Job apply(JobEntities.Job job) {
 
-    JobBuilder jobBuilder = JobBuilder.newBuilder().name(job.getName()).id(job.getId());
+    JobBuilder jobBuilder = JobBuilder.newBuilder().name(job.getName()).id(job.getId())
+        .userId(job.getUserId());
 
     job.getCommunicationsList().forEach(
         communication -> jobBuilder.addCommunication(communicationConverter.apply(communication)));

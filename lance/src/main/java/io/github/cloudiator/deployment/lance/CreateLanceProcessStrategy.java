@@ -254,7 +254,6 @@ public class CreateLanceProcessStrategy {
 
   private CloudiatorProcess waitForDeployment(LifecycleClient client, ComponentInstanceId cId,
       Task task, Node node, String schedule, String userId) {
-    client.waitForDeployment(cId);
 
     LOGGER.debug(String
         .format(

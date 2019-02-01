@@ -26,6 +26,7 @@ import io.github.cloudiator.deployment.scheduler.messaging.DeleteScheduleRequest
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessGroupQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ScheduleGraphSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleRequestSubscriber;
 import io.github.cloudiator.persistance.DeploymentJpaModule;
@@ -69,6 +70,9 @@ public class ScheduleAgent {
 
     LOGGER.info(String.format("Starting %s.", DeleteScheduleRequestSubscriber.class));
     INJECTOR.getInstance(DeleteScheduleRequestSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", ScheduleGraphSubscriber.class));
+    INJECTOR.getInstance(ScheduleGraphSubscriber.class).run();
 
   }
 

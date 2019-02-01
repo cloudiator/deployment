@@ -123,7 +123,7 @@ public class MediaWikiJob {
 
   public static Job wikiJob() {
 
-    return JobBuilder.newBuilder().id(JOB_ID).name("mediawiki")
+    return JobBuilder.newBuilder().id(JOB_ID).userId("admin").name("mediawiki")
         .addTask(wikiTask()).addTask(databaseTask()).addTask(loadBalancerTask())
         .addCommunication(wikiWithDB()).addCommunication(wikiWithLB())
         .build();

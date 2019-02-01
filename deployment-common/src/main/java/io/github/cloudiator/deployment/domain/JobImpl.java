@@ -37,16 +37,21 @@ import java.util.stream.Stream;
 class JobImpl extends JobNewImpl implements Job {
 
   private final String id;
+  private final String userId;
 
 
-  JobImpl(String id, String name, Set<Task> tasks,
+  JobImpl(String id, String userId, String name, Set<Task> tasks,
       Set<Communication> communications) {
     super(name, tasks, communications);
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
 
+    checkNotNull(userId, "userId is null");
+    checkArgument(!userId.isEmpty(), "userId is empty");
+
     this.id = id;
+    this.userId = userId;
     validateCommunication();
   }
 
@@ -55,6 +60,11 @@ class JobImpl extends JobNewImpl implements Job {
     return true;
   }
 
+
+  @Override
+  public String userId() {
+    return userId;
+  }
 
   @Override
   public Task providingTask(Communication communication) {
@@ -174,6 +184,6 @@ class JobImpl extends JobNewImpl implements Job {
 
   @Override
   protected ToStringHelper stringHelper() {
-    return super.stringHelper().add("id", id);
+    return super.stringHelper().add("id", id).add("userId", userId);
   }
 }

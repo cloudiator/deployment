@@ -29,6 +29,8 @@ public interface Schedule extends Identifiable {
 
   String job();
 
+  String userId();
+
   Set<CloudiatorProcess> processes();
 
   Instantiation instantiation();

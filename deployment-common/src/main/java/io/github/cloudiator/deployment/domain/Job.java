@@ -34,6 +34,8 @@ public interface Job extends JobNew, Identifiable {
     return tasks().stream().filter(task -> task.name().equals(name)).collect(StreamUtil.getOnly());
   }
 
+  String userId();
+
   Task providingTask(Communication communication);
 
   Task requiredTask(Communication communication);

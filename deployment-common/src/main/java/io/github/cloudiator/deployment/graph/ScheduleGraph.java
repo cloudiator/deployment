@@ -24,27 +24,29 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import de.uniulm.omi.cloudiator.util.StreamUtil;
+import com.google.common.base.Charsets;
+import com.google.common.collect.MoreCollectors;
+import com.google.common.hash.Funnel;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
-import java.util.Random;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import org.jgrapht.EdgeFactory;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
 
 /**
  * Created by daniel on 15.07.16.
  */
-@Deprecated
 public class ScheduleGraph {
-  //TODO: Refactor graph to distinguish between CloudiatorSingleProcess and CloudiatorClusterProcess for getting the node or nodeGroup
 
   private final DirectedPseudograph<CloudiatorProcess, CommunicationInstanceEdge> scheduleGraph;
   private final Set<Node> nodes;
@@ -54,58 +56,57 @@ public class ScheduleGraph {
     this.nodes = nodes;
   }
 
-  private static class CommunicationInstanceEdge extends DefaultEdge {
-
-  }
-
-
-  private static class CommunicationInstanceEdgeFactory
-      implements EdgeFactory<CloudiatorProcess, CommunicationInstanceEdge> {
-
-    @Override
-    public CommunicationInstanceEdge createEdge(CloudiatorProcess sourceVertex,
-        CloudiatorProcess targetVertex) {
-      return new CommunicationInstanceEdge();
-    }
-  }
-
-  private Node nodeFor(CloudiatorProcess cloudiatorProcess) {
+  private Optional<Node> nodeFor(CloudiatorProcess cloudiatorProcess) {
+    //noinspection UnstableApiUsage
     return nodes.stream().filter(new Predicate<Node>() {
       @Override
       public boolean test(Node node) {
 
-        return node.id().equals(cloudiatorProcess.id());
+        if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
+          CloudiatorSingleProcess cloudiatorSingleProcess = (CloudiatorSingleProcess) cloudiatorProcess;
+          return cloudiatorSingleProcess.node().equals(node.id());
+        }
+        return false;
       }
-    }).collect(StreamUtil.getOnly()).orElseThrow(() -> new IllegalStateException(String.format(
-        "Node set %s does not contain the node with id %s required for cloudiator process %s.",
-        this.nodes, cloudiatorProcess.id(), cloudiatorProcess)));
+    }).collect(MoreCollectors.toOptional());
+  }
+
+  private static class CommunicationInstanceEdge extends DefaultEdge {
+
+    public CloudiatorProcess source() {
+      return (CloudiatorProcess) super.getSource();
+    }
+
+    public CloudiatorProcess target() {
+      return (CloudiatorProcess) super.getTarget();
+    }
+  }
+
+  private String generateIdForEdge(CommunicationInstanceEdge edge) {
+    @SuppressWarnings("UnstableApiUsage") final Funnel<CommunicationInstanceEdge> funnel = (from, into) -> {
+      into.putString(from.source().id(), Charsets.UTF_8);
+      into.putString(from.target().id(), Charsets.UTF_8);
+    };
+    @SuppressWarnings("UnstableApiUsage") final HashFunction hashFunction = Hashing.md5();
+    return hashFunction.hashObject(edge, funnel).toString();
   }
 
   public JsonNode toJson() {
     final ObjectNode objectNode = new ObjectMapper().createObjectNode().with("elements");
-    final ArrayNode nodes = objectNode.putArray("nodes");
+    final ArrayNode processes = objectNode.putArray("processes");
     this.scheduleGraph.vertexSet().forEach(process -> {
-      final ObjectNode vertex = nodes.addObject();
-      vertex.with("data").put("id", process.id()).put("type", "INSTANCE")
-          .put("name", process.taskId())
-          .put("state", process.state().toString());
-          //.put("parent", process.nodeGroup());
+      final ObjectNode vertex = processes.addObject();
+      final ObjectNode data = vertex.with("data");
+      data.put("id", process.id())
+          .put("task", process.taskId()).put("state", process.state().toString());
+      nodeFor(process).ifPresent(present -> data.put("ip", present.connectTo().ip()));
     });
-    //add virtual machines as compound nodes
-    this.scheduleGraph.vertexSet().stream().map(this::nodeFor).distinct()
-        .forEach(node -> {
-          final ObjectNode compound = nodes.addObject();
-          compound.with("data").put("id", node.id()).put("type", "VM")
-              .put("name", node.name())
-              .put("state", "UNKNOWN").put("publicIp",
-              node.connectTo().ip());
-        });
     final ArrayNode edges = objectNode.putArray("edges");
     this.scheduleGraph.edgeSet().forEach(communicationEdge -> {
       final ObjectNode edge = edges.addObject();
-      edge.with("data").put("id", new Random().nextInt())
-          .put("source", scheduleGraph.getEdgeSource(communicationEdge).id())
-          .put("target", scheduleGraph.getEdgeTarget(communicationEdge).id());
+      edge.with("data").put("id", generateIdForEdge(communicationEdge))
+          .put("source", communicationEdge.source().id())
+          .put("target", communicationEdge.target().id());
     });
 
     return objectNode;
@@ -118,7 +119,7 @@ public class ScheduleGraph {
         Schedule schedule, Job job) {
 
       DirectedPseudograph<CloudiatorProcess, CommunicationInstanceEdge> instanceGraph =
-          new DirectedPseudograph<>(new CommunicationInstanceEdgeFactory());
+          new DirectedPseudograph<>(CommunicationInstanceEdge.class);
 
       schedule.processes().forEach(instanceGraph::addVertex);
       schedule.processes().forEach(cloudiatorProcess -> {
