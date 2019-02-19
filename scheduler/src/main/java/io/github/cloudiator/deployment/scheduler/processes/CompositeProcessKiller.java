@@ -48,6 +48,7 @@ public class CompositeProcessKiller implements ProcessKiller {
     for (ProcessKiller processKiller : processKillers) {
       if (processKiller.supports(cloudiatorProcess)) {
         processKiller.kill(cloudiatorProcess);
+        return;
       }
     }
 
