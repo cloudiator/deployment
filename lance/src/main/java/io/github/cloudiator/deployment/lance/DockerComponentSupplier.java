@@ -170,43 +170,54 @@ abstract class DockerComponentSupplier {
     return creds;
   }
 
-  protected String getMappedPorts() {
+  protected List<String> getMappedPorts() {
     DockerInterface dIface = dockerInterface();
     Map<String,String> envMap = dIface.environment();
-    String port = "";
+    List<String> portsList = new ArrayList<>();
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
       if(entry.getKey().equals("port")) {
         if (checkPortFormat(entry.getValue())) {
-          port = entry.getValue();
+          String[] ports = entry.getValue().split("\\s+");
+          portsList.addAll(new ArrayList<>(Arrays.asList(ports)));
         }
       }
     }
 
-    return port;
+    return portsList;
   }
 
   private static boolean checkPortFormat(String portsString) {
-    String[] ports = portsString.split(":");
+    String[] ports = portsString.trim().split("\\s+");
     List<String> portsList = new ArrayList<>(Arrays.asList(ports));
 
-    if(portsList.size() == 0 || portsList.size()>2) {
-      LOGGER.error("Wrong port option format!");
+    if(portsList.size() == 0) {
+      LOGGER.error("Wrong port option format! No port number given.");
       return false;
     }
 
-    try {
-      Integer.parseInt(portsList.get(0));
-    } catch (NumberFormatException ex) {
-      LOGGER.error("Host port is not a number!");
-      return false;
-    }
+    for(String port: portsList) {
+      String[] hostContPort = port.split(":");
+      List<String> hostContPortList = new ArrayList<>(Arrays.asList(hostContPort));
 
-    if (portsList.size() == 2) {
-      try {
-        Integer.parseInt(portsList.get(1));
-      } catch (NumberFormatException ex) {
-        LOGGER.error("Container port is not a number!");
+      if(hostContPortList.size() > 2) {
+        LOGGER.error("Wrong port option format! Cannot map more than two ports via \':\'");
         return false;
+      }
+
+      try {
+        Integer.parseInt(hostContPortList.get(0));
+      } catch (NumberFormatException ex) {
+        LOGGER.error("Host port is not a number!");
+        return false;
+      }
+
+      if (hostContPortList.size() == 2) {
+        try {
+          Integer.parseInt(hostContPortList.get(1));
+        } catch (NumberFormatException ex) {
+          LOGGER.error("Container port is not a number!");
+          return false;
+        }
       }
     }
 
@@ -261,8 +272,9 @@ abstract class DockerComponentSupplier {
     createOptionMap.put(Option.RESTART, new ArrayList<>(Arrays.asList("no")));
     createOptionMap.put(Option.INTERACTIVE, new ArrayList<>(Arrays.asList("")));
 
-    if (!getMappedPorts().equals("")) {
-      createOptionMap.put(Option.PORT, new ArrayList<>(Arrays.asList(getMappedPorts())));
+    List<String> mappedPorts = getMappedPorts();
+    if (mappedPorts.size() > 0) {
+      createOptionMap.put(Option.PORT, mappedPorts);
     }
 
     return createOptionMap;
