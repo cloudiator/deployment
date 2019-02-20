@@ -49,6 +49,24 @@ public class CreateSparkProcessStrategy {
 
   private static final String SPARK_ARGUMENT_DELIMITER = ",";
 
+
+  /**
+   * Spark Default Settings
+   */
+  private static final int SPARK_DRIVER_CORES = 1;
+  private static final String SPARK_DRIVER_MEMORY = "1G";
+  private static final int SPARK_EXECUTOR_NUMBER = 1;
+  private static final int  SPARK_EXECUTOR_CORES = 1;
+  private static final String SPARK_EXECUTOR_MEMORY = "1G";
+
+  private static final String SPARK_PORT_RETRIES = "100";
+  private static final String SPARK_DRIVER_PORT = "38000";
+  private static final String SPARK_BLOCKMANAGER_PORT = "38100";
+  private static final String SPARK_BROADCAST_PORT = "38200";
+  private static final String SPARK_EXECUTOR_PORT = "38300";
+  private static final String SPARK_FILESERVER_PORT = "38400";
+  private static final String SPARK_REPLCASSSERVER_PORT = "38500";
+
   private InstallationRequestService installationRequestService;
 
   @Inject
@@ -217,7 +235,7 @@ public class CreateSparkProcessStrategy {
     if (sparkInterface.sparkArguments().containsKey("driverMemory")) {
       livyBatch.setDriverMemory(sparkInterface.sparkArguments().get("driverMemory"));
     }else {
-      livyBatch.setDriverMemory(Configuration.conf().getString("spark.default.driver.memory"));
+      livyBatch.setDriverMemory(SPARK_DRIVER_MEMORY);
     }
 
     if (sparkInterface.sparkArguments().containsKey("driverCores")
@@ -225,13 +243,13 @@ public class CreateSparkProcessStrategy {
       livyBatch
           .setDriverCores(Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")));
     }else {
-      livyBatch.setDriverCores(Integer.parseInt(Configuration.conf().getString("spark.default.driver.cores")));
+      livyBatch.setDriverCores(SPARK_DRIVER_CORES);
     }
 
     if (sparkInterface.sparkArguments().containsKey("executorMemory")) {
       livyBatch.setExecutorMemory(sparkInterface.sparkArguments().get("executorMemory"));
     }else {
-      livyBatch.setExecutorMemory(Configuration.conf().getString("spark.default.executor.memory"));
+      livyBatch.setExecutorMemory(SPARK_EXECUTOR_MEMORY);
     }
 
     if (sparkInterface.sparkArguments().containsKey("executorCores")
@@ -239,7 +257,7 @@ public class CreateSparkProcessStrategy {
       livyBatch
           .setExecutorCores(Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")));
     }else {
-      livyBatch.setExecutorCores(Integer.parseInt(Configuration.conf().getString("spark.default.executor.cores")));
+      livyBatch.setExecutorCores(SPARK_EXECUTOR_CORES);
     }
 
     if (sparkInterface.sparkArguments().containsKey("numExecutors")
@@ -247,7 +265,7 @@ public class CreateSparkProcessStrategy {
       livyBatch
           .setNumExecutors(Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")));
     }else {
-      livyBatch.setNumExecutors(Integer.parseInt(Configuration.conf().getString("spark.default.executor.number")));
+      livyBatch.setNumExecutors(SPARK_EXECUTOR_NUMBER);
     }
 
     if (sparkInterface.sparkArguments().containsKey("archives")) {
@@ -268,17 +286,41 @@ public class CreateSparkProcessStrategy {
     }
 
     /**
-     * add default and optional Spark configurations
+     * add optional Spark configurations
      */
-    sparkInterface.sparkConfiguration().put("spark.port.maxRetries",Configuration.conf().getString("spark.default.port.maxRetries"));
-    sparkInterface.sparkConfiguration().put("spark.driver.port",Configuration.conf().getString("spark.default.driver.port"));
-    sparkInterface.sparkConfiguration().put("spark.blockManager.port",Configuration.conf().getString("spark.default.blockManager.port"));
-    sparkInterface.sparkConfiguration().put("spark.broadcast.port",Configuration.conf().getString("spark.default.broadcast.port"));
-    sparkInterface.sparkConfiguration().put("spark.executor.port",Configuration.conf().getString("spark.default.executor.port"));
-    sparkInterface.sparkConfiguration().put("spark.fileserver.port",Configuration.conf().getString("spark.default.fileserver.port"));
-    sparkInterface.sparkConfiguration().put("spark.replClassServer.port",Configuration.conf().getString("spark.default.replClassServer.port"));
-
     livyBatch.setConf(sparkInterface.sparkConfiguration());
+
+    /**
+     * set default values in Spark configuration
+     */
+    if(!livyBatch.getConf().containsKey("spark.port.maxRetries")){
+      livyBatch.getConf().put("spark.port.maxRetries",SPARK_PORT_RETRIES);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.driver.port")){
+      livyBatch.getConf().put("spark.driver.port",SPARK_DRIVER_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.blockManager.port")){
+      livyBatch.getConf().put("spark.blockManager.port",SPARK_BLOCKMANAGER_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.broadcast.port")){
+      livyBatch.getConf().put("spark.broadcast.port",SPARK_BROADCAST_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.executor.port")){
+      livyBatch.getConf().put("spark.executor.port",SPARK_EXECUTOR_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.fileserver.port")){
+      livyBatch.getConf().put("spark.fileserver.port",SPARK_FILESERVER_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.replClassServer.port")){
+      livyBatch.getConf().put("spark.replClassServer.port",SPARK_REPLCASSSERVER_PORT);
+    }
+
 
     return livyBatch;
   }
