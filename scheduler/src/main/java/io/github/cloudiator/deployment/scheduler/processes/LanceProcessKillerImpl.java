@@ -90,7 +90,10 @@ public class LanceProcessKillerImpl implements ProcessKiller {
     try {
       futureResponseCallback.get();
 
-      LOGGER.info("%s successfully killed the process %s.", this, cloudiatorProcess, userId);
+      LOGGER.info(
+          String
+              .format("%s successfully killed the process %s for user %s.", this, cloudiatorProcess,
+                  userId));
     } catch (InterruptedException e) {
       throw new IllegalStateException("Got interrupted while waiting for lance process deletion.");
     } catch (ExecutionException e) {
