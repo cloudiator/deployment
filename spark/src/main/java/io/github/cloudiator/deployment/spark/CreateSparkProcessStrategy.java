@@ -16,7 +16,9 @@ import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import org.apache.http.HttpStatus;
@@ -288,39 +290,49 @@ public class CreateSparkProcessStrategy {
     /**
      * add optional Spark configurations
      */
-    livyBatch.setConf(sparkInterface.sparkConfiguration());
+
+    Map sparkDefaultConfMap = new HashMap<String, String>();
+
 
     /**
      * set default values in Spark configuration
      */
     if(!livyBatch.getConf().containsKey("spark.port.maxRetries")){
-      livyBatch.getConf().put("spark.port.maxRetries",SPARK_PORT_RETRIES);
+      sparkDefaultConfMap.put("spark.port.maxRetries",SPARK_PORT_RETRIES);
     }
 
     if(!livyBatch.getConf().containsKey("spark.driver.port")){
-      livyBatch.getConf().put("spark.driver.port",SPARK_DRIVER_PORT);
+      sparkDefaultConfMap.put("spark.driver.port",SPARK_DRIVER_PORT);
     }
 
     if(!livyBatch.getConf().containsKey("spark.blockManager.port")){
-      livyBatch.getConf().put("spark.blockManager.port",SPARK_BLOCKMANAGER_PORT);
+      sparkDefaultConfMap.put("spark.blockManager.port",SPARK_BLOCKMANAGER_PORT);
     }
 
     if(!livyBatch.getConf().containsKey("spark.broadcast.port")){
-      livyBatch.getConf().put("spark.broadcast.port",SPARK_BROADCAST_PORT);
+      sparkDefaultConfMap.put("spark.broadcast.port",SPARK_BROADCAST_PORT);
     }
 
     if(!livyBatch.getConf().containsKey("spark.executor.port")){
-      livyBatch.getConf().put("spark.executor.port",SPARK_EXECUTOR_PORT);
+      sparkDefaultConfMap.put("spark.executor.port",SPARK_EXECUTOR_PORT);
     }
 
     if(!livyBatch.getConf().containsKey("spark.fileserver.port")){
-      livyBatch.getConf().put("spark.fileserver.port",SPARK_FILESERVER_PORT);
+      sparkDefaultConfMap.put("spark.fileserver.port",SPARK_FILESERVER_PORT);
     }
 
     if(!livyBatch.getConf().containsKey("spark.replClassServer.port")){
-      livyBatch.getConf().put("spark.replClassServer.port",SPARK_REPLCASSSERVER_PORT);
+      sparkDefaultConfMap.put("spark.replClassServer.port",SPARK_REPLCASSSERVER_PORT);
     }
 
+
+
+    Map sparkConfigMap = new HashMap<String, String>();
+    sparkConfigMap.putAll(sparkDefaultConfMap);
+    sparkConfigMap.putAll(sparkInterface.sparkConfiguration());
+
+
+    livyBatch.setConf(sparkConfigMap);
 
     return livyBatch;
   }
