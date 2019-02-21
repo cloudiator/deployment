@@ -14,7 +14,9 @@ import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,16 +69,22 @@ public class AzureDeployer implements FaasDeployer {
   public String deployApp(ApplicationTemplate app) {
     try {
       LOGGER.info("Creating function app: {}", app.name);
+
+      Map<String, String> appEnvironment = app.functions.stream().map(fun -> fun.env)
+          .collect(HashMap::new, Map::putAll, Map::putAll);
+
       FunctionApp functionApp = azure.appServices().functionApps()
           .define(app.name)
           .withRegion(region)
           .withNewResourceGroup()
+          .withAppSettings(appEnvironment)
           .create();
 
       for (LambdaTemplate lambda : app.functions) {
         LOGGER.info("Deploying function {}", lambda.name);
         functionApp.deploy().withPackageUri(lambda.codeUrl).execute();
       }
+      LOGGER.info("Function App depplyment finished {}", app.name);
       return functionApp.id();
     } catch (Exception e) {
       LOGGER.error("Failed to deploy Azure function app", e);
