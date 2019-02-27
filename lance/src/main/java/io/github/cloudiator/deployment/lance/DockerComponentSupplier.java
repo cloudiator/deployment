@@ -177,7 +177,7 @@ abstract class DockerComponentSupplier {
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
       if(entry.getKey().equals("port")) {
         if (checkPortFormat(entry.getValue())) {
-          String[] ports = entry.getValue().trim().split("\\s+");
+          String[] ports = entry.getValue().trim().split(",");
           portsList.addAll(new ArrayList<>(Arrays.asList(ports)));
         }
       }
@@ -187,7 +187,7 @@ abstract class DockerComponentSupplier {
   }
 
   private static boolean checkPortFormat(String portsString) {
-    String[] ports = portsString.trim().split("\\s+");
+    String[] ports = portsString.trim().split(",");
     List<String> portsList = new ArrayList<>(Arrays.asList(ports));
 
     if(portsList.size() == 0) {
