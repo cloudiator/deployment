@@ -74,7 +74,6 @@ public class ScheduleDeletionStrategy {
   }
 
 
-
   public void delete(Schedule schedule, String userId) {
 
     checkNotNull(schedule, "schedule is null");
@@ -180,6 +179,9 @@ public class ScheduleDeletionStrategy {
     LOGGER.debug("Waiting for all processes and corresponding nodes to be delete.");
     try {
       countDownLatch.await();
+
+      LOGGER.info(String.format("Deleted schedule %s successfully", schedule));
+
     } catch (InterruptedException e) {
       throw new IllegalStateException(
           "Interrupted while waiting for termination of all processes.");

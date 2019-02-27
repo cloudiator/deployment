@@ -97,7 +97,7 @@ public class DeleteProcessRequestSubscriber implements Runnable {
 
           LOGGER.info(String.format("Successfully delete process %s.", process));
 
-          messageInterface.reply(id, LanceProcessDeletedResponse.newBuilder().build());
+          messageInterface.reply(id, ProcessDeletedResponse.newBuilder().build());
 
         } catch (Exception e) {
           LOGGER.error(String

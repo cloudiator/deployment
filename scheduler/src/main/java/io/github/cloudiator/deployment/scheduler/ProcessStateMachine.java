@@ -35,7 +35,6 @@ import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
-import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.cloudiator.messages.Process.ProcessEvent;
 import org.cloudiator.messaging.services.ProcessService;
@@ -174,8 +173,7 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
 
 
   @Override
-  public CloudiatorProcess apply(CloudiatorProcess object, State to, Object[] arguments)
-      throws ExecutionException {
+  public CloudiatorProcess apply(CloudiatorProcess object, State to, Object[] arguments) {
     return stateMachine.apply(object, to, arguments);
   }
 

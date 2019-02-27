@@ -17,12 +17,15 @@ import io.github.cloudiator.deployment.faasagent.cloudformation.models.Applicati
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
 import io.github.cloudiator.deployment.messaging.JobConverter;
+import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.Runtime;
 import io.github.cloudiator.messaging.CloudMessageRepository;
 import io.github.cloudiator.messaging.LocationMessageRepository;
+import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+
 import org.cloudiator.messages.General;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
 import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
@@ -42,6 +45,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
   private final ProcessService processService;
   private final MessageInterface messageInterface;
   private final CloudMessageRepository cloudMessageRepository;
+  private final NodeMessageRepository nodeMessageRepository;
   private final FunctionDomainRepository functionDomainRepository;
   private final LocationMessageRepository locationMessageRepository;
   private final FaasDeployerFactory faasDeployerFactory;
@@ -53,12 +57,14 @@ public class CreateFaasProcessSubscriber implements Runnable {
       MessageInterface messageInterface,
       CloudMessageRepository cloudMessageRepository,
       LocationMessageRepository locationMessageRepository,
+      NodeMessageRepository nodeMessageRepository,
       FunctionDomainRepository functionDomainRepository,
       FaasDeployerFactory faasDeployerFactory) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.cloudMessageRepository = cloudMessageRepository;
     this.locationMessageRepository = locationMessageRepository;
+    this.nodeMessageRepository = nodeMessageRepository;
     this.functionDomainRepository = functionDomainRepository;
     this.faasDeployerFactory = faasDeployerFactory;
   }
@@ -71,7 +77,16 @@ public class CreateFaasProcessSubscriber implements Runnable {
             LOGGER.debug("Faas agent received process request {}", content);
             final String userId = content.getUserId();
             final String nodeId = content.getFaas().getNode().getId();
-            final Function function = functionDomainRepository.findByIdAndTenant(nodeId, userId);
+            final Node node = nodeMessageRepository.getById(userId, nodeId);
+            if (node == null) {
+              LOGGER.error("Node with ID {} doesn't exits", nodeId);
+              throw new IllegalStateException("Node doesn't exists: " + nodeId);
+            }
+            if (node.originId() == null || !node.originId().isPresent()) {
+              throw new IllegalStateException("Node origin ID is null");
+            }
+            final Function function = functionDomainRepository
+                .findByIdAndTenant(node.originId().get(), userId);
             final Cloud cloud = cloudMessageRepository.getById(userId, function.cloudId());
 
             ApplicationTemplate appTemplate = convertToTemplate(content, function);

@@ -16,7 +16,9 @@ import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import org.apache.http.HttpStatus;
@@ -48,6 +50,24 @@ public class CreateSparkProcessStrategy {
   private final NodeToNodeMessageConverter nodeMessageToNodeConverter = NodeToNodeMessageConverter.INSTANCE;
 
   private static final String SPARK_ARGUMENT_DELIMITER = ",";
+
+
+  /**
+   * Spark Default Settings
+   */
+  private static final int SPARK_DRIVER_CORES = 1;
+  private static final String SPARK_DRIVER_MEMORY = "1G";
+  private static final int SPARK_EXECUTOR_NUMBER = 1;
+  private static final int  SPARK_EXECUTOR_CORES = 1;
+  private static final String SPARK_EXECUTOR_MEMORY = "1G";
+
+  private static final String SPARK_PORT_RETRIES = "100";
+  private static final String SPARK_DRIVER_PORT = "38000";
+  private static final String SPARK_BLOCKMANAGER_PORT = "38100";
+  private static final String SPARK_BROADCAST_PORT = "38200";
+  private static final String SPARK_EXECUTOR_PORT = "38300";
+  private static final String SPARK_FILESERVER_PORT = "38400";
+  private static final String SPARK_REPLCASSSERVER_PORT = "38500";
 
   private InstallationRequestService installationRequestService;
 
@@ -128,7 +148,7 @@ public class CreateSparkProcessStrategy {
       httpPost.setHeader("Content-type", "application/json");
 
       LOGGER.debug("HttpPost: " + httpPost.toString());
-      LOGGER.debug("Submit Spark process payload: " + payload);
+      LOGGER.debug("Submit Spark process to Livy Server payload: " + payload);
 
       CloseableHttpResponse response = client.execute(httpPost);
 
@@ -216,28 +236,38 @@ public class CreateSparkProcessStrategy {
 
     if (sparkInterface.sparkArguments().containsKey("driverMemory")) {
       livyBatch.setDriverMemory(sparkInterface.sparkArguments().get("driverMemory"));
+    }else {
+      livyBatch.setDriverMemory(SPARK_DRIVER_MEMORY);
     }
 
     if (sparkInterface.sparkArguments().containsKey("driverCores")
         && Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")) > 0) {
       livyBatch
           .setDriverCores(Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")));
+    }else {
+      livyBatch.setDriverCores(SPARK_DRIVER_CORES);
     }
 
     if (sparkInterface.sparkArguments().containsKey("executorMemory")) {
       livyBatch.setExecutorMemory(sparkInterface.sparkArguments().get("executorMemory"));
+    }else {
+      livyBatch.setExecutorMemory(SPARK_EXECUTOR_MEMORY);
     }
 
     if (sparkInterface.sparkArguments().containsKey("executorCores")
         && Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")) > 0) {
       livyBatch
           .setExecutorCores(Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")));
+    }else {
+      livyBatch.setExecutorCores(SPARK_EXECUTOR_CORES);
     }
 
     if (sparkInterface.sparkArguments().containsKey("numExecutors")
         && Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")) > 0) {
       livyBatch
           .setNumExecutors(Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")));
+    }else {
+      livyBatch.setNumExecutors(SPARK_EXECUTOR_NUMBER);
     }
 
     if (sparkInterface.sparkArguments().containsKey("archives")) {
@@ -260,7 +290,49 @@ public class CreateSparkProcessStrategy {
     /**
      * add optional Spark configurations
      */
-    livyBatch.setConf(sparkInterface.sparkConfiguration());
+
+    Map sparkDefaultConfMap = new HashMap<String, String>();
+
+
+    /**
+     * set default values in Spark configuration
+     */
+    if(!livyBatch.getConf().containsKey("spark.port.maxRetries")){
+      sparkDefaultConfMap.put("spark.port.maxRetries",SPARK_PORT_RETRIES);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.driver.port")){
+      sparkDefaultConfMap.put("spark.driver.port",SPARK_DRIVER_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.blockManager.port")){
+      sparkDefaultConfMap.put("spark.blockManager.port",SPARK_BLOCKMANAGER_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.broadcast.port")){
+      sparkDefaultConfMap.put("spark.broadcast.port",SPARK_BROADCAST_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.executor.port")){
+      sparkDefaultConfMap.put("spark.executor.port",SPARK_EXECUTOR_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.fileserver.port")){
+      sparkDefaultConfMap.put("spark.fileserver.port",SPARK_FILESERVER_PORT);
+    }
+
+    if(!livyBatch.getConf().containsKey("spark.replClassServer.port")){
+      sparkDefaultConfMap.put("spark.replClassServer.port",SPARK_REPLCASSSERVER_PORT);
+    }
+
+
+
+    Map sparkConfigMap = new HashMap<String, String>();
+    sparkConfigMap.putAll(sparkDefaultConfMap);
+    sparkConfigMap.putAll(sparkInterface.sparkConfiguration());
+
+
+    livyBatch.setConf(sparkConfigMap);
 
     return livyBatch;
   }
