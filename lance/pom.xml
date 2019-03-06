@@ -67,6 +67,7 @@
   </dependencies>
 
   <build>
+    <finalName>lance-agent</finalName>
     <plugins>
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
@@ -91,7 +92,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>lance-agent</finalName>
+
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
       </plugin>

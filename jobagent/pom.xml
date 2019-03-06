@@ -54,6 +54,7 @@
   </dependencies>
 
   <build>
+    <finalName>job-agent</finalName>
     <plugins>
 
       <plugin>
@@ -76,7 +77,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>job-agent</finalName>
+
           <appendAssemblyId>false</appendAssemblyId>
           <archive>
             <manifest>

@@ -64,7 +64,7 @@
 
 
   </dependencies>
-
+  <finalName>spark-agent</finalName>
   <build>
     <plugins>
       <plugin>
@@ -90,7 +90,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>spark-agent</finalName>
+
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
       </plugin>

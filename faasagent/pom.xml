@@ -103,6 +103,7 @@
   </dependencies>
 
   <build>
+    <finalName>faas-agent</finalName>
     <plugins>
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
@@ -120,7 +121,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>faas-agent</finalName>
+
           <appendAssemblyId>false</appendAssemblyId>
           <archive>
             <manifest>
