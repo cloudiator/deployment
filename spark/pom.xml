@@ -64,8 +64,9 @@
 
 
   </dependencies>
-  <finalName>spark-agent</finalName>
+
   <build>
+    <finalName>spark-agent</finalName>
     <plugins>
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
