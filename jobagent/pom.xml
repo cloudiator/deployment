@@ -67,6 +67,9 @@
           <to>
             registry.hub.docker.com/cloudiator/job-agent:${docker.tag}
           </to>
+          <container>
+            <useCurrentTimestamp>true</useCurrentTimestamp>
+          </container>
         </configuration>
       </plugin>
 

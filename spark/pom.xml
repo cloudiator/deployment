@@ -78,6 +78,9 @@
           <to>
             registry.hub.docker.com/cloudiator/spark-agent:${docker.tag}
           </to>
+          <container>
+            <useCurrentTimestamp>true</useCurrentTimestamp>
+          </container>
         </configuration>
       </plugin>
       <plugin>

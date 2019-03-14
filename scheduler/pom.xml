@@ -80,6 +80,9 @@
           <to>
             registry.hub.docker.com/cloudiator/scheduler-agent:${docker.tag}
           </to>
+          <container>
+            <useCurrentTimestamp>true</useCurrentTimestamp>
+          </container>
         </configuration>
       </plugin>
 

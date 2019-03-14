@@ -79,6 +79,9 @@
           <to>
             registry.hub.docker.com/cloudiator/lance-agent:${docker.tag}
           </to>
+          <container>
+            <useCurrentTimestamp>true</useCurrentTimestamp>
+          </container>
         </configuration>
       </plugin>
       <plugin>
