@@ -66,7 +66,6 @@
   </dependencies>
 
   <build>
-    <finalName>spark-agent</finalName>
     <plugins>
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
@@ -94,7 +93,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-
+          <finalName>spark-agent</finalName>
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
       </plugin>

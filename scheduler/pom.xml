@@ -67,7 +67,6 @@
   </dependencies>
 
   <build>
-    <finalName>scheduler-agent</finalName>
     <plugins>
 
       <plugin>
@@ -97,7 +96,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-
+          <finalName>scheduler-agent</finalName>
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
       </plugin>
