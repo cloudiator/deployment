@@ -25,6 +25,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import org.cloudiator.messages.entities.ProcessEntities;
+import org.cloudiator.messages.entities.ProcessEntities.NodeGroup;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.Process.Builder;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessState;
@@ -56,7 +57,8 @@ public class ProcessMessageConverter implements
     } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
       //Spark processes
       final Builder builder = Process.newBuilder()
-          .setNodeGroup(((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup());
+          .setNodes(NodeGroup.newBuilder()
+              .addAllNodes(((CloudiatorClusterProcess) cloudiatorProcess).nodes()).build());
 
       return finishBuilding(cloudiatorProcess, builder);
 
@@ -109,14 +111,14 @@ public class ProcessMessageConverter implements
 
         return cloudiatorSingleProcessBuilder.build();
 
-      case NODEGROUP:
+      case NODES:
         final CloudiatorClusterProcessBuilder cloudiatorClusterProcessBuilder = CloudiatorClusterProcessBuilder
             .create()
             .id(process.getId())
             .userId(process.getUserId())
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
-            .nodeGroup(process.getNodeGroup())
+            .addAllNodes(process.getNodes().getNodesList())
             .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
 
