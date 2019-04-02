@@ -18,10 +18,17 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
-import io.github.cloudiator.domain.NodeGroup;
-import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
+import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -31,7 +38,12 @@ import org.cloudiator.messages.Node.NodeRequestMessage;
 import org.cloudiator.messages.Node.NodeRequestMessage.Builder;
 import org.cloudiator.messages.Node.NodeRequestResponse;
 import org.cloudiator.messages.NodeEntities.NodeRequirements;
+import org.cloudiator.messages.entities.Matchmaking.MatchmakingRequest;
+import org.cloudiator.messages.entities.Matchmaking.MatchmakingResponse;
+import org.cloudiator.messages.entities.MatchmakingEntities.NodeCandidate;
+import org.cloudiator.messaging.ResponseException;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
+import org.cloudiator.messaging.services.MatchmakingService;
 import org.cloudiator.messaging.services.NodeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,44 +54,84 @@ public class OnDemandResourcePool implements ResourcePool {
   private static final RequirementConverter REQUIREMENT_CONVERTER = RequirementConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(OnDemandResourcePool.class);
-  private static final NodeGroupMessageToNodeGroup NODE_GROUP_CONVERTER = new NodeGroupMessageToNodeGroup();
+  private static final NodeToNodeMessageConverter NODE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
+  private final MatchmakingService matchmakingService;
 
   @Inject
-  public OnDemandResourcePool(NodeService nodeService) {
+  public OnDemandResourcePool(NodeService nodeService,
+      MatchmakingService matchmakingService) {
     this.nodeService = nodeService;
+    this.matchmakingService = matchmakingService;
   }
 
   @Override
-  public ListenableFuture<NodeGroup> allocate(String userId,
-      Iterable<? extends Requirement> requirements, @Nullable String name) {
+  public ListenableFuture<List<Node>> allocate(Schedule schedule,
+      Iterable<? extends Requirement> requirements, @Nullable String name)
+      throws SchedulingException {
 
     LOGGER.info(
         String.format("%s is allocating resources matching requirements %s.", this,
             Joiner.on(",").join(requirements)));
 
-    final NodeRequirements nodeRequirements = NodeRequirements.newBuilder()
-        .addAllRequirements(StreamSupport.stream(requirements.spliterator(), false)
-            .map(REQUIREMENT_CONVERTER::applyBack).collect(
-                Collectors.toList())).build();
+    try {
+      final List<NodeCandidate> nodeCandidates = matchmaking(requirements, schedule.userId());
 
-    final Builder builder = NodeRequestMessage.newBuilder();
-    builder.setUserId(userId).setRequirements(nodeRequirements);
-    if (name != null) {
-      builder.setGroupName(name);
+      final List<ListenableFuture<Node>> nodeFutures = new ArrayList<>(nodeCandidates.size());
+      for (NodeCandidate nodeCandidate : nodeCandidates) {
+
+        final Builder builder = NodeRequestMessage.newBuilder().setUserId(schedule.userId())
+            .setNodeCandidate(nodeCandidate);
+        if (name != null) {
+          builder.setGroupName(name);
+        }
+
+        SettableFutureResponseCallback<NodeRequestResponse, Node> nodeCallback = SettableFutureResponseCallback
+            .create(
+                nodeRequestResponse -> NODE_CONVERTER.applyBack(nodeRequestResponse.getNode()));
+
+        nodeService.createNodeAsync(builder.build(), nodeCallback);
+
+        nodeFutures.add(nodeCallback);
+      }
+
+      //noinspection UnstableApiUsage
+      return Futures.allAsList(nodeFutures);
+
+
+    } catch (MatchmakingException e) {
+      throw new SchedulingException("Can not schedule due to matchmaking failure", e);
+    }
+  }
+
+  private List<NodeCandidate> matchmaking(Iterable<? extends Requirement> requirements,
+      String userId) throws MatchmakingException {
+    LOGGER.debug(String
+        .format("%s is calling matchmaking engine to derive configuration for requirements %s.",
+            this, requirements));
+
+    NodeRequirements nodeRequirements = NodeRequirements.newBuilder()
+        .addAllRequirements(StreamSupport.stream(requirements.spliterator(), false)
+            .map(REQUIREMENT_CONVERTER::applyBack).collect(Collectors.toList()))
+        .build();
+
+    final MatchmakingResponse matchmakingResponse;
+    try {
+      matchmakingResponse = matchmakingService.requestMatch(
+          MatchmakingRequest.newBuilder()
+              .setNodeRequirements(nodeRequirements)
+              .setUserId(userId)
+              .build());
+
+      LOGGER.debug(String
+          .format("%s received matchmaking response for requirements %s. Used solution is %s.",
+              this, requirements, matchmakingResponse.getSolution()));
+
+      return matchmakingResponse.getSolution().getNodeCandidatesList();
+
+    } catch (ResponseException e) {
+      throw new MatchmakingException("Could not perform matchmaking.", e);
     }
 
-    final NodeRequestMessage requestMessage = builder.build();
-
-    SettableFutureResponseCallback<NodeRequestResponse, NodeGroup> futureResponseCallback = SettableFutureResponseCallback
-        .create(
-            nodeRequestResponse -> NODE_GROUP_CONVERTER.apply(nodeRequestResponse.getNodeGroup()));
-
-    LOGGER.info(
-        String.format("%s issued node request message %s.", this,
-            requestMessage));
-    nodeService.createNodesAsync(requestMessage, futureResponseCallback);
-
-    return futureResponseCallback;
   }
 
   @Override

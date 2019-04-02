@@ -5,8 +5,10 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
-import io.github.cloudiator.domain.NodeGroup;
-import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
 import org.cloudiator.messaging.MessageInterface;
@@ -20,12 +22,12 @@ import org.slf4j.LoggerFactory;
 public class CreateSparkProcessSubscriber implements Runnable {
 
   private final ProcessService processService;
-  private final NodeGroupMessageToNodeGroup nodeGroupMessageToNodeGroup = new NodeGroupMessageToNodeGroup();
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private final CreateSparkProcessStrategy createSparkProcessStrategy;
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateSparkProcessSubscriber.class);
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private final MessageInterface messageInterface;
+  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
 
   @Inject
   public CreateSparkProcessSubscriber(
@@ -52,19 +54,17 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final Job job = JOB_CONVERTER.apply(content.getSpark().getJob());
             final String task = content.getSpark().getTask();
 
-
-            NodeGroup nodeGroupDomain = nodeGroupMessageToNodeGroup
-                .apply(content.getSpark().getNodeGroup());
-
-
+            Set<Node> nodes = content.getSpark().getNodesList().stream()
+                .map(NODE_MESSAGE_CONVERTER::applyBack).collect(
+                    Collectors.toSet());
 
             final String schedule = content.getSpark().getSchedule();
 
             final CloudiatorProcess cloudiatorProcess = createSparkProcessStrategy
                 .execute(userId, schedule, job, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
-                        String.format("Job %s does not contain task %s", job, task))), nodeGroupDomain);
-
+                        String.format("Job %s does not contain task %s", job, task))),
+                    nodes);
 
             final SparkProcessCreatedResponse sparkProcessCreatedResponse = SparkProcessCreatedResponse
                 .newBuilder()

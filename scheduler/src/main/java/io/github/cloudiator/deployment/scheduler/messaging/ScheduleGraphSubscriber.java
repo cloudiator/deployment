@@ -20,7 +20,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import de.uniulm.omi.cloudiator.domain.Identifiable;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
@@ -30,7 +29,6 @@ import io.github.cloudiator.deployment.graph.Graphs;
 import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.messaging.NodeGroupMessageRepository;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.HashSet;
@@ -39,7 +37,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.cloudiator.messages.General.Error;
-import org.cloudiator.messages.Job.JobGraphResponse;
 import org.cloudiator.messages.Process.ScheduleGraphRequest;
 import org.cloudiator.messages.Process.ScheduleGraphResponse;
 import org.cloudiator.messaging.MessageInterface;
@@ -55,20 +52,17 @@ public class ScheduleGraphSubscriber implements Runnable {
   private final ScheduleDomainRepository scheduleDomainRepository;
   private final JobMessageRepository jobMessageRepository;
   private final NodeMessageRepository nodeMessageRepository;
-  private final NodeGroupMessageRepository nodeGroupMessageRepository;
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   @Inject
   public ScheduleGraphSubscriber(MessageInterface messageInterface,
       ScheduleDomainRepository scheduleDomainRepository,
       JobMessageRepository jobMessageRepository,
-      NodeMessageRepository nodeMessageRepository,
-      NodeGroupMessageRepository nodeGroupMessageRepository) {
+      NodeMessageRepository nodeMessageRepository) {
     this.messageInterface = messageInterface;
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.jobMessageRepository = jobMessageRepository;
     this.nodeMessageRepository = nodeMessageRepository;
-    this.nodeGroupMessageRepository = nodeGroupMessageRepository;
   }
 
   private boolean runsOnNode(Schedule schedule, Node node) {
@@ -80,9 +74,7 @@ public class ScheduleGraphSubscriber implements Runnable {
         if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
           nodesContainedInSchedule.add(((CloudiatorSingleProcess) cloudiatorProcess).node());
         } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
-          nodesContainedInSchedule.addAll(nodeGroupMessageRepository.getById(schedule.userId(),
-              ((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup()).getNodes().stream().map(
-              Identifiable::id).collect(Collectors.toSet()));
+          nodesContainedInSchedule.addAll(((CloudiatorClusterProcess) cloudiatorProcess).nodes());
         } else {
           throw new AssertionError(
               "Unknown process type " + cloudiatorProcess.getClass().getSimpleName());

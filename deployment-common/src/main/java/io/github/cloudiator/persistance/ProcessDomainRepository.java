@@ -24,6 +24,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -153,19 +154,16 @@ public class ProcessDomainRepository {
 
     if (domain instanceof CloudiatorSingleProcess) {
 
-      return new ProcessModel(domain.id(), scheduleModel,
-          domain.taskId(),
-          ((CloudiatorSingleProcess) domain).node(),
-          null, domain.state(), domain.type(), null);
+      return new ProcessSingleModel(domain.id(), scheduleModel, domain.taskId(), domain.state(),
+          domain.type(), null, ((CloudiatorSingleProcess) domain).node());
 
     } else if (domain instanceof CloudiatorClusterProcess) {
 
-      return new ProcessModel(domain.id(), scheduleModel,
-          domain.taskId(), null,
-          ((CloudiatorClusterProcess) domain).nodeGroup(), domain.state(), domain.type(),
-          null);
+      return new ProcessClusterModel(domain.id(), scheduleModel, domain.taskId(), domain.state(),
+          domain.type(), null, new ArrayList<>(((CloudiatorClusterProcess) domain).nodes()));
+
     } else {
-      throw new IllegalStateException(
+      throw new AssertionError(
           "Unknown CloudiatorProcess interface for persisting CloudiatorProcess: " + domain
               .getClass().getName());
     }

@@ -26,9 +26,11 @@ import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
-import io.github.cloudiator.domain.NodeGroup;
-import io.github.cloudiator.messaging.NodeGroupMessageToNodeGroup;
+import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import org.cloudiator.messages.Process.CreateSparkProcessRequest;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.SparkProcess;
@@ -44,7 +46,7 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
   private final ProcessService processService;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
-  private static final NodeGroupMessageToNodeGroup NODE_GROUP_MESSAGE_TO_NODE_GROUP = new NodeGroupMessageToNodeGroup();
+  private static final NodeToNodeMessageConverter NODE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(LanceProcessSpawnerImpl.class);
@@ -71,7 +73,7 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
   @Override
   public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
-      NodeGroup nodeGroup) {
+      Set<Node> nodes) {
 
     //TODO: check for flag which indicates process mapping, one to one or one to many
     //TODO: for now only one to many is supported until flag is available
@@ -81,14 +83,14 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
       LOGGER.info(String
           .format(
-              "%s is spawning a new Spark process for user: %s, Schedule %s, Task %s on Node %s",
+              "%s is spawning a new Spark process for user: %s, Schedule %s, Task %s on Nodes %s",
               this,
-              userId, schedule, task, nodeGroup));
+              userId, schedule, task, nodes));
 
       final SparkProcess sparkProcess = SparkProcess.newBuilder()
           .setSchedule(schedule)
           .setJob(JOB_CONVERTER.applyBack(job))
-          .setNodeGroup(NODE_GROUP_MESSAGE_TO_NODE_GROUP.applyBack(nodeGroup))
+          .addAllNodes(nodes.stream().map(NODE_CONVERTER).collect(Collectors.toList()))
           .setTask(task.name()).build();
       final CreateSparkProcessRequest processRequest = CreateSparkProcessRequest.newBuilder()
           .setSpark(sparkProcess).setUserId(userId).build();

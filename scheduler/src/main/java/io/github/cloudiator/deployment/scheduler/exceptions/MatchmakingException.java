@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler.processes;
+package io.github.cloudiator.deployment.scheduler.exceptions;
 
-import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
-import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.Node;
-import java.util.Set;
+public class MatchmakingException extends Exception {
 
+  public MatchmakingException(String s) {
+    super(s);
+  }
 
-public interface ProcessSpawner {
-
-  boolean supports(Task task);
-
-  ProcessGroup spawn(String userId, String schedule, Job job, Task task, Set<Node> nodes);
-
-
+  public MatchmakingException(String s, Throwable throwable) {
+    super(s, throwable);
+  }
 }

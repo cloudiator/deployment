@@ -26,8 +26,6 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
 
   static final ProcessModelConverter INSTANCE = new ProcessModelConverter();
 
-  NodeGroupConverter nodeGroupConverter = new NodeGroupConverter();
-
   private ProcessModelConverter() {
   }
 
@@ -39,30 +37,28 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
       return null;
     }
 
-    if (processModel.getNodeGroup() == null && processModel.getNode() == null) {
-      throw new IllegalStateException(
-          "Persistence ProcessModel does not contain a nodeModel nor a nodeGroupModel!");
-    }
-
-    if (processModel.getNode() != null) {
+    if (processModel instanceof ProcessSingleModel) {
       return CloudiatorSingleProcessBuilder.create()
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
           .userId(processModel.getTenant().getUserId())
-          .node(processModel.getNode())
+          .node(((ProcessSingleModel) processModel).getNode())
           .taskName(processModel.getTask())
           .state(processModel.getState()).build();
-    } else {
+    } else if (processModel instanceof ProcessClusterModel) {
 
       return CloudiatorClusterProcessBuilder.create()
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
           .userId(processModel.getTenant().getUserId())
-          .nodeGroup(processModel.getNodeGroup())
+          .addAllNodes(((ProcessClusterModel) processModel).getNodes())
           .taskName(processModel.getTask())
           .state(processModel.getState()).build();
+    } else {
+      throw new AssertionError(
+          "Illegal type of process model " + processModel.getClass().getSimpleName());
     }
   }
 
