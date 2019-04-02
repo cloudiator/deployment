@@ -127,7 +127,7 @@ public class ProcessRequestSubscriber implements Runnable {
           //retrieve the nodes
           final Set<Node> nodes = new HashSet<>();
           for (String nodeId : nodeIds) {
-            final Node node = nodeMessageRepository.getById(userId, id);
+            final Node node = nodeMessageRepository.getById(userId, nodeId);
             if (node == null) {
               messageInterface.reply(ProcessCreatedResponse.class, id,
                   Error.newBuilder().setCode(404)
