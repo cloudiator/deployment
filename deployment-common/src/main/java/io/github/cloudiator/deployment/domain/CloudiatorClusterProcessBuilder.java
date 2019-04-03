@@ -26,6 +26,7 @@ import java.util.Set;
 public class CloudiatorClusterProcessBuilder {
 
   private String id;
+  private String originId;
   private String userId;
   private String scheduleId;
   private String taskName;
@@ -41,6 +42,7 @@ public class CloudiatorClusterProcessBuilder {
 
   private CloudiatorClusterProcessBuilder(CloudiatorClusterProcess cloudiatorClusterProcess) {
     this.id = cloudiatorClusterProcess.id();
+    this.originId = cloudiatorClusterProcess.originId().orElse(null);
     this.userId = cloudiatorClusterProcess.userId();
     this.scheduleId = cloudiatorClusterProcess.scheduleId();
     this.taskName = cloudiatorClusterProcess.taskId();
@@ -63,6 +65,11 @@ public class CloudiatorClusterProcessBuilder {
 
   public CloudiatorClusterProcessBuilder id(String id) {
     this.id = id;
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder originId(String originId) {
+    this.originId = originId;
     return this;
   }
 
@@ -112,7 +119,7 @@ public class CloudiatorClusterProcessBuilder {
   }
 
   public CloudiatorClusterProcess build() {
-    return new CloudiatorClusterProcessImpl(id, userId, scheduleId, taskName, state, type,
+    return new CloudiatorClusterProcessImpl(id, originId, userId, scheduleId, taskName, state, type,
         nodes, diagnostic, reason);
   }
 

@@ -58,9 +58,9 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
     //noinspection unchecked
     stateMachine = StateMachineBuilder.<CloudiatorProcess>builder().errorTransition(error())
         .addTransition(
-            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.CREATED)
+            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.PENDING)
                 .to(ProcessState.RUNNING)
-                .action(createdToRunning())
+                .action(pendingToRunning())
                 .build())
         .addTransition(
             Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.RUNNING)
@@ -140,7 +140,7 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
     processDomainRepository.delete(process.id(), process.userId());
   }
 
-  private TransitionAction<CloudiatorProcess> createdToRunning() {
+  private TransitionAction<CloudiatorProcess> pendingToRunning() {
 
     return (o, arguments) -> {
       final CloudiatorProcess running = updateProcess(o, ProcessState.DELETED, null);

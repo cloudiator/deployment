@@ -19,10 +19,10 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
   private final Set<String> nodes;
 
 
-  CloudiatorClusterProcessImpl(String id, String userId, String scheduleId, String taskName,
+  CloudiatorClusterProcessImpl(String id, @Nullable String originId, String userId, String scheduleId, String taskName,
       CloudiatorProcess.ProcessState state, Type type, Set<String> nodes,
       @Nullable String diagnostic, @Nullable String reason) {
-    super(id, userId, scheduleId, taskName, state, type, diagnostic, reason);
+    super(id, originId, userId, scheduleId, taskName, state, type, diagnostic, reason);
 
     checkNotNull(nodes, "nodes is null");
     this.nodes = new HashSet<>(nodes);

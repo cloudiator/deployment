@@ -16,10 +16,12 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
 
   private final String node;
 
-  CloudiatorSingleProcessImpl(String id, String userId, String scheduleId, String taskName,
+  CloudiatorSingleProcessImpl(String id, @Nullable String originId, String userId,
+      String scheduleId,
+      String taskName,
       ProcessState state, Type type, String node, @Nullable String diagnostic,
       @Nullable String reason) {
-    super(id, userId, scheduleId, taskName, state, type, diagnostic, reason);
+    super(id, originId, userId, scheduleId, taskName, state, type, diagnostic, reason);
 
     checkNotNull(node, "node is null");
     checkArgument(!node.isEmpty(), "node is empty");
@@ -35,7 +37,6 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
 
   @Override
   public int hashCode() {
-
     return Objects.hash(id, userId, scheduleId, taskName, node);
   }
 

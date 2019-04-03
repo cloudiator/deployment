@@ -359,7 +359,7 @@ public class CreateSparkProcessStrategy {
       return CloudiatorClusterProcessBuilder.create().id(temporarySparkProcessUid)
           .userId(userId)
           .type(Type.SPARK)
-          .state(ProcessState.CREATED)
+          .state(ProcessState.RUNNING)
           .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
           .taskName(task.name()).scheduleId(schedule).build();
 

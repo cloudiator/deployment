@@ -156,14 +156,12 @@ public class ProcessMessageConverter implements
       switch (processState) {
         case DELETED:
           return ProcessState.PROCESS_STATE_DELETED;
-        case CREATED:
-          return ProcessState.PROCESS_STATE_CREATED;
+        case PENDING:
+          return ProcessState.PROCESS_STATE_PENDING;
         case ERROR:
           return ProcessState.PROCESS_STATE_ERROR;
         case RUNNING:
-          return ProcessState.PROCESS_STATE_FAILED;
-        case FAILED:
-          return ProcessState.PROCESS_STATE_FAILED;
+          return ProcessState.PROCESS_STATE_RUNNING;
         case FINISHED:
           return ProcessState.PROCESS_STATE_FINISHED;
         default:
@@ -174,12 +172,10 @@ public class ProcessMessageConverter implements
     @Override
     public CloudiatorProcess.ProcessState apply(ProcessState processState) {
       switch (processState) {
-        case PROCESS_STATE_FAILED:
-          return CloudiatorProcess.ProcessState.FAILED;
         case PROCESS_STATE_ERROR:
           return CloudiatorProcess.ProcessState.ERROR;
-        case PROCESS_STATE_CREATED:
-          return CloudiatorProcess.ProcessState.CREATED;
+        case PROCESS_STATE_PENDING:
+          return CloudiatorProcess.ProcessState.PENDING;
         case PROCESS_STATE_DELETED:
           return CloudiatorProcess.ProcessState.DELETED;
         case PROCESS_STATE_RUNNING:
