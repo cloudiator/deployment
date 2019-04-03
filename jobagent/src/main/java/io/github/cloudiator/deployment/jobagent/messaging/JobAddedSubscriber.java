@@ -87,6 +87,9 @@ public class JobAddedSubscriber implements Runnable {
 
         persistJob(job);
 
+        LOGGER
+            .info(String.format("User %s created new job %s.", createJobRequest.getUserId(), job));
+
         final JobCreatedResponse jobCreatedResponse = JobCreatedResponse.newBuilder()
             .setJob(JOB_CONVERTER.applyBack(job)).build();
 
