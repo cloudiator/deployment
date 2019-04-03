@@ -32,40 +32,40 @@ public class RequirementDomainRepository {
     this.requirementModelRepository = requirementModelRepository;
   }
 
-  RequirementModel saveAndGet(Requirement domain, TaskModel taskModel) {
-    final RequirementModel requirementModel = create(domain, taskModel);
+  RequirementModel saveAndGet(Requirement domain, TaskModel taskModel, JobModel jobModel) {
+    final RequirementModel requirementModel = create(domain, taskModel, jobModel);
     requirementModelRepository.save(requirementModel);
     return requirementModel;
   }
 
-  private RequirementModel create(Requirement domain, TaskModel taskModel) {
+  private RequirementModel create(Requirement domain, TaskModel taskModel, JobModel jobModel) {
     if (domain instanceof AttributeRequirement) {
-      return createAttributeRequirementModel((AttributeRequirement) domain, taskModel);
+      return createAttributeRequirementModel((AttributeRequirement) domain, taskModel, jobModel);
     } else if (domain instanceof IdRequirement) {
-      return createIdentifierRequirementModel((IdRequirement) domain, taskModel);
+      return createIdentifierRequirementModel((IdRequirement) domain, taskModel, jobModel);
     } else if (domain instanceof OclRequirement) {
-      return createOCLRequirementModel((OclRequirement) domain, taskModel);
+      return createOCLRequirementModel((OclRequirement) domain, taskModel, jobModel);
     } else {
       throw new AssertionError("Unknown requirement type " + domain.getClass().getName());
     }
   }
 
   private AttributeRequirementModel createAttributeRequirementModel(
-      AttributeRequirement attributeRequirement, TaskModel taskModel) {
-    return new AttributeRequirementModel(taskModel, attributeRequirement.requirementClass(),
+      AttributeRequirement attributeRequirement, TaskModel taskModel, JobModel jobModel) {
+    return new AttributeRequirementModel(taskModel, jobModel, attributeRequirement.requirementClass(),
         attributeRequirement.requirementAttribute(), attributeRequirement.requirementOperator(),
         attributeRequirement.value());
   }
 
   private IdentifierRequirementModel createIdentifierRequirementModel(IdRequirement domain,
-      TaskModel taskModel) {
-    return new IdentifierRequirementModel(taskModel, domain.hardwareId(), domain.locationId(),
+      TaskModel taskModel, JobModel jobModel) {
+    return new IdentifierRequirementModel(taskModel, jobModel, domain.hardwareId(), domain.locationId(),
         domain.imageId());
   }
 
   private OCLRequirementModel createOCLRequirementModel(OclRequirement domain,
-      TaskModel taskModel) {
-    return new OCLRequirementModel(taskModel, domain.constraint());
+      TaskModel taskModel, JobModel jobModel) {
+    return new OCLRequirementModel(taskModel, jobModel, domain.constraint());
   }
 
 

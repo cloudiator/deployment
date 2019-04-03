@@ -19,6 +19,8 @@ package io.github.cloudiator.deployment.domain;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import org.cloudiator.matchmaking.domain.Optimization;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 /**
  * Created by daniel on 13.02.17.
@@ -28,6 +30,8 @@ public class JobNewBuilder {
   private String name;
   private Set<Task> tasks = new HashSet<>();
   private Set<Communication> communications = new HashSet<>();
+  private Set<Requirement> requirements = new HashSet<>();
+  private Optimization optimization;
 
   private JobNewBuilder() {
 
@@ -63,8 +67,24 @@ public class JobNewBuilder {
     return this;
   }
 
+  public JobNewBuilder addRequirement(Requirement requirement) {
+    this.requirements.add(requirement);
+    return this;
+  }
+
+  public JobNewBuilder addRequirements(
+      Collection<? extends Requirement> requirements) {
+    this.requirements.addAll(requirements);
+    return this;
+  }
+
+  public JobNewBuilder optimization(Optimization optimization) {
+    this.optimization = optimization;
+    return this;
+  }
+
   public JobNew build() {
-    return new JobNewImpl(name, tasks, communications);
+    return new JobNewImpl(name, tasks, communications, requirements, optimization);
   }
 
 

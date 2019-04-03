@@ -3,6 +3,7 @@ package io.github.cloudiator.persistance;
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.JobBuilder;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 class JobModelConverter implements OneWayConverter<JobModel, Job> {
@@ -11,6 +12,8 @@ class JobModelConverter implements OneWayConverter<JobModel, Job> {
 
   private final static TaskModelConverter TASK_MODEL_CONVERTER = TaskModelConverter.INSTANCE;
   private final static CommunicationModelConverter COMMUNICATION_MODEL_CONVERTER = CommunicationModelConverter.INSTANCE;
+  private final RequirementModelConverter requirementModelConverter = new RequirementModelConverter();
+  private final OptimizationModelConverter optimizationModelConverter = new OptimizationModelConverter();
 
   private JobModelConverter() {
 
@@ -34,6 +37,10 @@ class JobModelConverter implements OneWayConverter<JobModel, Job> {
 
     jobModel.getCommunications().stream().map(COMMUNICATION_MODEL_CONVERTER)
         .forEach(jobBuilder::addCommunication);
+
+    jobBuilder.addRequirements(jobModel.getRequirements().stream().map(requirementModelConverter)
+        .collect(Collectors.toList()));
+    jobBuilder.optimization(optimizationModelConverter.apply(jobModel.getOptimizationModel()));
 
     return jobBuilder.build();
   }

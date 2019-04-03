@@ -20,7 +20,6 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
-import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.domain.Requirement;
 
 class TaskDomainRepository {
@@ -77,7 +76,7 @@ class TaskDomainRepository {
     }
 
     for (Requirement requirement : domain.requirements()) {
-      requirementDomainRepository.saveAndGet(requirement, taskModel);
+      requirementDomainRepository.saveAndGet(requirement, taskModel, null);
     }
 
     return taskModel;

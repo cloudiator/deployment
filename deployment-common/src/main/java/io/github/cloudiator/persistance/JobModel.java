@@ -27,6 +27,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 
 /**
  * Created by daniel on 12.12.14.
@@ -48,6 +49,12 @@ class JobModel extends Model {
 
   @OneToMany(mappedBy = "jobModel")
   private List<CommunicationModel> communications;
+
+  @OneToMany(mappedBy = "job")
+  private List<RequirementModel> requirements;
+
+  @OneToOne
+  private OptimizationModel optimizationModel;
 
   /**
    * Empty constructor for hibernate.
@@ -79,6 +86,14 @@ class JobModel extends Model {
 
   public TenantModel getTenant() {
     return tenant;
+  }
+
+  public OptimizationModel getOptimizationModel() {
+    return optimizationModel;
+  }
+
+  public List<RequirementModel> getRequirements() {
+    return ImmutableList.copyOf(requirements);
   }
 
   @Override
