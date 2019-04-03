@@ -74,7 +74,8 @@ public class JobAddedSubscriber implements Runnable {
         Job job = JobBuilder.newBuilder().generateId().name(jobNew.name())
             .userId(createJobRequest.getUserId())
             .addCommunications(jobNew.communications())
-            .addTasks(jobNew.tasks()).build();
+            .addTasks(jobNew.tasks()).addRequirements(jobNew.requirements())
+            .optimization(jobNew.optimization().orElse(null)).build();
 
         try {
           modelValidationService.validate(job);
