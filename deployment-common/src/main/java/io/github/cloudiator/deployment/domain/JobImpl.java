@@ -30,6 +30,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
+import org.cloudiator.matchmaking.domain.Optimization;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 /**
  * Created by daniel on 13.02.17.
@@ -41,8 +44,9 @@ class JobImpl extends JobNewImpl implements Job {
 
 
   JobImpl(String id, String userId, String name, Set<Task> tasks,
-      Set<Communication> communications) {
-    super(name, tasks, communications);
+      Set<Communication> communications, Set<Requirement> requirements,
+      @Nullable Optimization optimization) {
+    super(name, tasks, communications, requirements, optimization);
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");

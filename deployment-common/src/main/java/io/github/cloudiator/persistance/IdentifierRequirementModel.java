@@ -38,9 +38,9 @@ public class IdentifierRequirementModel extends RequirementModel {
 
   }
 
-  IdentifierRequirementModel(TaskModel task, String hardwareId, String locationId,
+  IdentifierRequirementModel(TaskModel task, JobModel job, String hardwareId, String locationId,
       String imageId) {
-    super(task);
+    super(task, job);
 
     checkNotNull(hardwareId, "hardwareId is null");
     checkArgument(!hardwareId.isEmpty(), "hardwareId is empty");

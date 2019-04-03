@@ -20,7 +20,10 @@ import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.JobBuilder;
 import java.util.stream.Collectors;
+import org.cloudiator.matchmaking.converters.OptimizationConverter;
+import org.cloudiator.matchmaking.converters.RequirementConverter;
 import org.cloudiator.messages.entities.JobEntities;
+import org.cloudiator.messages.entities.JobEntities.Job.Builder;
 
 public class JobConverter implements TwoWayConverter<JobEntities.Job, Job> {
 
@@ -32,17 +35,29 @@ public class JobConverter implements TwoWayConverter<JobEntities.Job, Job> {
 
   private final CommunicationConverter communicationConverter = new CommunicationConverter();
   private final TaskConverter taskConverter = new TaskConverter();
+  private static final RequirementConverter REQUIREMENT_CONVERTER = RequirementConverter.INSTANCE;
+  private static final OptimizationConverter OPTIMIZATION_CONVERTER = OptimizationConverter.INSTANCE;
 
   @Override
   public JobEntities.Job applyBack(Job job) {
 
-    return JobEntities.Job.newBuilder().setId(job.id()).setUserId(job.userId()).setName(job.name())
+    final Builder builder = JobEntities.Job.newBuilder().setId(job.id()).setUserId(job.userId())
+        .setName(job.name())
         .addAllCommunications(
             job.communications().stream()
                 .map(communicationConverter::applyBack).collect(
                 Collectors.toList())).addAllTasks(
-            job.tasks().stream().map(taskConverter::applyBack).collect(Collectors.toList()))
-        .build();
+            job.tasks().stream().map(taskConverter::applyBack).collect(Collectors.toList()));
+
+    job.requirements().stream().map(REQUIREMENT_CONVERTER::applyBack)
+        .forEach(builder::addRequirements);
+
+    if (job.optimization().isPresent()) {
+      builder.setOptimization(OPTIMIZATION_CONVERTER.applyBack(job.optimization().get()));
+    }
+
+    return builder.build();
+
   }
 
   @Override
@@ -55,6 +70,12 @@ public class JobConverter implements TwoWayConverter<JobEntities.Job, Job> {
         communication -> jobBuilder.addCommunication(communicationConverter.apply(communication)));
 
     job.getTasksList().forEach(task -> jobBuilder.addTask(taskConverter.apply(task)));
+
+    if (job.hasOptimization()) {
+      jobBuilder.optimization(OPTIMIZATION_CONVERTER.apply(job.getOptimization()));
+    }
+    job.getRequirementsList().stream().map(REQUIREMENT_CONVERTER)
+        .forEach(jobBuilder::addRequirement);
 
     return jobBuilder.build();
   }

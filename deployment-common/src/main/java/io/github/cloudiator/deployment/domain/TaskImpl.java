@@ -77,6 +77,14 @@ class TaskImpl implements Task {
   }
 
   @Override
+  public Set<Requirement> requirements(Job fallback) {
+    if (requirements.isEmpty()) {
+      return fallback.requirements();
+    }
+    return requirements;
+  }
+
+  @Override
   public Optional<Optimization> optimization() {
     return Optional.ofNullable(optimization);
   }

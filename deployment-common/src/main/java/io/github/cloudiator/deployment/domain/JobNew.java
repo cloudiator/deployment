@@ -17,12 +17,19 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Named;
+import java.util.Optional;
 import java.util.Set;
+import org.cloudiator.matchmaking.domain.Optimization;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 public interface JobNew extends Named {
 
   Set<Task> tasks();
 
   Set<Communication> communications();
+
+  Set<Requirement> requirements();
+
+  Optional<Optimization> optimization();
 
 }

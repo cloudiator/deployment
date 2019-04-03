@@ -102,8 +102,9 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       //allocate the resources
       final ListenableFuture<List<Node>> allocation;
       try {
+
         allocation = resourcePool
-            .allocate(schedule, task.requirements(), task.name());
+            .allocate(schedule, task.requirements(job), task.name());
 
         Futures.addCallback(allocation, new FutureCallback<List<Node>>() {
           @Override
