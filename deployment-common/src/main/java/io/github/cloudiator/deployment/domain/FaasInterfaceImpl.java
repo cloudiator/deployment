@@ -103,4 +103,9 @@ public class FaasInterfaceImpl implements FaasInterface {
         ", functionEnvironment=" + functionEnvironment +
         '}';
   }
+
+  @Override
+  public ProcessMapping processMapping() {
+    return ProcessMapping.SINGLE;
+  }
 }

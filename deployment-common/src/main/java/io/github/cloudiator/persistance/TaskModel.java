@@ -29,7 +29,6 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
-import org.cloudiator.matchmaking.domain.Requirement;
 
 /**
  * Created by daniel on 12.12.14.

@@ -154,12 +154,14 @@ public class ProcessDomainRepository {
 
     if (domain instanceof CloudiatorSingleProcess) {
 
-      return new ProcessSingleModel(domain.id(), scheduleModel, domain.taskId(), domain.state(),
+      return new ProcessSingleModel(domain.id(), domain.originId().orElse(null), scheduleModel,
+          domain.taskId(), domain.state(),
           domain.type(), null, ((CloudiatorSingleProcess) domain).node());
 
     } else if (domain instanceof CloudiatorClusterProcess) {
 
-      return new ProcessClusterModel(domain.id(), scheduleModel, domain.taskId(), domain.state(),
+      return new ProcessClusterModel(domain.id(), domain.originId().orElse(null), scheduleModel,
+          domain.taskId(), domain.state(),
           domain.type(), null, new ArrayList<>(((CloudiatorClusterProcess) domain).nodes()));
 
     } else {

@@ -75,4 +75,6 @@ public interface Task {
     return ports(type).stream().filter(t -> name.equals(t.name())).collect(StreamUtil.getOnly());
   }
 
+  Behaviour behaviour();
+
 }

@@ -202,4 +202,9 @@ class LanceInterfaceImpl implements LanceInterface {
         ", shutdown='" + shutdown + '\'' +
         '}';
   }
+
+  @Override
+  public ProcessMapping processMapping() {
+    return ProcessMapping.SINGLE;
+  }
 }

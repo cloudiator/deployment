@@ -43,6 +43,8 @@ abstract class ProcessModel extends Model {
   @Column(unique = true, nullable = false)
   private String domainId;
 
+  private String originId;
+
   @ManyToOne(optional = false)
   private ScheduleModel schedule;
 
@@ -65,7 +67,7 @@ abstract class ProcessModel extends Model {
   protected ProcessModel() {
   }
 
-  public ProcessModel(String domainId, ScheduleModel schedule, String task,
+  public ProcessModel(String domainId, String orginId, ScheduleModel schedule, String task,
       CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
       @Nullable ProcessGroupModel processGroupModel) {
 
@@ -80,6 +82,7 @@ abstract class ProcessModel extends Model {
     checkNotNull(type, "type is null");
 
     this.domainId = domainId;
+    this.originId = orginId;
     this.schedule = schedule;
     this.task = task;
     this.state = state;

@@ -46,4 +46,9 @@ public class DockerInterfaceImpl implements DockerInterface {
   public Map<String, String> environment() {
     return environment;
   }
+
+  @Override
+  public ProcessMapping processMapping() {
+    return ProcessMapping.SINGLE;
+  }
 }

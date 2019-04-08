@@ -110,7 +110,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
           @Override
           public void onSuccess(List<Node> nodes) {
 
-            LOGGER.info(String.format("Nodes %s were created successfully. Starting processes.",
+            LOGGER.info(String.format("Nodes %s were created. Starting processes.",
                 nodes));
 
             //spawn processes on success

@@ -182,9 +182,8 @@ public class ProcessRequestSubscriber implements Runnable {
           LOGGER.info(String.format(
               "%s is spawning a new cloudiator process for user %s using processSpawner %s, schedule %s, job %s, task %s and nodes %s.",
               this, userId, processSpawner, schedule, job, task, nodeIds));
-
+          
           //convert nodes
-
           final ProcessGroup processGroup = processSpawner
               .spawn(userId, scheduleId, job, task, nodes);
 

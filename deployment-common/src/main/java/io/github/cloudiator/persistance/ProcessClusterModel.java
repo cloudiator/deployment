@@ -44,11 +44,11 @@ class ProcessClusterModel extends ProcessModel {
   protected ProcessClusterModel() {
   }
 
-  public ProcessClusterModel(String domainId, ScheduleModel schedule, String task,
+  public ProcessClusterModel(String domainId, String originId, ScheduleModel schedule, String task,
       ProcessState state, Type type,
       @Nullable ProcessGroupModel processGroupModel,
       List<String> nodes) {
-    super(domainId, schedule, task, state, type, processGroupModel);
+    super(domainId, originId, schedule, task, state, type, processGroupModel);
 
     checkNotNull(nodes, "nodes is null");
 

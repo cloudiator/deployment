@@ -37,22 +37,26 @@ class TaskImpl implements Task {
   private final Set<Requirement> requirements;
   @Nullable
   private final Optimization optimization;
+  private final Behaviour behaviour;
 
   TaskImpl(String name, Set<Port> ports,
       Set<TaskInterface> interfaces,
-      Set<Requirement> requirements, @Nullable Optimization optimization) {
+      Set<Requirement> requirements, @Nullable Optimization optimization,
+      Behaviour behaviour) {
 
     checkNotNull(name, "name is null");
     checkArgument(!name.isEmpty(), "name is empty");
     checkNotNull(ports, "ports is null");
     checkNotNull(interfaces, "interfaces is null");
     checkNotNull(requirements, "requirements is null");
+    checkNotNull(behaviour, "behaviour is null");
 
     this.name = name;
     this.ports = ImmutableSet.copyOf(ports);
     this.interfaces = ImmutableSet.copyOf(interfaces);
     this.requirements = ImmutableSet.copyOf(requirements);
     this.optimization = optimization;
+    this.behaviour = behaviour;
   }
 
 
@@ -89,10 +93,16 @@ class TaskImpl implements Task {
     return Optional.ofNullable(optimization);
   }
 
+  @Override
+  public Behaviour behaviour() {
+    return behaviour;
+  }
+
   protected MoreObjects.ToStringHelper toStringHelper() {
     return MoreObjects.toStringHelper(this).add("name", name)
         .add("ports", Joiner.on(",").join(ports)).add("interfaces", Joiner.on(",").join(interfaces))
-        .add("requirements", Joiner.on(",").join(requirements)).add("optimization", optimization);
+        .add("requirements", Joiner.on(",").join(requirements)).add("optimization", optimization)
+        .add("behaviour", behaviour);
   }
 
   @Override
@@ -109,16 +119,16 @@ class TaskImpl implements Task {
       return false;
     }
     TaskImpl task = (TaskImpl) o;
-    return Objects.equals(name, task.name) &&
-        Objects.equals(ports, task.ports) &&
-        Objects.equals(interfaces, task.interfaces) &&
-        Objects.equals(requirements, task.requirements) &&
-        Objects.equals(optimization, task.optimization);
+    return name.equals(task.name) &&
+        ports.equals(task.ports) &&
+        interfaces.equals(task.interfaces) &&
+        requirements.equals(task.requirements) &&
+        Objects.equals(optimization, task.optimization) &&
+        behaviour.equals(task.behaviour);
   }
 
   @Override
   public int hashCode() {
-
-    return Objects.hash(name, ports, interfaces, requirements, optimization);
+    return Objects.hash(name, ports, interfaces, requirements, optimization, behaviour);
   }
 }

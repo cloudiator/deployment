@@ -110,13 +110,11 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
     } catch (InterruptedException e) {
       LOGGER.error("Spawn Spark Process Execution got interrupted. Stopping.");
-      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Spawning of lance process got interrupted.", e);
     } catch (ExecutionException e) {
       LOGGER.error("Error while waiting for LanceProcess to spawn!", e);
       throw new IllegalStateException(e);
     }
-
-    return null;
   }
 
 
