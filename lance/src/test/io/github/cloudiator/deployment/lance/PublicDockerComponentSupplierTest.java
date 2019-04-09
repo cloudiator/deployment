@@ -31,6 +31,7 @@ public class PublicDockerComponentSupplierTest {
   private static String dockerCreateOptionsString, dockerCreateOsCommandString, dockerCreateArgsString;
   private static String dockerStartOptionsString;
   private static String containerPort;
+  private static String containerVolume;
   private static Map<String,String> envMap;
   private static Task taskSimple, taskExtended;
   private static Job jobSimple, jobExtended;
@@ -66,11 +67,13 @@ public class PublicDockerComponentSupplierTest {
     imageNameRelative = "imagename";
     imageTag = "latest";
     containerPort = "8000:8001";
+    containerVolume = "/var/lib/mysql";
     envMap = new HashMap<>();
     envMap.put("foo","bar");
     envMap.put("john","doe");
     envMap.put("port",containerPort);
-    dockerCreateOptionsString = "--publish 8000:8001 --interactive  --restart no --env foo=bar --env john=doe";
+    envMap.put("volume",containerVolume);
+    dockerCreateOptionsString = "--publish 8000:8001 --volume /var/lib/mysql --interactive  --restart no --env foo=bar --env john=doe";
     dockerCreateOsCommandString = "bash";
     dockerCreateArgsString = "--noediting";
     dockerStartOptionsString = "--interactive";
