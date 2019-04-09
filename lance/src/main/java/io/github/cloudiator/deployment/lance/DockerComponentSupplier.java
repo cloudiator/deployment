@@ -186,6 +186,19 @@ abstract class DockerComponentSupplier {
     return portsList;
   }
 
+  protected String getVolume() {
+    String volume = "";
+    DockerInterface dIface = dockerInterface();
+    Map<String,String> envMap = dIface.environment();
+    for (Map.Entry<String, String> entry : envMap.entrySet()) {
+      if(entry.getKey().equals("volume")) {
+        //todo: might check correct format
+        volume = entry.getValue().trim();
+        }
+      }
+    return volume;
+  }
+
   private static boolean checkPortFormat(String portsString) {
     String[] ports = portsString.trim().split(",");
     List<String> portsList = new ArrayList<>(Arrays.asList(ports));
@@ -277,6 +290,11 @@ abstract class DockerComponentSupplier {
       createOptionMap.put(Option.PORT, mappedPorts);
     }
 
+    String volume = getVolume();
+    if (!volume.equals("")) {
+      createOptionMap.put(Option.VOLUME, new ArrayList<>(Arrays.asList(volume)));
+    }
+
     return createOptionMap;
   }
 
@@ -304,7 +322,8 @@ abstract class DockerComponentSupplier {
   private static Map<String,String> getActualEnv(Map<String,String> envMap) {
     Map<String,String> env = new HashMap<>();
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey().equals("username") || entry.getKey().equals("password") || entry.getKey().equals("port")) {
+      if(entry.getKey().equals("username") || entry.getKey().equals("password")
+          || entry.getKey().equals("port") || entry.getKey().equals("volume")) {
         continue;
       }
       env.put(entry.getKey(),entry.getValue());
