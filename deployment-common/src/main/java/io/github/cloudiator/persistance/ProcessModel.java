@@ -29,6 +29,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 
 
@@ -36,7 +37,8 @@ import javax.persistence.ManyToOne;
  * Created by daniel on 12.12.14.
  */
 @Entity
-class ProcessModel extends Model {
+@Inheritance(strategy = javax.persistence.InheritanceType.TABLE_PER_CLASS)
+abstract class ProcessModel extends Model {
 
   @Column(unique = true, nullable = false)
   private String domainId;
@@ -46,13 +48,6 @@ class ProcessModel extends Model {
 
   @Column(nullable = false)
   private String task;
-
-  //TODO: refactor this to proper inheritance?
-  @Column(nullable = true)
-  private String node;
-
-  @Column(nullable = true)
-  private String nodeGroup;
 
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.Type type;
@@ -70,8 +65,7 @@ class ProcessModel extends Model {
   protected ProcessModel() {
   }
 
-  public ProcessModel(String domainId, ScheduleModel schedule, String task, @Nullable String node,
-      @Nullable String nodeGroup,
+  public ProcessModel(String domainId, ScheduleModel schedule, String task,
       CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
       @Nullable ProcessGroupModel processGroupModel) {
 
@@ -83,17 +77,12 @@ class ProcessModel extends Model {
     checkNotNull(task, "task is null");
     checkArgument(!task.isEmpty(), "task is empty");
 
-    //checkNotNull(nodeGroupModel, "nodeGroup is null");
-    //checkArgument(!nodeGroupModel.isEmpty(), "nodeGroup is empty");
-
     checkNotNull(type, "type is null");
 
     this.domainId = domainId;
     this.schedule = schedule;
     this.task = task;
     this.state = state;
-    this.node = node;
-    this.nodeGroup = nodeGroup;
     this.type = type;
     this.processGroupModel = processGroupModel;
 
@@ -102,22 +91,18 @@ class ProcessModel extends Model {
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
-        .add("task", task).add("state", state).add("nodeGroup", nodeGroup).add("node", node);
+        .add("task", task).add("state", state);
   }
-  
+
+  @Override
+  public String toString() {
+    return stringHelper().toString();
+  }
+
   public ProcessModel assignGroup(ProcessGroupModel processGroupModel) {
     checkState(this.processGroupModel == null, "Process Group was already assigned.");
     this.processGroupModel = processGroupModel;
     return this;
-  }
-
-
-  public String getNodeGroup() {
-    return nodeGroup;
-  }
-
-  public String getNode() {
-    return node;
   }
 
   public String getDomainId() {

@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import de.uniulm.omi.cloudiator.util.execution.LoggingThreadPoolExecutor;
 import io.github.cloudiator.deployment.domain.Job;
@@ -32,7 +33,8 @@ import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.ProcessGroupMessageConverter;
 import io.github.cloudiator.deployment.scheduler.ResourcePool;
-import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
+import io.github.cloudiator.domain.Node;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessNew;
@@ -98,55 +100,62 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
 
       //allocate the resources
-      final ListenableFuture<NodeGroup> allocateFuture = resourcePool
-          .allocate(userId, task.requirements(), task.name());
+      final ListenableFuture<List<Node>> allocation;
+      try {
 
-      Futures.addCallback(allocateFuture, new FutureCallback<NodeGroup>() {
-        @Override
-        public void onSuccess(@Nullable NodeGroup result) {
+        allocation = resourcePool
+            .allocate(schedule, task.requirements(job), task.name());
 
-          LOGGER.info(String.format("Node group %s was created successfully. Starting processes.",
-              result));
+        Futures.addCallback(allocation, new FutureCallback<List<Node>>() {
+          @Override
+          public void onSuccess(List<Node> nodes) {
 
-          //spawn processes on success
-          //for (Node node : result.getNodes()) {
+            LOGGER.info(String.format("Nodes %s were created successfully. Starting processes.",
+                nodes));
 
-          LOGGER.info(String
-              .format("Requesting new process for schedule %s, task %s on node group %s.", schedule,
-                  task, result.id()));
+            //spawn processes on success
+            //for (Node node : result.getNodes()) {
 
-          final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
-              schedule.id()).setTask(task.name())
-              .setNodeGroup(result.id())
-              .build();
-          final CreateProcessRequest createProcessRequest = CreateProcessRequest
-              .newBuilder()
-              .setUserId(userId).setProcess(newProcess).build();
+            LOGGER.info(String
+                .format("Requesting new process for schedule %s, task %s on nodes %s.", schedule,
+                    task, nodes));
 
-          final SettableFutureResponseCallback<ProcessCreatedResponse, ProcessGroup> processGroupFuture = SettableFutureResponseCallback
-              .create(processCreatedResponse -> PROCESS_GROUP_MESSAGE_CONVERTER
-                  .apply(processCreatedResponse.getProcessGroup()));
+            final ProcessNew newProcess = ProcessNew.newBuilder().setSchedule(
+                schedule.id()).setTask(task.name())
+                .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
+                .build();
+            final CreateProcessRequest createProcessRequest = CreateProcessRequest
+                .newBuilder()
+                .setUserId(userId).setProcess(newProcess).build();
 
-          processService.createProcessAsync(createProcessRequest, processGroupFuture);
+            final SettableFutureResponseCallback<ProcessCreatedResponse, ProcessGroup> processGroupFuture = SettableFutureResponseCallback
+                .create(processCreatedResponse -> PROCESS_GROUP_MESSAGE_CONVERTER
+                    .apply(processCreatedResponse.getProcessGroup()));
 
-          processGroupFutures.add(processGroupFuture);
+            processService.createProcessAsync(createProcessRequest, processGroupFuture);
 
-          //}
+            processGroupFutures.add(processGroupFuture);
 
-          countDownLatch.countDown();
-        }
+            //}
 
-        @Override
-        public void onFailure(Throwable t) {
-          //todo: what to do when nodes fail?
-          LOGGER.error(String
-                  .format("An uncaught exception occurred while spawning nodes: %s.", t.getMessage()),
-              t);
+            countDownLatch.countDown();
+          }
 
-          countDownLatch.countDown();
+          @Override
+          public void onFailure(Throwable t) {
+            //todo: what to do when nodes fail?
+            LOGGER.error(String
+                    .format("An uncaught exception occurred while spawning nodes: %s.", t.getMessage()),
+                t);
 
-        }
-      }, EXECUTOR);
+            countDownLatch.countDown();
+
+          }
+        }, EXECUTOR);
+
+      } catch (SchedulingException e) {
+        throw new InstantiationException("Error during scheduling.", e);
+      }
 
     }
 

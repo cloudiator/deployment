@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.scheduler.exceptions;
 
-import de.uniulm.omi.cloudiator.domain.Named;
-import java.util.Optional;
-import java.util.Set;
-import org.cloudiator.matchmaking.domain.Optimization;
-import org.cloudiator.matchmaking.domain.Requirement;
+public class MatchmakingException extends Exception {
 
-public interface JobNew extends Named {
+  public MatchmakingException(String s) {
+    super(s);
+  }
 
-  Set<Task> tasks();
-
-  Set<Communication> communications();
-
-  Set<Requirement> requirements();
-
-  Optional<Optimization> optimization();
-
+  public MatchmakingException(String s, Throwable throwable) {
+    super(s, throwable);
+  }
 }

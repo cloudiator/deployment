@@ -26,23 +26,28 @@ import javax.annotation.Nullable;
 abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
   protected final String id;
+  @Nullable
+  private final String originId;
+  protected final String userId;
   protected final String scheduleId;
   protected final String taskName;
   protected final CloudiatorProcess.ProcessState state;
   protected final Type type;
-  protected final String userId;
   @Nullable
   private final String diagnostic;
   @Nullable
   private final String reason;
 
-  CloudiatorProcessImpl(String id, String userId, String scheduleId, String taskName,
+  CloudiatorProcessImpl(String id, @Nullable String originId, String userId, String scheduleId,
+      String taskName,
       CloudiatorProcess.ProcessState state, Type type, @Nullable String diagnostic,
       @Nullable String reason) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
     this.id = id;
+
+    this.originId = originId;
 
     checkNotNull(userId, "userId is null");
     checkArgument(!userId.isEmpty(), "userId is empty");
@@ -64,6 +69,11 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
     this.diagnostic = diagnostic;
     this.reason = reason;
+  }
+
+  @Override
+  public Optional<String> originId() {
+    return Optional.ofNullable(originId);
   }
 
   @Override
@@ -108,7 +118,8 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   }
 
   protected MoreObjects.ToStringHelper stringHelper() {
-    return MoreObjects.toStringHelper(this).add("id", id).add("userId", userId)
+    return MoreObjects.toStringHelper(this).add("id", id).add("originId", originId)
+        .add("userId", userId)
         .add("scheduleId", scheduleId)
         .add("taskName", taskName).add("state", state).add("type", type)
         .add("diagnostic", diagnostic).add("reason", reason);

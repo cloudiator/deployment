@@ -23,6 +23,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 public class CloudiatorSingleProcessBuilder {
 
   private String id;
+  private String originId;
   private String userId;
   private String scheduleId;
   private String taskName;
@@ -37,6 +38,7 @@ public class CloudiatorSingleProcessBuilder {
 
   private CloudiatorSingleProcessBuilder(CloudiatorSingleProcess cloudiatorSingleProcess) {
     this.id = cloudiatorSingleProcess.id();
+    this.originId = cloudiatorSingleProcess.originId().orElse(null);
     this.userId = cloudiatorSingleProcess.userId();
     this.scheduleId = cloudiatorSingleProcess.scheduleId();
     this.taskName = cloudiatorSingleProcess.taskId();
@@ -58,6 +60,11 @@ public class CloudiatorSingleProcessBuilder {
 
   public CloudiatorSingleProcessBuilder id(String id) {
     this.id = id;
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder originId(String originId) {
+    this.originId = originId;
     return this;
   }
 
@@ -102,7 +109,8 @@ public class CloudiatorSingleProcessBuilder {
   }
 
   public CloudiatorSingleProcess build() {
-    return new CloudiatorSingleProcessImpl(id, userId, scheduleId, taskName, state, type, node,
+    return new CloudiatorSingleProcessImpl(id, originId, userId, scheduleId, taskName, state, type,
+        node,
         diagnostic, reason);
   }
 

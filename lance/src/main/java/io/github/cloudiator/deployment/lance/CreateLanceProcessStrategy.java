@@ -285,7 +285,7 @@ public class CreateLanceProcessStrategy {
             deploymentInfo.getTask(), cId));
 
     return CloudiatorSingleProcessBuilder.create().id(cId.toString())
-        .state(ProcessState.CREATED)
+        .state(ProcessState.RUNNING)
         .userId(deploymentInfo.getUserId())
         .node(deploymentInfo.getNode().id())
         .type(Type.LANCE)
@@ -309,7 +309,7 @@ public class CreateLanceProcessStrategy {
             deploymentInfo.getTask(), id, e.getMessage()), e);
 
     return CloudiatorSingleProcessBuilder.create().id(id)
-        .state(ProcessState.FAILED)
+        .state(ProcessState.ERROR)
         .userId(deploymentInfo.getUserId())
         .node(deploymentInfo.getNode().id())
         .type(Type.LANCE)

@@ -1,10 +1,13 @@
 package io.github.cloudiator.deployment.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import com.google.common.collect.ImmutableSet;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -13,29 +16,21 @@ import javax.annotation.Nullable;
 public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implements
     CloudiatorClusterProcess {
 
-  private final String nodeGroup;
+  private final Set<String> nodes;
 
 
-  CloudiatorClusterProcessImpl(String id, String userId, String scheduleId, String taskName,
-      CloudiatorProcess.ProcessState state, Type type, String nodeGroup,
+  CloudiatorClusterProcessImpl(String id, @Nullable String originId, String userId, String scheduleId, String taskName,
+      CloudiatorProcess.ProcessState state, Type type, Set<String> nodes,
       @Nullable String diagnostic, @Nullable String reason) {
-    super(id, userId, scheduleId, taskName, state, type, diagnostic, reason);
+    super(id, originId, userId, scheduleId, taskName, state, type, diagnostic, reason);
 
-    checkNotNull(nodeGroup, "nodeGroup is null");
-    checkArgument(!nodeGroup.isEmpty(), "nodeGroup is empty");
-    this.nodeGroup = nodeGroup;
-  }
-
-
-  @Override
-  public String nodeGroup() {
-    return nodeGroup;
+    checkNotNull(nodes, "nodes is null");
+    this.nodes = new HashSet<>(nodes);
   }
 
   @Override
   public int hashCode() {
-
-    return Objects.hash(id, userId, scheduleId, taskName, nodeGroup);
+    return Objects.hash(id, userId, scheduleId, taskName, nodes);
   }
 
 
@@ -52,11 +47,16 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
         Objects.equals(userId, that.userId) &&
         Objects.equals(scheduleId, that.scheduleId) &&
         Objects.equals(taskName, that.taskName) &&
-        Objects.equals(nodeGroup, that.nodeGroup);
+        Objects.equals(nodes, that.nodes);
   }
 
   @Override
   protected ToStringHelper stringHelper() {
-    return super.stringHelper().add("nodeGroup", nodeGroup);
+    return super.stringHelper().add("nodes", nodes);
+  }
+
+  @Override
+  public Set<String> nodes() {
+    return ImmutableSet.copyOf(nodes);
   }
 }

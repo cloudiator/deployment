@@ -25,6 +25,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import org.cloudiator.messages.entities.ProcessEntities;
+import org.cloudiator.messages.entities.ProcessEntities.NodeGroup;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.Process.Builder;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessState;
@@ -56,7 +57,8 @@ public class ProcessMessageConverter implements
     } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
       //Spark processes
       final Builder builder = Process.newBuilder()
-          .setNodeGroup(((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup());
+          .setNodes(NodeGroup.newBuilder()
+              .addAllNodes(((CloudiatorClusterProcess) cloudiatorProcess).nodes()).build());
 
       return finishBuilding(cloudiatorProcess, builder);
 
@@ -109,14 +111,14 @@ public class ProcessMessageConverter implements
 
         return cloudiatorSingleProcessBuilder.build();
 
-      case NODEGROUP:
+      case NODES:
         final CloudiatorClusterProcessBuilder cloudiatorClusterProcessBuilder = CloudiatorClusterProcessBuilder
             .create()
             .id(process.getId())
             .userId(process.getUserId())
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
-            .nodeGroup(process.getNodeGroup())
+            .addAllNodes(process.getNodes().getNodesList())
             .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
 
@@ -154,14 +156,12 @@ public class ProcessMessageConverter implements
       switch (processState) {
         case DELETED:
           return ProcessState.PROCESS_STATE_DELETED;
-        case CREATED:
-          return ProcessState.PROCESS_STATE_CREATED;
+        case PENDING:
+          return ProcessState.PROCESS_STATE_PENDING;
         case ERROR:
           return ProcessState.PROCESS_STATE_ERROR;
         case RUNNING:
-          return ProcessState.PROCESS_STATE_FAILED;
-        case FAILED:
-          return ProcessState.PROCESS_STATE_FAILED;
+          return ProcessState.PROCESS_STATE_RUNNING;
         case FINISHED:
           return ProcessState.PROCESS_STATE_FINISHED;
         default:
@@ -172,12 +172,10 @@ public class ProcessMessageConverter implements
     @Override
     public CloudiatorProcess.ProcessState apply(ProcessState processState) {
       switch (processState) {
-        case PROCESS_STATE_FAILED:
-          return CloudiatorProcess.ProcessState.FAILED;
         case PROCESS_STATE_ERROR:
           return CloudiatorProcess.ProcessState.ERROR;
-        case PROCESS_STATE_CREATED:
-          return CloudiatorProcess.ProcessState.CREATED;
+        case PROCESS_STATE_PENDING:
+          return CloudiatorProcess.ProcessState.PENDING;
         case PROCESS_STATE_DELETED:
           return CloudiatorProcess.ProcessState.DELETED;
         case PROCESS_STATE_RUNNING:

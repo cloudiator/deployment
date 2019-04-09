@@ -27,18 +27,19 @@ import java.util.Optional;
 public interface CloudiatorProcess extends Identifiable, Stateful {
 
   enum ProcessState implements State {
-    CREATED,
-    FAILED,
+    PENDING,
     RUNNING,
+    FINISHED,
     ERROR,
-    DELETED,
-    FINISHED
+    DELETED
   }
 
   enum Type {
     LANCE,
     SPARK
   }
+
+  Optional<String> originId();
 
   String scheduleId();
 

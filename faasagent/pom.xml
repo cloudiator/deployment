@@ -111,6 +111,9 @@
           <to>
             registry.hub.docker.com/cloudiator/faas-agent:${docker.tag}
           </to>
+          <container>
+            <useCurrentTimestamp>true</useCurrentTimestamp>
+          </container>
         </configuration>
       </plugin>
       <plugin>

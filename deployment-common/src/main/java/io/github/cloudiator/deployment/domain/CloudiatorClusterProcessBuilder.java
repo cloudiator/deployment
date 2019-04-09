@@ -19,29 +19,35 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CloudiatorClusterProcessBuilder {
 
   private String id;
+  private String originId;
   private String userId;
   private String scheduleId;
   private String taskName;
   private CloudiatorProcess.ProcessState state;
-  private String nodeGroup;
+  private Set<String> nodes;
   private Type type;
   private String reason;
   private String diagnostic;
 
   private CloudiatorClusterProcessBuilder() {
+    this.nodes = new HashSet<>();
   }
 
   private CloudiatorClusterProcessBuilder(CloudiatorClusterProcess cloudiatorClusterProcess) {
     this.id = cloudiatorClusterProcess.id();
+    this.originId = cloudiatorClusterProcess.originId().orElse(null);
     this.userId = cloudiatorClusterProcess.userId();
     this.scheduleId = cloudiatorClusterProcess.scheduleId();
     this.taskName = cloudiatorClusterProcess.taskId();
     this.state = cloudiatorClusterProcess.state();
-    this.nodeGroup = cloudiatorClusterProcess.nodeGroup();
+    this.nodes = cloudiatorClusterProcess.nodes();
     this.type = cloudiatorClusterProcess.type();
     this.reason = cloudiatorClusterProcess.reason().orElse(null);
     this.diagnostic = cloudiatorClusterProcess.diagnostic().orElse(null);
@@ -62,6 +68,11 @@ public class CloudiatorClusterProcessBuilder {
     return this;
   }
 
+  public CloudiatorClusterProcessBuilder originId(String originId) {
+    this.originId = originId;
+    return this;
+  }
+
   public CloudiatorClusterProcessBuilder userId(String userId) {
     this.userId = userId;
     return this;
@@ -77,8 +88,13 @@ public class CloudiatorClusterProcessBuilder {
     return this;
   }
 
-  public CloudiatorClusterProcessBuilder nodeGroup(String nodeGroup) {
-    this.nodeGroup = nodeGroup;
+  public CloudiatorClusterProcessBuilder addNode(String node) {
+    this.nodes.add(node);
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder addAllNodes(Collection<? extends String> nodes) {
+    this.nodes.addAll(nodes);
     return this;
   }
 
@@ -103,8 +119,8 @@ public class CloudiatorClusterProcessBuilder {
   }
 
   public CloudiatorClusterProcess build() {
-    return new CloudiatorClusterProcessImpl(id, userId, scheduleId, taskName, state, type,
-        nodeGroup, diagnostic, reason);
+    return new CloudiatorClusterProcessImpl(id, originId, userId, scheduleId, taskName, state, type,
+        nodes, diagnostic, reason);
   }
 
 }

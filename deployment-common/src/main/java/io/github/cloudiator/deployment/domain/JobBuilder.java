@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import org.cloudiator.matchmaking.domain.Optimization;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 /**
  * Created by daniel on 13.02.17.
@@ -31,6 +33,8 @@ public class JobBuilder {
   private String name;
   private Set<Task> tasks = new HashSet<>();
   private Set<Communication> communications = new HashSet<>();
+  private Set<Requirement> requirements = new HashSet<>();
+  private Optimization optimization;
 
   private JobBuilder() {
 
@@ -81,8 +85,24 @@ public class JobBuilder {
     return this;
   }
 
+  public JobBuilder addRequirement(Requirement requirement) {
+    this.requirements.add(requirement);
+    return this;
+  }
+
+  public JobBuilder addRequirements(
+      Collection<? extends Requirement> requirements) {
+    this.requirements.addAll(requirements);
+    return this;
+  }
+
+  public JobBuilder optimization(Optimization optimization) {
+    this.optimization = optimization;
+    return this;
+  }
+
   public Job build() {
-    return new JobImpl(id, userId, name, tasks, communications);
+    return new JobImpl(id, userId, name, tasks, communications, requirements, optimization);
   }
 
 

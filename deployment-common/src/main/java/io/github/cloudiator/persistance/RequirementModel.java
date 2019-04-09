@@ -27,19 +27,36 @@ import javax.persistence.ManyToOne;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 class RequirementModel extends Model {
 
-  @ManyToOne(optional = false)
+  @ManyToOne
   private TaskModel task;
+
+  @ManyToOne
+  private JobModel job;
 
   protected RequirementModel() {
 
   }
 
+  RequirementModel(TaskModel task, JobModel job) {
+
+    if ((job != null && task != null) || (job == null && task == null)) {
+      throw new IllegalArgumentException("Either job or task need to be set");
+    }
+
+    this.task = task;
+    this.job = job;
+  }
+
   RequirementModel(TaskModel task) {
     checkNotNull(task, "task is null");
     this.task = task;
+    this.job = null;
   }
 
-  public TaskModel getTaskModel() {
-    return task;
+  RequirementModel(JobModel job) {
+    checkNotNull(job, "job is null;");
+    this.task = null;
+    this.job = job;
   }
+
 }

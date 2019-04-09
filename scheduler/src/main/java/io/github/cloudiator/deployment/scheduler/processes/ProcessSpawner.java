@@ -19,15 +19,15 @@ package io.github.cloudiator.deployment.scheduler.processes;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.ProcessGroup;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.domain.Node;
+import java.util.Set;
 
 
 public interface ProcessSpawner {
 
   boolean supports(Task task);
 
-  ProcessGroup spawn(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup);
-
+  ProcessGroup spawn(String userId, String schedule, Job job, Task task, Set<Node> nodes);
 
 
 }

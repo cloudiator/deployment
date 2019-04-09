@@ -47,6 +47,8 @@ public interface Task {
 
   Set<Requirement> requirements();
 
+  Set<Requirement> requirements(Job fallback);
+
   Optional<Optimization> optimization();
 
   default Set<PortProvided> providedPorts() {
