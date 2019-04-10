@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.persistance;
 
-public interface Periodic extends Behaviour {
-
-  Interval interval();
-
-  CollisionHandling collisionHandling();
+interface IntervalModelRepository extends ModelRepository<IntervalModel> {
 
 }

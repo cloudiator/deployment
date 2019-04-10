@@ -13,6 +13,7 @@
     <class>io.github.cloudiator.persistance.PortRequiredModel</class>
     <class>io.github.cloudiator.persistance.TenantModel</class>
     <class>io.github.cloudiator.persistance.TaskModel</class>
+    <class>io.github.cloudiator.persistance.BehaviourModel</class>
     <class>io.github.cloudiator.persistance.TaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.LanceTaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.FaasTaskInterfaceModel</class>
@@ -27,6 +28,9 @@
     <class>io.github.cloudiator.persistance.AttributeRequirementModel</class>
     <class>io.github.cloudiator.persistance.OCLRequirementModel</class>
     <class>io.github.cloudiator.persistance.IdentifierRequirementModel</class>
+    <class>io.github.cloudiator.persistance.ServiceBehaviourModel</class>
+    <class>io.github.cloudiator.persistance.PeriodicBehaviourModel</class>
+    <class>io.github.cloudiator.persistance.IntervalModel</class>
 
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

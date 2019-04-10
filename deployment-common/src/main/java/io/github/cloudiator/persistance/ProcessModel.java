@@ -18,7 +18,6 @@ package io.github.cloudiator.persistance;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
@@ -51,15 +50,18 @@ abstract class ProcessModel extends Model {
   @Column(nullable = false)
   private String task;
 
+  @Column(nullable = false)
+  private String taskInterface;
+
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.Type type;
 
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.ProcessState state;
 
-  @ManyToOne
-  @Nullable
-  private ProcessGroupModel processGroupModel;
+  private String diagnostic;
+
+  private String reason;
 
   /**
    * Empty constructor for hibernate
@@ -68,8 +70,9 @@ abstract class ProcessModel extends Model {
   }
 
   public ProcessModel(String domainId, String orginId, ScheduleModel schedule, String task,
+      String taskInterface,
       CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
-      @Nullable ProcessGroupModel processGroupModel) {
+      @Nullable String diagnostic, @Nullable String reason) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -85,27 +88,23 @@ abstract class ProcessModel extends Model {
     this.originId = orginId;
     this.schedule = schedule;
     this.task = task;
+    this.taskInterface = taskInterface;
     this.state = state;
     this.type = type;
-    this.processGroupModel = processGroupModel;
+    this.diagnostic = diagnostic;
+    this.reason = reason;
 
   }
 
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
-        .add("task", task).add("state", state);
+        .add("task", task).add("taskInterface", taskInterface).add("state", state);
   }
 
   @Override
   public String toString() {
     return stringHelper().toString();
-  }
-
-  public ProcessModel assignGroup(ProcessGroupModel processGroupModel) {
-    checkState(this.processGroupModel == null, "Process Group was already assigned.");
-    this.processGroupModel = processGroupModel;
-    return this;
   }
 
   public String getDomainId() {
@@ -135,6 +134,37 @@ abstract class ProcessModel extends Model {
   public ProcessModel setState(
       ProcessState state) {
     this.state = state;
+    return this;
+  }
+
+  public ProcessModel setOriginId(String originId) {
+    this.originId = originId;
+    return this;
+  }
+
+  public String getOriginId() {
+    return originId;
+  }
+
+  public String getTaskInterface() {
+    return taskInterface;
+  }
+
+  public String getDiagnostic() {
+    return diagnostic;
+  }
+
+  public ProcessModel setDiagnostic(String diagnostic) {
+    this.diagnostic = diagnostic;
+    return this;
+  }
+
+  public String getReason() {
+    return reason;
+  }
+
+  public ProcessModel setType(Type type) {
+    this.type = type;
     return this;
   }
 }

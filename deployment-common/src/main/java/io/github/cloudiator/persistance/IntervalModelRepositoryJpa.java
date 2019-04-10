@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,18 @@
 
 package io.github.cloudiator.persistance;
 
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.ManyToOne;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
+import javax.persistence.EntityManager;
 
-@Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-abstract class TaskInterfaceModel extends Model {
+class IntervalModelRepositoryJpa extends
+    BaseModelRepositoryJpa<IntervalModel> implements IntervalModelRepository {
 
-  @ManyToOne
-  private TaskModel task;
-
-  protected TaskInterfaceModel() {
-
+  @Inject
+  protected IntervalModelRepositoryJpa(
+      Provider<EntityManager> entityManager,
+      TypeLiteral<IntervalModel> type) {
+    super(entityManager, type);
   }
-
-  protected TaskInterfaceModel(TaskModel task) {
-    this.task = task;
-  }
-
 }

@@ -23,6 +23,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.validation.EveryPortRequiredFullfilledValidator;
+import io.github.cloudiator.deployment.validation.EveryTaskHasAnInterface;
 import io.github.cloudiator.deployment.validation.ModelValidationService;
 import io.github.cloudiator.deployment.validation.ModelValidationServiceImpl;
 import io.github.cloudiator.deployment.validation.ModelValidator;
@@ -43,5 +44,6 @@ public class ModelValidationModule extends AbstractModule {
     typeModelValidatorBinder.addBinding().to(NoCycleInMandatoryCommunicationValidator.class);
     typeModelValidatorBinder.addBinding().to(EveryPortRequiredFullfilledValidator.class);
     typeModelValidatorBinder.addBinding().to(PortsOfCommunicationsExistValidator.class);
+    typeModelValidatorBinder.addBinding().to(EveryTaskHasAnInterface.class);
   }
 }

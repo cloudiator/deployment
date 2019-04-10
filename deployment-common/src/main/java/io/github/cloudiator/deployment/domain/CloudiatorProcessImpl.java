@@ -31,6 +31,7 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   protected final String userId;
   protected final String scheduleId;
   protected final String taskName;
+  protected final String taskInterface;
   protected final CloudiatorProcess.ProcessState state;
   protected final Type type;
   @Nullable
@@ -39,7 +40,7 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   private final String reason;
 
   CloudiatorProcessImpl(String id, @Nullable String originId, String userId, String scheduleId,
-      String taskName,
+      String taskName, String taskInterface,
       CloudiatorProcess.ProcessState state, Type type, @Nullable String diagnostic,
       @Nullable String reason) {
 
@@ -60,6 +61,10 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     checkNotNull(taskName, "taskName is null");
     checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
+
+    checkNotNull(taskInterface, "taskInterface is null");
+    checkArgument(!taskInterface.isEmpty(), "taskInterface is empty");
+    this.taskInterface = taskInterface;
 
     checkNotNull(state, "state is null");
     this.state = state;
@@ -84,6 +89,11 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   @Override
   public String taskId() {
     return taskName;
+  }
+
+  @Override
+  public String taskInterface() {
+    return taskInterface;
   }
 
   @Override
@@ -121,7 +131,9 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     return MoreObjects.toStringHelper(this).add("id", id).add("originId", originId)
         .add("userId", userId)
         .add("scheduleId", scheduleId)
-        .add("taskName", taskName).add("state", state).add("type", type)
+        .add("taskName", taskName)
+        .add("taskInterface", taskInterface)
+        .add("state", state).add("type", type)
         .add("diagnostic", diagnostic).add("reason", reason);
   }
 

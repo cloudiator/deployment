@@ -35,14 +35,14 @@ public interface Task {
   Set<Port> ports();
 
   Set<TaskInterface> interfaces();
-
+  
   default <T extends TaskInterface> T interfaceOfType(Class<T> type) {
     //noinspection unchecked
     return interfaces().stream().filter(
         type::isInstance).map(taskInterface -> (T) taskInterface)
         .collect(StreamUtil.getOnly())
         .orElseThrow(() -> new IllegalArgumentException(
-            String.format("Task %s does not supply a lance interface.", this)));
+            String.format("Task %s does not supply a interface of type %s.", this, type)));
   }
 
   Set<Requirement> requirements();

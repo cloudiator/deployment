@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.github.cloudiator.deployment.domain.ProcessMapping;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,6 +13,8 @@ import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.OrderColumn;
 
 @Entity
@@ -32,6 +35,10 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
 
   @ElementCollection
   private Map<String, String> sparkConfiguration = new HashMap<>();
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private ProcessMapping processMapping;
 
   @Nullable
   public String getClassName() {
@@ -75,6 +82,10 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
     return file;
   }
 
+  public ProcessMapping getProcessMapping() {
+    return processMapping;
+  }
+
   /**
    * Empty hibernate constructor
    */
@@ -83,17 +94,20 @@ public class SparkTaskInterfaceModel extends TaskInterfaceModel {
 
   SparkTaskInterfaceModel(TaskModel taskModel, String file, @Nullable String className,
       List<String> arguments, Map<String, String> sparkArguments,
-      Map<String, String> sparkConfiguration) {
+      Map<String, String> sparkConfiguration, ProcessMapping processMapping) {
     super(taskModel);
     checkNotNull(file, "file is null");
     checkNotNull(arguments, "arguments is null");
     checkNotNull(sparkArguments, "sparkArguments is null");
     checkNotNull(sparkConfiguration, "sparkConfiguration is null");
+    checkNotNull(processMapping, "processMapping is null");
+
     this.file = file;
     this.className = className;
     this.arguments = arguments;
     this.sparkArguments = sparkArguments;
     this.sparkConfiguration = sparkConfiguration;
+    this.processMapping = processMapping;
   }
 
 }

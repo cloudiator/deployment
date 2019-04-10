@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,10 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.persistance;
+package io.github.cloudiator.deployment.domain;
 
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.ManyToOne;
+public interface ServiceBehaviour extends Behaviour {
 
-@Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-abstract class TaskInterfaceModel extends Model {
-
-  @ManyToOne
-  private TaskModel task;
-
-  protected TaskInterfaceModel() {
-
-  }
-
-  protected TaskInterfaceModel(TaskModel task) {
-    this.task = task;
-  }
+  boolean restart();
 
 }

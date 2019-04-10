@@ -3,6 +3,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,5 +73,13 @@ public class SparkInterfaceImpl implements SparkInterface {
   @Override
   public ProcessMapping processMapping() {
     return processMapping;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("file", file).add("className", className)
+        .add("arguments", arguments).add("sparkArguments", sparkArguments)
+        .add("sparkConfiguration", sparkConfiguration).add("processMapping", processMapping)
+        .toString();
   }
 }

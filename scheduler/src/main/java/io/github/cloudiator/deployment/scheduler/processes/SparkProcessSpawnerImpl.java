@@ -16,16 +16,20 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
-import io.github.cloudiator.deployment.domain.ProcessGroupBuilder;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
+import io.github.cloudiator.deployment.messaging.SparkInterfaceConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.Set;
@@ -33,7 +37,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.cloudiator.messages.Process.CreateSparkProcessRequest;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
+import org.cloudiator.messages.entities.ProcessEntities.Nodes;
 import org.cloudiator.messages.entities.ProcessEntities.SparkProcess;
+import org.cloudiator.messages.entities.ProcessEntities.SparkProcess.Builder;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
@@ -57,69 +63,74 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public boolean supports(Task task) {
-
-    try {
-      task.interfaceOfType(SparkInterface.class);
-      return true;
-    } catch (IllegalArgumentException e) {
-      LOGGER
-          .debug("Provided task does not contain a SparkInterface! Skipping SparkProcessSpawner!");
-      return false;
-    }
-
-
-  }
-
-  @Override
-  public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
-      Set<Node> nodes) {
-
-    //TODO: check for flag which indicates process mapping, one to one or one to many
-    //TODO: for now only one to many is supported until flag is available
-
-    //wait until all processes are spawned
-    try {
-
-      LOGGER.info(String
-          .format(
-              "%s is spawning a new Spark process for user: %s, Schedule %s, Task %s on Nodes %s",
-              this,
-              userId, schedule, task, nodes));
-
-      final SparkProcess sparkProcess = SparkProcess.newBuilder()
-          .setSchedule(schedule)
-          .setJob(JOB_CONVERTER.applyBack(job))
-          .addAllNodes(nodes.stream().map(NODE_CONVERTER).collect(Collectors.toList()))
-          .setTask(task.name()).build();
-      final CreateSparkProcessRequest processRequest = CreateSparkProcessRequest.newBuilder()
-          .setSpark(sparkProcess).setUserId(userId).build();
-
-      SettableFutureResponseCallback<SparkProcessCreatedResponse, CloudiatorProcess> futureResponseCallback = SettableFutureResponseCallback
-          .create(
-              sparkProcessCreatedResponse -> PROCESS_MESSAGE_CONVERTER
-                  .apply(sparkProcessCreatedResponse.getProcess()));
-
-      processService.createSparkProcessAsync(processRequest, futureResponseCallback);
-
-      CloudiatorProcess spawnedSparkProcess = futureResponseCallback.get();
-
-      return ProcessGroupBuilder.create().generateId().userId(userId).scheduleId(schedule)
-          .addProcess(spawnedSparkProcess).build();
-
-
-    } catch (InterruptedException e) {
-      LOGGER.error("Spawn Spark Process Execution got interrupted. Stopping.");
-      throw new IllegalStateException("Spawning of lance process got interrupted.", e);
-    } catch (ExecutionException e) {
-      LOGGER.error("Error while waiting for LanceProcess to spawn!", e);
-      throw new IllegalStateException(e);
-    }
-  }
-
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).toString();
+  }
+
+  @Override
+  public boolean supports(TaskInterface taskInterface) {
+    return taskInterface instanceof SparkInterface;
+  }
+
+  private Builder builder(String schedule, Job job, Task task,
+      TaskInterface taskInterface) {
+
+    return SparkProcess.newBuilder()
+        .setSchedule(schedule)
+        .setJob(JOB_CONVERTER.applyBack(job))
+        .setTask(task.name())
+        .setSparkInterface(SparkInterfaceConverter.INSTANCE.applyBack(
+            (SparkInterface) taskInterface));
+
+  }
+
+  private CloudiatorProcess executeRequest(String userId, SparkProcess sparkProcess)
+      throws ProcessSpawningException {
+
+    final CreateSparkProcessRequest processRequest = CreateSparkProcessRequest.newBuilder()
+        .setSpark(sparkProcess).setUserId(userId).build();
+
+    SettableFutureResponseCallback<SparkProcessCreatedResponse, CloudiatorProcess> futureResponseCallback = SettableFutureResponseCallback
+        .create(
+            sparkProcessCreatedResponse -> PROCESS_MESSAGE_CONVERTER
+                .apply(sparkProcessCreatedResponse.getProcess()));
+
+    processService.createSparkProcessAsync(processRequest, futureResponseCallback);
+
+    try {
+      return futureResponseCallback.get();
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(
+          String.format("%s got interrupted while spawning process", this), e);
+    } catch (ExecutionException e) {
+      throw new ProcessSpawningException(e.getCause().getMessage(), e);
+    }
+
+  }
+
+  @Override
+  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Node node) throws ProcessSpawningException {
+
+    checkState(supports(taskInterface), String
+        .format("TaskInterface of type %s is not supported by %s",
+            taskInterface.getClass().getName(), this));
+
+    return (CloudiatorSingleProcess) executeRequest(userId,
+        builder(schedule, job, task, taskInterface).setNode(NODE_CONVERTER.apply(node)).build());
+  }
+
+  @Override
+  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
+
+    checkState(supports(taskInterface), String
+        .format("TaskInterface of type %s is not supported by %s",
+            taskInterface.getClass().getName(), this));
+
+    return (CloudiatorClusterProcess) executeRequest(userId,
+        builder(schedule, job, task, taskInterface).setNodes(Nodes.newBuilder()
+            .addAllNodes(nodes.stream().map(NODE_CONVERTER).collect(Collectors.toList())).build())
+            .build());
   }
 }

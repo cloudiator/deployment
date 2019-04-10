@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.persistance;
 
-public interface Service extends Behaviour {
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
+import javax.persistence.EntityManager;
 
-  boolean restart();
+class BehaviourModelRepositoryJpa extends
+    BaseModelRepositoryJpa<BehaviourModel> implements BehaviourModelRepository {
 
+  @Inject
+  protected BehaviourModelRepositoryJpa(
+      Provider<EntityManager> entityManager,
+      TypeLiteral<BehaviourModel> type) {
+    super(entityManager, type);
+  }
 }

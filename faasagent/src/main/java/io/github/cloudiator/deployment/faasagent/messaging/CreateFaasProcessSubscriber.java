@@ -11,11 +11,11 @@ import io.github.cloudiator.deployment.domain.FunctionBuilder;
 import io.github.cloudiator.deployment.domain.HttpTrigger;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.domain.Trigger;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.ApplicationTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
+import io.github.cloudiator.deployment.messaging.FaasInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.Runtime;
@@ -25,7 +25,6 @@ import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-
 import org.cloudiator.messages.General;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
 import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
@@ -103,6 +102,8 @@ public class CreateFaasProcessSubscriber implements Runnable {
                 FaasProcessCreatedResponse.newBuilder()
                     .setProcess(Process.newBuilder()
                         .setId(apiId)
+                        .setOriginId(apiId)
+                        .setTaskInterface(FaasInterface.class.getCanonicalName())
                         .setUserId(userId)
                         .setState(ProcessState.PROCESS_STATE_RUNNING)
                         .setSchedule(content.getFaas().getSchedule())
@@ -112,7 +113,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
                     .build();
             messageInterface.reply(id, faasProcessCreatedResponse);
           } catch (Exception e) {
-            
+
             final String errorMessage = MessageFormat.format(
                 "Exception {0} while processing request {1} with id {2}.",
                 e.getMessage(), // 0
@@ -147,27 +148,27 @@ public class CreateFaasProcessSubscriber implements Runnable {
     applicationTemplate.region = locationMessageRepository
         .getRegionName(request.getUserId(), function.locationId());
     applicationTemplate.functions = new ArrayList<>();
-    for (TaskInterface taskInterface : task.interfaces()) {
-      if (taskInterface instanceof FaasInterface) {
-        FaasInterface faasInterface = (FaasInterface) taskInterface;
-        LambdaTemplate lambda = new LambdaTemplate();
-        lambda.name = faasInterface.functionName();
-        lambda.codeUrl = faasInterface.sourceCodeUrl();
-        for (Trigger trigger : faasInterface.triggers()) {
-          if (trigger instanceof HttpTrigger) {
-            HttpTrigger httpTrigger = (HttpTrigger) trigger;
-            lambda.httpPath = httpTrigger.httpPath();
-            lambda.httpMethod = httpTrigger.httpMethod();
-          }
-        }
-        lambda.handler = faasInterface.handler();
-        lambda.memorySize = function.memory();
-        lambda.timeout = faasInterface.timeout();
-        lambda.runtime = convertRuntime(function.runtime());
-        lambda.env = faasInterface.functionEnvironment();
-        applicationTemplate.functions.add(lambda);
+
+    FaasInterface faasInterface = FaasInterfaceConverter.INSTANCE
+        .apply(request.getFaas().getFaasInterface());
+
+    LambdaTemplate lambda = new LambdaTemplate();
+    lambda.name = faasInterface.functionName();
+    lambda.codeUrl = faasInterface.sourceCodeUrl();
+    for (Trigger trigger : faasInterface.triggers()) {
+      if (trigger instanceof HttpTrigger) {
+        HttpTrigger httpTrigger = (HttpTrigger) trigger;
+        lambda.httpPath = httpTrigger.httpPath();
+        lambda.httpMethod = httpTrigger.httpMethod();
       }
     }
+    lambda.handler = faasInterface.handler();
+    lambda.memorySize = function.memory();
+    lambda.timeout = faasInterface.timeout();
+    lambda.runtime = convertRuntime(function.runtime());
+    lambda.env = faasInterface.functionEnvironment();
+    applicationTemplate.functions.add(lambda);
+
     return applicationTemplate;
   }
 

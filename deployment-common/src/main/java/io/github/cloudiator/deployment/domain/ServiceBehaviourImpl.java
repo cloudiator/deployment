@@ -19,7 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 
-public class ServiceBehaviourImpl implements Service {
+public class ServiceBehaviourImpl implements ServiceBehaviour {
 
   private final boolean restart;
 

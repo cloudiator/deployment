@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.List;
 
+@Deprecated
 public class ProcessGroupImpl implements ProcessGroup {
 
   private final List<CloudiatorProcess> cloudiatorProcesses;

@@ -17,22 +17,20 @@
 package io.github.cloudiator.deployment.scheduler.processes;
 
 import com.google.inject.Inject;
-import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
-import io.github.cloudiator.deployment.domain.ProcessGroupBuilder;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.messaging.FaasInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
 import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.FaasProcess;
@@ -56,46 +54,20 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public boolean supports(Task task) {
-    return task.interfaces().stream()
-        .allMatch(iface -> iface instanceof FaasInterface);
+  public boolean supports(TaskInterface taskInterface) {
+    return taskInterface instanceof FaasInterface;
   }
 
   @Override
-  public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
-      Set<Node> nodes) {
-    //Create all Lance processes of for the nodegroup
-    List<Future<CloudiatorProcess>> futures = new ArrayList<>();
+  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Node node) throws ProcessSpawningException {
 
-    for (Node node : nodes) {
-      futures.add(spawn(userId, schedule, job, task, node));
-    }
-
-    //wait until all processes are spawned
-    try {
-      List<CloudiatorProcess> spawnedFaaSProcesses = null;
-      try {
-        spawnedFaaSProcesses = CloudiatorFutures.waitForFutures(futures);
-      } catch (InterruptedException e) {
-        LOGGER.error("Interrupted while waiting for processes to spawn.", e);
-        Thread.currentThread().interrupt();
-      }
-
-      return ProcessGroupBuilder.create().generateId().userId(userId).scheduleId(schedule)
-          .addProcesses(spawnedFaaSProcesses).build();
-
-    } catch (ExecutionException e) {
-      LOGGER.error("Error while waiting for FaaSProcess to spawn!", e);
-      throw new IllegalStateException(e);
-    }
-  }
-
-  private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
-      Node node) {
     final FaasProcess faasProcess = FaasProcess.newBuilder()
         .setSchedule(schedule)
         .setJob(JOB_CONVERTER.applyBack(job))
-        .setNode(NODE_MESSAGE_CONVERTER.apply(node)).setTask(task.name()).build();
+        .setNode(NODE_MESSAGE_CONVERTER.apply(node)).setTask(task.name())
+        .setFaasInterface(FaasInterfaceConverter.INSTANCE.applyBack((FaasInterface) taskInterface))
+        .build();
     CreateFaasProcessRequest processRequest = CreateFaasProcessRequest.newBuilder()
         .setFaas(faasProcess)
         .setUserId(userId).build();
@@ -107,7 +79,22 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
 
     processService.createFaasProcessAsync(processRequest, futureResponseCallback);
 
-    return futureResponseCallback;
+    try {
+      return (CloudiatorSingleProcess) futureResponseCallback.get();
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(
+          String.format("%s got interrupted while spawning process.", this), e);
+    } catch (ExecutionException e) {
+      throw new ProcessSpawningException(e.getCause().getMessage(), e.getCause());
+    }
   }
+
+  @Override
+  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
+    throw new UnsupportedOperationException(
+        String.format("%s does not support running processes on clusters.", this));
+  }
+
 
 }

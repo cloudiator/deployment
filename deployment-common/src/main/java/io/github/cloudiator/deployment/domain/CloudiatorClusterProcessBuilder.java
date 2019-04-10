@@ -30,6 +30,7 @@ public class CloudiatorClusterProcessBuilder {
   private String userId;
   private String scheduleId;
   private String taskName;
+  private String taskInterface;
   private CloudiatorProcess.ProcessState state;
   private Set<String> nodes;
   private Type type;
@@ -46,6 +47,7 @@ public class CloudiatorClusterProcessBuilder {
     this.userId = cloudiatorClusterProcess.userId();
     this.scheduleId = cloudiatorClusterProcess.scheduleId();
     this.taskName = cloudiatorClusterProcess.taskId();
+    this.taskInterface = cloudiatorClusterProcess.taskInterface();
     this.state = cloudiatorClusterProcess.state();
     this.nodes = cloudiatorClusterProcess.nodes();
     this.type = cloudiatorClusterProcess.type();
@@ -80,6 +82,11 @@ public class CloudiatorClusterProcessBuilder {
 
   public CloudiatorClusterProcessBuilder taskName(String taskName) {
     this.taskName = taskName;
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder taskInterface(String taskInterface) {
+    this.taskInterface = taskInterface;
     return this;
   }
 
@@ -119,7 +126,8 @@ public class CloudiatorClusterProcessBuilder {
   }
 
   public CloudiatorClusterProcess build() {
-    return new CloudiatorClusterProcessImpl(id, originId, userId, scheduleId, taskName, state, type,
+    return new CloudiatorClusterProcessImpl(id, originId, userId, scheduleId, taskName,
+        taskInterface, state, type,
         nodes, diagnostic, reason);
   }
 

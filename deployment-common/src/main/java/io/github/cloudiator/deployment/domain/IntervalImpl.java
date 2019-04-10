@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
@@ -29,6 +30,7 @@ public class IntervalImpl implements Interval {
 
   IntervalImpl(TimeUnit timeUnit, long period) {
     checkNotNull(timeUnit, "timeUnit is null");
+    checkArgument(period >= 0, "period needs to be >= 0");
     this.timeUnit = timeUnit;
     this.period = period;
   }

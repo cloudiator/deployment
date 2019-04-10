@@ -21,7 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 
-public class PeriodicBehaviourImpl implements Periodic {
+public class PeriodicBehaviourImpl implements PeriodicBehaviour {
 
   private final Interval interval;
   private final CollisionHandling collisionHandling;

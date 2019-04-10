@@ -36,7 +36,9 @@ public interface CloudiatorProcess extends Identifiable, Stateful {
 
   enum Type {
     LANCE,
-    SPARK
+    SPARK,
+    FAAS,
+    UNKNOWN
   }
 
   Optional<String> originId();
@@ -44,6 +46,8 @@ public interface CloudiatorProcess extends Identifiable, Stateful {
   String scheduleId();
 
   String taskId();
+
+  String taskInterface();
 
   ProcessState state();
 

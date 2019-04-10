@@ -42,20 +42,30 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
+          .originId(processModel.getOriginId())
           .userId(processModel.getTenant().getUserId())
           .node(((ProcessSingleModel) processModel).getNode())
           .taskName(processModel.getTask())
-          .state(processModel.getState()).build();
+          .taskInterface(processModel.getTaskInterface())
+          .state(processModel.getState())
+          .diagnostic(processModel.getDiagnostic())
+          .reason(processModel.getReason())
+          .build();
     } else if (processModel instanceof ProcessClusterModel) {
 
       return CloudiatorClusterProcessBuilder.create()
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
+          .originId(processModel.getOriginId())
           .userId(processModel.getTenant().getUserId())
           .addAllNodes(((ProcessClusterModel) processModel).getNodes())
           .taskName(processModel.getTask())
-          .state(processModel.getState()).build();
+          .taskInterface(processModel.getTaskInterface())
+          .state(processModel.getState())
+          .diagnostic(processModel.getDiagnostic())
+          .reason(processModel.getReason())
+          .build();
     } else {
       throw new AssertionError(
           "Illegal type of process model " + processModel.getClass().getSimpleName());

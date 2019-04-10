@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -186,21 +187,22 @@ class LanceInterfaceImpl implements LanceInterface {
 
   @Override
   public String toString() {
-    return "LanceInterfaceImpl{" +
-        "init='" + init + '\'' +
-        ", preInstall='" + preInstall + '\'' +
-        ", install='" + install + '\'' +
-        ", postInstall='" + postInstall + '\'' +
-        ", preStart='" + preStart + '\'' +
-        ", start='" + start + '\'' +
-        ", startDetection='" + startDetection + '\'' +
-        ", stopDetection='" + stopDetection + '\'' +
-        ", postStart='" + postStart + '\'' +
-        ", preStop='" + preStop + '\'' +
-        ", stop='" + stop + '\'' +
-        ", postStop='" + postStop + '\'' +
-        ", shutdown='" + shutdown + '\'' +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("lanceContainerType", lanceContainerType)
+        .add("init", init)
+        .add("preInstall", preInstall)
+        .add("install", install)
+        .add("postInstall", postInstall)
+        .add("preStart", preStart)
+        .add("start", start)
+        .add("startDetection", startDetection)
+        .add("stopDetection", stopDetection)
+        .add("postStart", postStart)
+        .add("preStop", preStop)
+        .add("stop", stop)
+        .add("postStop", postStop)
+        .add("shutdown", shutdown)
+        .toString();
   }
 
   @Override

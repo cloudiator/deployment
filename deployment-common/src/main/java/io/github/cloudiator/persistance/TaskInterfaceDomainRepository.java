@@ -17,8 +17,8 @@
 package io.github.cloudiator.persistance;
 
 import com.google.inject.Inject;
-import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.DockerInterface;
+import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
@@ -89,14 +89,16 @@ public class TaskInterfaceDomainRepository {
     }
     return faasInterfaceModel;
   }
-  
-  private DockerTaskInterfaceModel createDockerInterfaceModel(DockerInterface domain, TaskModel taskModel) {
-    return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(),domain.environment());
+
+  private DockerTaskInterfaceModel createDockerInterfaceModel(DockerInterface domain,
+      TaskModel taskModel) {
+    return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(), domain.environment());
   }
 
   private SparkTaskInterfaceModel createSparkInterfaceModel(SparkInterface domain,
       TaskModel taskModel) {
     return new SparkTaskInterfaceModel(taskModel, domain.file(), domain.className().orElse(null),
-        domain.arguments(), domain.sparkArguments(), domain.sparkConfiguration());
+        domain.arguments(), domain.sparkArguments(), domain.sparkConfiguration(),
+        domain.processMapping());
   }
 }

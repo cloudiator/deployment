@@ -45,6 +45,9 @@ class TaskModel extends Model {
   @OneToOne
   private OptimizationModel optimizationModel;
 
+  @OneToOne
+  private BehaviourModel behaviourModel;
+
   @OneToMany(mappedBy = "task")
   private List<PortModel> ports;
 
@@ -60,13 +63,16 @@ class TaskModel extends Model {
   protected TaskModel() {
   }
 
-  public TaskModel(String name, JobModel job, OptimizationModel optimizationModel) {
+  public TaskModel(String name, JobModel job, OptimizationModel optimizationModel,
+      BehaviourModel behaviourModel) {
     checkNotNull(name, "name is null");
     checkArgument(!name.isEmpty(), "name is empty");
     checkNotNull(job, "job is null");
+    checkNotNull(behaviourModel, "behaviour model is null");
     this.name = name;
     this.jobModel = job;
     this.optimizationModel = optimizationModel;
+    this.behaviourModel = behaviourModel;
   }
 
   public String getName() {
@@ -114,5 +120,9 @@ class TaskModel extends Model {
 
   public List<RequirementModel> getRequirements() {
     return ImmutableList.copyOf(requirements);
+  }
+
+  public BehaviourModel getBehaviourModel() {
+    return behaviourModel;
   }
 }

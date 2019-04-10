@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.persistance;
+package io.github.cloudiator.deployment.scheduler.processes;
 
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.ManyToOne;
+public class ProcessSpawningException extends Exception {
 
-@Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-abstract class TaskInterfaceModel extends Model {
-
-  @ManyToOne
-  private TaskModel task;
-
-  protected TaskInterfaceModel() {
-
+  public ProcessSpawningException(String s) {
+    super(s);
   }
 
-  protected TaskInterfaceModel(TaskModel task) {
-    this.task = task;
+  public ProcessSpawningException(String s, Throwable throwable) {
+    super(s, throwable);
   }
 
+  public ProcessSpawningException(Throwable throwable) {
+    super(throwable);
+  }
 }
