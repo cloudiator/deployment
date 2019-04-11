@@ -45,7 +45,6 @@ import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.NodeCluster;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessNew;
-import org.cloudiator.messages.entities.ProcessEntities.ProcessNew.Builder;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
@@ -78,36 +77,67 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     return instantiation.equals(Instantiation.AUTOMATIC);
   }
 
-  private class NodeCallback implements FutureCallback<List<Node>> {
+  private ListenableFuture<CloudiatorProcess> submitProcess(Schedule schedule,
+      ProcessNew processNew) {
+    final CreateProcessRequest createProcessRequest = CreateProcessRequest
+        .newBuilder()
+        .setUserId(schedule.userId()).setProcess(processNew).build();
+
+    final SettableFutureResponseCallback<ProcessCreatedResponse, CloudiatorProcess> processRequestFuture = SettableFutureResponseCallback
+        .create(processCreatedResponse -> ProcessMessageConverter.INSTANCE
+            .apply(processCreatedResponse.getProcess()));
+
+    processService.createProcessAsync(createProcessRequest, processRequestFuture);
+
+    return processRequestFuture;
+  }
+
+  private class NodeCallback implements FutureCallback<Node> {
 
     private final Schedule schedule;
     private final Task task;
+    private final TaskInterface taskInterface;
 
-    private NodeCallback(Schedule schedule, Task task) {
+    private NodeCallback(Schedule schedule, Task task,
+        TaskInterface taskInterface) {
       this.schedule = schedule;
       this.task = task;
+      this.taskInterface = taskInterface;
     }
 
-    private ProcessNew.Builder buildProcess(Schedule schedule, Task task,
-        TaskInterface taskInterface) {
-      return ProcessNew.newBuilder().setSchedule(
+    @Override
+    public void onSuccess(Node node) {
+
+      LOGGER.info(String.format("Node %s was created. Starting processes.",
+          node));
+
+      final ProcessNew build = ProcessNew.newBuilder().setSchedule(
           schedule.id()).setTask(task.name())
-          .setTaskInterface(taskInterface.getClass().getCanonicalName());
+          .setTaskInterface(taskInterface.getClass().getCanonicalName())
+          .setNode(node.id()).build();
+
+      submitProcess(schedule, build);
+
     }
 
-    private ListenableFuture<CloudiatorProcess> submitProcess(
-        ProcessNew processNew) {
-      final CreateProcessRequest createProcessRequest = CreateProcessRequest
-          .newBuilder()
-          .setUserId(schedule.userId()).setProcess(processNew).build();
+    @Override
+    public void onFailure(Throwable t) {
+      throw new IllegalStateException("Unexpected exception while spawning node", t);
+    }
 
-      final SettableFutureResponseCallback<ProcessCreatedResponse, CloudiatorProcess> processRequestFuture = SettableFutureResponseCallback
-          .create(processCreatedResponse -> ProcessMessageConverter.INSTANCE
-              .apply(processCreatedResponse.getProcess()));
+  }
 
-      processService.createProcessAsync(createProcessRequest, processRequestFuture);
+  private class ClusterCallback implements FutureCallback<List<Node>> {
 
-      return processRequestFuture;
+    private final Schedule schedule;
+    private final Task task;
+    private final TaskInterface taskInterface;
+
+    private ClusterCallback(Schedule schedule, Task task,
+        TaskInterface taskInterface) {
+      this.schedule = schedule;
+      this.task = task;
+      this.taskInterface = taskInterface;
     }
 
     @Override
@@ -116,35 +146,14 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       LOGGER.info(String.format("Nodes %s were created. Starting processes.",
           nodes));
 
-      //select the interface
-      final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
-          .select(task);
-
-      switch (taskInterface.processMapping()) {
-        case SINGLE:
-          //generate a process request for each node
-
-          for (Node node : nodes) {
-            final Builder builder = buildProcess(schedule, task, taskInterface);
-            builder.setNode(node.id());
-            submitProcess(builder.build());
-          }
-          break;
-
-        case CLUSTER:
-
-          //generate a cluster process request
-
-          final Builder builder = buildProcess(schedule, task, taskInterface);
-          builder.setCluster(NodeCluster.newBuilder()
+      final ProcessNew build = ProcessNew.newBuilder().setSchedule(
+          schedule.id()).setTask(task.name())
+          .setTaskInterface(taskInterface.getClass().getCanonicalName())
+          .setCluster(NodeCluster.newBuilder()
               .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
-              .build());
-          break;
+              .build()).build();
 
-        default:
-          throw new AssertionError(
-              "Unknown process mapping " + taskInterface.processMapping());
-      }
+      submitProcess(schedule, build);
 
     }
 
@@ -152,6 +161,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     public void onFailure(Throwable t) {
       throw new IllegalStateException("Unexpected exception while spawning node", t);
     }
+
   }
 
   @Override
@@ -167,11 +177,29 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
 
       try {
-        final ListenableFuture<List<Node>> allocate = resourcePool
+        final List<ListenableFuture<Node>> allocate = resourcePool
             .allocate(schedule, task.requirements(job), task.name());
 
-        Futures.addCallback(allocate, new NodeCallback(schedule, task));
+        //select the interface
+        final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
+            .select(task);
 
+        switch (taskInterface.processMapping()) {
+          case CLUSTER:
+
+            final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocate);
+            Futures.addCallback(nodeFutures, new ClusterCallback(schedule, task, taskInterface),
+                EXECUTOR);
+            break;
+          case SINGLE:
+            for (ListenableFuture<Node> nodeFuture : allocate) {
+              Futures.addCallback(nodeFuture, new NodeCallback(schedule, task, taskInterface),
+                  EXECUTOR);
+            }
+            break;
+          default:
+            throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
+        }
 
       } catch (SchedulingException e) {
         throw new InstantiationException("Error while scheduling.", e);
