@@ -73,6 +73,7 @@ public class ProcessMessageConverter implements
         .setSchedule(cloudiatorProcess.scheduleId()).setTask(cloudiatorProcess.taskId())
         .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type()))
         .setState(PROCESS_STATE_CONVERTER.applyBack(cloudiatorProcess.state()))
+        .setTaskInterface(cloudiatorProcess.taskInterface())
     ;
 
     if (cloudiatorProcess.originId().isPresent()) {
