@@ -16,6 +16,11 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
@@ -35,8 +40,11 @@ import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeState;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,6 +161,21 @@ public class ProcessScheduler {
   }
 
   private Node getNode(String userId, String id) {
+
+    final Retryer<Node> nodeRetryer = RetryerBuilder.<Node>newBuilder()
+        .withWaitStrategy(WaitStrategies.randomWait(30, TimeUnit.SECONDS)).retryIfResult(
+            Objects::isNull)
+        .retryIfResult(input -> input != null && input.state().equals(NodeState.PENDING))
+        .withStopStrategy(StopStrategies.stopAfterDelay(2, TimeUnit.MINUTES)).build();
+
+    try {
+      return nodeRetryer.call(() -> nodeMessageRepository.getById(userId, id));
+    } catch (ExecutionException e) {
+      LOGGER.warn("Catching node with id %s failed.", e.getCause());
+    } catch (RetryException e) {
+      LOGGER.warn("Catching node with id %s failed.", e);
+    }
+
     return nodeMessageRepository.getById(userId, id);
   }
 

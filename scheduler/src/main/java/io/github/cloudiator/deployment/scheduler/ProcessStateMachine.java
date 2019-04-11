@@ -180,7 +180,7 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
           final String message = throwable != null ? throwable.getMessage() : null;
 
           return save(updateProcess(o, ProcessState.ERROR, message));
-        }).build();
+        }).errorState(ProcessState.ERROR).build();
   }
 
 
