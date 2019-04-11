@@ -129,6 +129,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             builder.setNode(node.id());
             submitProcess(builder.build());
           }
+          break;
 
         case CLUSTER:
 
@@ -138,6 +139,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
           builder.setCluster(NodeCluster.newBuilder()
               .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
               .build());
+          break;
 
         default:
           throw new AssertionError(
