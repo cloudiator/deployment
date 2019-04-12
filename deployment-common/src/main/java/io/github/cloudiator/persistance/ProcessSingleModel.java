@@ -39,10 +39,12 @@ class ProcessSingleModel extends ProcessModel {
   protected ProcessSingleModel() {
   }
 
-  public ProcessSingleModel(String domainId, ScheduleModel schedule, String task,
+  public ProcessSingleModel(String domainId, String originId, ScheduleModel schedule, String task,
+      String taskInterface,
       ProcessState state, Type type,
-      @Nullable ProcessGroupModel processGroupModel, String node) {
-    super(domainId, schedule, task, state, type, processGroupModel);
+      String node, @Nullable String diagnostic,
+      @Nullable String reason) {
+    super(domainId, originId, schedule, task, taskInterface, state, type, diagnostic, reason);
 
     this.node = node;
   }

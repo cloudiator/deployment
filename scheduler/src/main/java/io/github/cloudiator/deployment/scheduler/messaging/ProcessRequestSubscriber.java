@@ -18,25 +18,30 @@ package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
-import io.github.cloudiator.deployment.messaging.ProcessGroupMessageConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
+import io.github.cloudiator.deployment.scheduler.ProcessStateMachine;
 import io.github.cloudiator.deployment.scheduler.processes.ProcessSpawner;
 import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.domain.NodeState;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
+import org.cloudiator.messages.entities.ProcessEntities.ProcessNew;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
@@ -54,8 +59,8 @@ public class ProcessRequestSubscriber implements Runnable {
   private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
-  private static final ProcessGroupMessageConverter PROCESS_GROUP_MESSAGE_CONVERTER = new ProcessGroupMessageConverter();
   private final ProcessDomainRepository processDomainRepository;
+  private final ProcessStateMachine processStateMachine;
 
   @Inject
   public ProcessRequestSubscriber(ProcessService processService,
@@ -64,7 +69,8 @@ public class ProcessRequestSubscriber implements Runnable {
       ScheduleDomainRepository scheduleDomainRepository,
       ProcessSpawner processSpawner,
       NodeMessageRepository nodeMessageRepository,
-      ProcessDomainRepository processDomainRepository) {
+      ProcessDomainRepository processDomainRepository,
+      ProcessStateMachine processStateMachine) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.jobMessageRepository = jobMessageRepository;
@@ -72,6 +78,7 @@ public class ProcessRequestSubscriber implements Runnable {
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
     this.processDomainRepository = processDomainRepository;
+    this.processStateMachine = processStateMachine;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -80,19 +87,42 @@ public class ProcessRequestSubscriber implements Runnable {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
-  /*
-  @SuppressWarnings("WeakerAccess")
   @Transactional
-  void persistProcess(CloudiatorProcess cloudiatorProcess, String userId) {
-    processDomainRepository.save(cloudiatorProcess, userId);
+  CloudiatorProcess persistProcess(CloudiatorProcess process) {
+    processDomainRepository.save(process);
+    return process;
   }
-  */
 
-  @SuppressWarnings("WeakerAccess")
-  @Transactional
-  void persistProcessGroup(ProcessGroup processGroup) {
-    processDomainRepository.save(processGroup);
+  private CloudiatorProcess initializeProcess(CreateProcessRequest createProcessRequest) {
+
+    final ProcessNew process = createProcessRequest.getProcess();
+
+    switch (process.getRunsOnCase()) {
+      case CLUSTER:
+
+        return CloudiatorClusterProcessBuilder.create().id(UUID.randomUUID().toString())
+            .userId(createProcessRequest.getUserId()).scheduleId(process.getSchedule())
+            .taskInterface(process.getTaskInterface()).taskName(process.getTask())
+            .addAllNodes(process.getCluster().getNodesList()).state(
+                ProcessState.PENDING).type(
+                Type.UNKNOWN).build();
+
+      case NODE:
+
+        return CloudiatorSingleProcessBuilder.create().id(UUID.randomUUID().toString())
+            .userId(createProcessRequest.getUserId()).scheduleId(process.getSchedule())
+            .taskInterface(process.getTaskInterface()).taskName(process.getTask())
+            .node(process.getNode()).state(
+                ProcessState.PENDING).type(
+                Type.UNKNOWN).build();
+
+      case RUNSON_NOT_SET:
+      default:
+        throw new AssertionError("Unknown runsOn case " + process.getRunsOnCase());
+    }
+
   }
+
 
   @Override
   public void run() {
@@ -122,10 +152,22 @@ public class ProcessRequestSubscriber implements Runnable {
 
           final String jobId = schedule.job();
           final String taskName = content.getProcess().getTask();
-          final Set<String> nodeIds = new HashSet<>(content.getProcess().getNodesList());
+
+          final Set<String> nodeIds = new HashSet<>();
+          switch (content.getProcess().getRunsOnCase()) {
+            case NODE:
+              nodeIds.add(content.getProcess().getNode());
+              break;
+            case CLUSTER:
+              nodeIds.addAll(content.getProcess().getCluster().getNodesList());
+              break;
+            case RUNSON_NOT_SET:
+            default:
+              throw new AssertionError(
+                  "Unknown process type " + content.getProcess().getRunsOnCase());
+          }
 
           //retrieve the nodes
-          final Set<Node> nodes = new HashSet<>();
           for (String nodeId : nodeIds) {
             final Node node = nodeMessageRepository.getById(userId, nodeId);
             if (node == null) {
@@ -135,16 +177,6 @@ public class ProcessRequestSubscriber implements Runnable {
                       .build());
               return;
             }
-            if (!node.state().equals(NodeState.RUNNING)) {
-              messageInterface.reply(ProcessCreatedResponse.class, id,
-                  Error.newBuilder().setCode(400)
-                      .setMessage(String
-                          .format("Node %s with the id %s is in illegal state %s.", node, nodeId,
-                              node.state()))
-                      .build());
-              return;
-            }
-            nodes.add(node);
           }
 
           LOGGER.debug(String.format("Retrieving job for process request %s.", id));
@@ -180,22 +212,20 @@ public class ProcessRequestSubscriber implements Runnable {
               .debug(String.format("Found task %s for process request %s.", task, id));
 
           LOGGER.info(String.format(
-              "%s is spawning a new cloudiator process for user %s using processSpawner %s, schedule %s, job %s, task %s and nodes %s.",
-              this, userId, processSpawner, schedule, job, task, nodeIds));
+              "%s is spawning a new cloudiator process for user %s, schedule %s, job %s, task %s and nodes %s.",
+              this, userId, schedule, job, task, nodeIds));
 
-          //convert nodes
+          final CloudiatorProcess cloudiatorProcess = initializeProcess(content);
 
-          final ProcessGroup processGroup = processSpawner
-              .spawn(userId, scheduleId, job, task, nodes);
+          persistProcess(cloudiatorProcess);
 
-          //persist processes via process group
-          persistProcessGroup(processGroup);
+          final CloudiatorProcess created = processStateMachine
+              .apply(cloudiatorProcess, ProcessState.RUNNING, null);
 
-          final ProcessCreatedResponse processCreatedResponse = ProcessCreatedResponse.newBuilder()
-              .setProcessGroup(PROCESS_GROUP_MESSAGE_CONVERTER.applyBack(processGroup))
-              .build();
+          final ProcessCreatedResponse build = ProcessCreatedResponse.newBuilder()
+              .setProcess(PROCESS_MESSAGE_CONVERTER.applyBack(created)).build();
 
-          messageInterface.reply(id, processCreatedResponse);
+          messageInterface.reply(id, build);
 
         } catch (Exception e) {
           final String errorMessage = String

@@ -21,4 +21,6 @@ package io.github.cloudiator.deployment.domain;
  */
 public interface TaskInterface {
 
+  ProcessMapping processMapping();
+
 }

@@ -27,6 +27,7 @@ public class CloudiatorSingleProcessBuilder {
   private String userId;
   private String scheduleId;
   private String taskName;
+  private String taskInterface;
   private CloudiatorProcess.ProcessState state;
   private String node;
   private Type type;
@@ -42,6 +43,7 @@ public class CloudiatorSingleProcessBuilder {
     this.userId = cloudiatorSingleProcess.userId();
     this.scheduleId = cloudiatorSingleProcess.scheduleId();
     this.taskName = cloudiatorSingleProcess.taskId();
+    this.taskInterface = cloudiatorSingleProcess.taskInterface();
     this.state = cloudiatorSingleProcess.state();
     this.node = cloudiatorSingleProcess.node();
     this.type = cloudiatorSingleProcess.type();
@@ -78,6 +80,11 @@ public class CloudiatorSingleProcessBuilder {
     return this;
   }
 
+  public CloudiatorSingleProcessBuilder taskInterface(String taskInterface) {
+    this.taskInterface = taskInterface;
+    return this;
+  }
+
   public CloudiatorSingleProcessBuilder scheduleId(String scheduleId) {
     this.scheduleId = scheduleId;
     return this;
@@ -109,7 +116,8 @@ public class CloudiatorSingleProcessBuilder {
   }
 
   public CloudiatorSingleProcess build() {
-    return new CloudiatorSingleProcessImpl(id, originId, userId, scheduleId, taskName, state, type,
+    return new CloudiatorSingleProcessImpl(id, originId, userId, scheduleId, taskName,
+        taskInterface, state, type,
         node,
         diagnostic, reason);
   }

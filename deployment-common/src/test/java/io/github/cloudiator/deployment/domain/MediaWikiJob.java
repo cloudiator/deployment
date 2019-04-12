@@ -40,7 +40,6 @@ public class MediaWikiJob {
 
   public static Task wikiTask() {
 
-
     final LanceInterface wikiInterface = LanceInterfaceBuilder.newBuilder()
         .containerType(LanceContainerType.DOCKER).preInstall("./preInstall")
         .install("./install").postInstall("./postInstall").start("./start").build();
@@ -52,10 +51,11 @@ public class MediaWikiJob {
     final OclRequirement wikiRequirementImage = OclRequirement
         .of("nodes->forAll(image.providerId = '83f41918-2d73-49dd-8f42-4983fbdbf705')");
 
-    return TaskBuilder.newBuilder().name("wiki").addPort(wikiProvided()).addPort(wikiRequiresDatabase())
+    return TaskBuilder.newBuilder().name("wiki").addPort(wikiProvided())
+        .addPort(wikiRequiresDatabase())
         .addInterface(wikiInterface)
         .addRequirement(wikiRequirementCores).addRequirement(wikiRequirementRam)
-        .addRequirement(wikiRequirementImage).build();
+        .addRequirement(wikiRequirementImage).behaviour(service()).build();
 
   }
 
@@ -80,7 +80,8 @@ public class MediaWikiJob {
 
     return TaskBuilder.newBuilder().name("database").addPort(databaseProvided())
         .addInterface(databaseInterface).addRequirement(databaseRequirementCores)
-        .addRequirement(databaseRequirementImage).addRequirement(databaseRequirementRam).build();
+        .addRequirement(databaseRequirementImage).addRequirement(databaseRequirementRam)
+        .behaviour(service()).build();
 
   }
 
@@ -106,9 +107,11 @@ public class MediaWikiJob {
     final OclRequirement lbRequirementImage = OclRequirement
         .of("nodes->forAll(image.providerId = '83f41918-2d73-49dd-8f42-4983fbdbf705')");
 
-    return TaskBuilder.newBuilder().name("loadbalancer").addPort(lbProv()).addPort(loadbalancerreqwiki())
+    return TaskBuilder.newBuilder().name("loadbalancer").addPort(lbProv())
+        .addPort(loadbalancerreqwiki())
         .addInterface(lbInterface).addRequirement(lbRequirementCores)
-        .addRequirement(lbRequirementRam).addRequirement(lbRequirementImage).build();
+        .addRequirement(lbRequirementRam).addRequirement(lbRequirementImage).behaviour(service())
+        .build();
   }
 
   public static Communication wikiWithLB() {
@@ -127,6 +130,10 @@ public class MediaWikiJob {
         .addTask(wikiTask()).addTask(databaseTask()).addTask(loadBalancerTask())
         .addCommunication(wikiWithDB()).addCommunication(wikiWithLB())
         .build();
+  }
+
+  public static Behaviour service() {
+    return Behaviours.service(true);
   }
 
 

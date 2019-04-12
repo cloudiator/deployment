@@ -12,7 +12,7 @@ import javax.persistence.Query;
 /**
  * Created by Daniel Seybold on 22.11.2018.
  */
-
+@Deprecated
 public class ProcessGroupModelRepositoryJpa extends BaseModelRepositoryJpa<ProcessGroupModel> implements
     ProcessGroupModelRepository {
 

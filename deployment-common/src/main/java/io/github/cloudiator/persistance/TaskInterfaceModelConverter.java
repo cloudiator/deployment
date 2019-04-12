@@ -17,9 +17,17 @@
 package io.github.cloudiator.persistance;
 
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
-import io.github.cloudiator.deployment.domain.*;
-import javax.annotation.Nullable;
+import io.github.cloudiator.deployment.domain.DockerInterface;
+import io.github.cloudiator.deployment.domain.DockerInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.FaasInterface;
+import io.github.cloudiator.deployment.domain.FaasInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.LanceInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.SparkInterface;
+import io.github.cloudiator.deployment.domain.SparkInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.TaskInterface;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 class TaskInterfaceModelConverter implements
     OneWayConverter<TaskInterfaceModel, TaskInterface> {
@@ -79,7 +87,7 @@ class TaskInterfaceModelConverter implements
         .functionEnvironment(faasTaskInterfaceModel.getFunctionEnvironment())
         .build();
   }
-  
+
   private DockerInterface dockerInterface(DockerTaskInterfaceModel dockerTaskInterfaceModel) {
     return DockerInterfaceBuilder.newBuilder()
         .dockerImage(dockerTaskInterfaceModel.getDockerImage())
@@ -91,6 +99,7 @@ class TaskInterfaceModelConverter implements
         .className(sparkTaskInterfaceModel.getClassName())
         .arguments(sparkTaskInterfaceModel.getArguments())
         .sparkArguments(sparkTaskInterfaceModel.getSparkArguments())
-        .sparkConfiguration(sparkTaskInterfaceModel.getSparkConfiguration()).build();
+        .sparkConfiguration(sparkTaskInterfaceModel.getSparkConfiguration())
+        .processMapping(sparkTaskInterfaceModel.getProcessMapping()).build();
   }
 }

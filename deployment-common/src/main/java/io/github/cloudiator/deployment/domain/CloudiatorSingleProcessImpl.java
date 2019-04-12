@@ -19,9 +19,11 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
   CloudiatorSingleProcessImpl(String id, @Nullable String originId, String userId,
       String scheduleId,
       String taskName,
+      String taskInterface,
       ProcessState state, Type type, String node, @Nullable String diagnostic,
       @Nullable String reason) {
-    super(id, originId, userId, scheduleId, taskName, state, type, diagnostic, reason);
+    super(id, originId, userId, scheduleId, taskName, taskInterface, state, type, diagnostic,
+        reason);
 
     checkNotNull(node, "node is null");
     checkArgument(!node.isEmpty(), "node is empty");

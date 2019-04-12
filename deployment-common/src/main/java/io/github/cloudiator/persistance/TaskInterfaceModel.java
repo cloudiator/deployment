@@ -23,7 +23,7 @@ import javax.persistence.ManyToOne;
 
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-class TaskInterfaceModel extends Model {
+abstract class TaskInterfaceModel extends Model {
 
   @ManyToOne
   private TaskModel task;

@@ -15,6 +15,7 @@ public class SparkInterfaceBuilder {
   private List<String> arguments;
   private Map<String, String> sparkArguments;
   private Map<String, String> sparkConfiguration;
+  private ProcessMapping processMapping;
 
   private SparkInterfaceBuilder() {
     arguments = new LinkedList<>();
@@ -71,9 +72,15 @@ public class SparkInterfaceBuilder {
     return this;
   }
 
+  public SparkInterfaceBuilder processMapping(ProcessMapping processMapping) {
+    this.processMapping = processMapping;
+    return this;
+  }
+
 
   public SparkInterface build() {
-    return new SparkInterfaceImpl(file, className, arguments, sparkArguments, sparkConfiguration);
+    return new SparkInterfaceImpl(file, className, arguments, sparkArguments, sparkConfiguration,
+        processMapping);
   }
 
 

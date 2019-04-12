@@ -25,7 +25,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import org.cloudiator.messages.entities.ProcessEntities;
-import org.cloudiator.messages.entities.ProcessEntities.NodeGroup;
+import org.cloudiator.messages.entities.ProcessEntities.NodeCluster;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.Process.Builder;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessState;
@@ -57,7 +57,7 @@ public class ProcessMessageConverter implements
     } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
       //Spark processes
       final Builder builder = Process.newBuilder()
-          .setNodes(NodeGroup.newBuilder()
+          .setCluster(NodeCluster.newBuilder()
               .addAllNodes(((CloudiatorClusterProcess) cloudiatorProcess).nodes()).build());
 
       return finishBuilding(cloudiatorProcess, builder);
@@ -73,7 +73,12 @@ public class ProcessMessageConverter implements
         .setSchedule(cloudiatorProcess.scheduleId()).setTask(cloudiatorProcess.taskId())
         .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type()))
         .setState(PROCESS_STATE_CONVERTER.applyBack(cloudiatorProcess.state()))
+        .setTaskInterface(cloudiatorProcess.taskInterface())
     ;
+
+    if (cloudiatorProcess.originId().isPresent()) {
+      builder.setOriginId(cloudiatorProcess.originId().get());
+    }
 
     if (cloudiatorProcess.reason().isPresent()) {
       builder.setReason(cloudiatorProcess.reason().get());
@@ -94,12 +99,18 @@ public class ProcessMessageConverter implements
         final CloudiatorSingleProcessBuilder cloudiatorSingleProcessBuilder = CloudiatorSingleProcessBuilder
             .create()
             .id(process.getId())
+            .originId(process.getOriginId())
             .userId(process.getUserId())
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
+            .taskInterface(process.getTaskInterface())
             .node(process.getNode())
             .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
+
+        if (!Strings.isNullOrEmpty(process.getOriginId())) {
+          cloudiatorSingleProcessBuilder.originId(process.getOriginId());
+        }
 
         if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
           cloudiatorSingleProcessBuilder.diagnostic(process.getDiagnostic());
@@ -111,16 +122,22 @@ public class ProcessMessageConverter implements
 
         return cloudiatorSingleProcessBuilder.build();
 
-      case NODES:
+      case CLUSTER:
         final CloudiatorClusterProcessBuilder cloudiatorClusterProcessBuilder = CloudiatorClusterProcessBuilder
             .create()
             .id(process.getId())
+            .originId(process.getOriginId())
             .userId(process.getUserId())
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
-            .addAllNodes(process.getNodes().getNodesList())
+            .taskInterface(process.getTaskInterface())
+            .addAllNodes(process.getCluster().getNodesList())
             .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
+
+        if (!Strings.isNullOrEmpty(process.getOriginId())) {
+          cloudiatorClusterProcessBuilder.originId(process.getOriginId());
+        }
 
         if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
           cloudiatorClusterProcessBuilder.diagnostic(process.getDiagnostic());
@@ -201,6 +218,10 @@ public class ProcessMessageConverter implements
           return ProcessType.LANCE;
         case SPARK:
           return ProcessType.SPARK;
+        case FAAS:
+          return ProcessType.FAAS;
+        case UNKNOWN:
+          return ProcessType.UNKNOWN;
         default:
           throw new AssertionError("Unknown type: " + type);
       }
@@ -213,6 +234,10 @@ public class ProcessMessageConverter implements
           return Type.SPARK;
         case LANCE:
           return Type.LANCE;
+        case FAAS:
+          return Type.FAAS;
+        case UNKNOWN:
+          return Type.UNKNOWN;
         case UNRECOGNIZED:
         default:
           throw new AssertionError("Unknown process type: " + processType);

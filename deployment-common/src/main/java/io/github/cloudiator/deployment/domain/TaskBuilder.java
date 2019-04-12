@@ -29,6 +29,7 @@ public class TaskBuilder {
   private Set<TaskInterface> interfaces;
   private Set<Requirement> requirements;
   private Optimization optimization;
+  private Behaviour behaviour;
 
   private TaskBuilder() {
     ports = new HashSet<>();
@@ -80,8 +81,13 @@ public class TaskBuilder {
     return this;
   }
 
+  public TaskBuilder behaviour(Behaviour behaviour) {
+    this.behaviour = behaviour;
+    return this;
+  }
+
   public Task build() {
-    return new TaskImpl(name, ports, interfaces, requirements, optimization);
+    return new TaskImpl(name, ports, interfaces, requirements, optimization, behaviour);
   }
 
 }

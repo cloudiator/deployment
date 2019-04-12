@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 /**
  * Created by Daniel Seybold on 22.11.2018.
  */
+@Deprecated
 public class ProcessGroupConverter implements OneWayConverter<ProcessGroupModel, ProcessGroup> {
 
   private final ProcessModelConverter processModelConverter = ProcessModelConverter.INSTANCE;

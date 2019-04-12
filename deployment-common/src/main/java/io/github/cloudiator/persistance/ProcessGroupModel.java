@@ -16,6 +16,7 @@ import javax.persistence.OneToMany;
  */
 
 @Entity
+@Deprecated
 class ProcessGroupModel extends Model {
 
   @Column(nullable = false)

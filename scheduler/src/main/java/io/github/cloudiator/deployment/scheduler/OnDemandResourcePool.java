@@ -18,7 +18,6 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -27,7 +26,6 @@ import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -65,7 +63,7 @@ public class OnDemandResourcePool implements ResourcePool {
   }
 
   @Override
-  public ListenableFuture<List<Node>> allocate(Schedule schedule,
+  public List<ListenableFuture<Node>> allocate(Schedule schedule,
       Iterable<? extends Requirement> requirements, @Nullable String name)
       throws SchedulingException {
 
@@ -95,7 +93,7 @@ public class OnDemandResourcePool implements ResourcePool {
       }
 
       //noinspection UnstableApiUsage
-      return Futures.allAsList(nodeFutures);
+      return nodeFutures;
 
 
     } catch (MatchmakingException e) {

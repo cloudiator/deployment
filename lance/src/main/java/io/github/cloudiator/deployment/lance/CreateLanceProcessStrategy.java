@@ -37,6 +37,7 @@ import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.domain.Node;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -87,26 +88,25 @@ public class CreateLanceProcessStrategy {
   }
 
 
-  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, Node node) {
+  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task, Node node,
+      TaskInterface taskInterface) {
 
     LOGGER.info(String
         .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
             userId, schedule, task, node));
-    ContainerType containerType = ContainerType.PLAIN;
 
-    if (usesLanceInterface(task)) {
-      containerType =
+    if (taskInterface instanceof LanceInterface) {
+      ContainerType containerType =
           deriveContainerType(task.interfaceOfType(LanceInterface.class), node);
       LOGGER.debug(
           "Executing lance installation strategy for a process connected with a LanceInterface");
       lanceInstallationStrategy.execute(userId, node, containerType);
-    } else if (usesDockerInterface(task)) {
+    } else if (taskInterface instanceof DockerInterface) {
       LOGGER.debug(
           "Executing lance installation strategy for a process connected with a DockerInterface");
       lanceInstallationStrategy.execute(userId, node);
     } else {
-      throw new IllegalStateException(
-          "Wrong task interface submitted. Must be either LanceInterface or DockerInterface");
+      throw new AssertionError("Unknown task interface type " + taskInterface.getClass().getName());
     }
 
     final LifecycleClient lifecycleClient = lanceClientConnector.getLifecycleClient(
@@ -146,18 +146,17 @@ public class CreateLanceProcessStrategy {
     LOGGER.debug(String.format("Initialized deployment context %s.", deploymentContext));
 
     DeploymentInfo deplInfo = new DeploymentInfo(task, job, deploymentContext, schedule, node,
-        userId);
+        userId, taskInterface);
 
-    if (usesLanceInterface(task)) {
+    if (taskInterface instanceof LanceInterface) {
+      ContainerType containerType =
+          deriveContainerType(task.interfaceOfType(LanceInterface.class), node);
       LOGGER.debug("Deploying a LifecycleComponent for a " + containerType
           + " container connected with a LanceInterface");
       return deployLifecycleComponent(deplInfo, lifecycleClient, containerType);
-    } else if (usesDockerInterface(task)) {
+    } else {
       LOGGER.debug("Deploying a DockerComponent for a container connected with a DockerInterface");
       return deployDockerComponent(deplInfo, lifecycleClient);
-    } else {
-      throw new IllegalStateException(
-          "Wrong task interface submitted. Must be either LanceInterface or DockerInterface");
     }
   }
 
@@ -233,13 +232,13 @@ public class CreateLanceProcessStrategy {
     try {
       componentInstanceId = deployLogic.call();
     } catch (Exception e) {
-      failProcess(null, deploymentInfo, e);
+      return failProcess(null, deploymentInfo, e);
     }
 
     try {
       waitForDeployment(lifecycleClient, componentInstanceId);
     } catch (Exception e) {
-      failProcess(componentInstanceId, deploymentInfo, e);
+      return failProcess(componentInstanceId, deploymentInfo, e);
     }
 
     return convertToProcess(componentInstanceId, deploymentInfo);
@@ -284,8 +283,9 @@ public class CreateLanceProcessStrategy {
             "Client deployed the process of task %s with component instance id %s successfully",
             deploymentInfo.getTask(), cId));
 
-    return CloudiatorSingleProcessBuilder.create().id(cId.toString())
+    return CloudiatorSingleProcessBuilder.create().id(cId.toString()).originId(cId.toString())
         .state(ProcessState.RUNNING)
+        .taskInterface(deploymentInfo.getTaskInterface().getClass().getCanonicalName())
         .userId(deploymentInfo.getUserId())
         .node(deploymentInfo.getNode().id())
         .type(Type.LANCE)
@@ -308,11 +308,12 @@ public class CreateLanceProcessStrategy {
             "Exception occurred while deployment the task %s. InstanceId is %s. Exception was %s.",
             deploymentInfo.getTask(), id, e.getMessage()), e);
 
-    return CloudiatorSingleProcessBuilder.create().id(id)
+    return CloudiatorSingleProcessBuilder.create().id(id).originId(id)
         .state(ProcessState.ERROR)
         .userId(deploymentInfo.getUserId())
         .node(deploymentInfo.getNode().id())
         .type(Type.LANCE)
+        .taskInterface(deploymentInfo.getTaskInterface().getClass().getCanonicalName())
         .diagnostic(e.getMessage())
         .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).build();
   }
@@ -341,30 +342,6 @@ public class CreateLanceProcessStrategy {
     }
   }
 
-  private boolean usesLanceInterface(Task task) {
-    try {
-      task.interfaceOfType(LanceInterface.class);
-      return true;
-    } catch (IllegalArgumentException e) {
-      LOGGER
-          .debug(
-              "Provided task does not contain a LanceInterface. Skip creating a process for a task supporting a LanceInterface...");
-      return false;
-    }
-  }
-
-  private boolean usesDockerInterface(Task task) {
-    try {
-      task.interfaceOfType(DockerInterface.class);
-      return true;
-    } catch (IllegalArgumentException e) {
-      LOGGER
-          .debug(
-              "Provided task does not contain a DockerInterface. Skip creating a process for a task supporting a DockerInterface...");
-      return false;
-    }
-  }
-
   private static class DeploymentInfo {
 
     private final Task task;
@@ -373,15 +350,17 @@ public class CreateLanceProcessStrategy {
     private final String schedule;
     private final Node node;
     private final String userId;
+    private final TaskInterface taskInterface;
 
     private DeploymentInfo(Task task, Job job, DeploymentContext deploymentContext,
-        String schedule, Node node, String userId) {
+        String schedule, Node node, String userId, TaskInterface taskInterface) {
       this.task = task;
       this.job = job;
       this.deploymentContext = deploymentContext;
       this.schedule = schedule;
       this.node = node;
       this.userId = userId;
+      this.taskInterface = taskInterface;
     }
 
     public Task getTask() {
@@ -406,6 +385,10 @@ public class CreateLanceProcessStrategy {
 
     public String getUserId() {
       return userId;
+    }
+
+    public TaskInterface getTaskInterface() {
+      return taskInterface;
     }
   }
 }

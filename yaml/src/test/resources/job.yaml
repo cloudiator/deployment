@@ -3,7 +3,9 @@ job:
   name: mediawiki
   tasks:
   - name: loadbalancer
-    taskType: SERVICE
+    behaviour:
+      type: ServiceBehaviour
+      restart: true
     ports:
     - type: PortProvided
       name: LBPROV
@@ -29,7 +31,9 @@ job:
     - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
       type: OclRequirement
   - name: wiki
-    taskType: SERVICE
+    behaviour:
+      type: ServiceBehaviour
+      restart: true
     ports:
     - type: PortRequired
       name: WIKIREQMARIADB
@@ -55,7 +59,9 @@ job:
     - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
       type: OclRequirement
   - name: database
-    taskType: SERVICE
+    behaviour:
+      type: ServiceBehaviour
+      restart: true
     ports:
     - type: PortProvided
       name: MARIADBPROV

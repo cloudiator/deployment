@@ -34,7 +34,10 @@ import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessScheduler;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessSpawningException;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.cloudiator.messages.Process.ProcessEvent;
 import org.cloudiator.messaging.services.ProcessService;
@@ -48,11 +51,13 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
   private final ErrorAwareStateMachine<CloudiatorProcess> stateMachine;
   private final ProcessDomainRepository processDomainRepository;
   private final ProcessKiller processKiller;
+  private final ProcessScheduler processScheduler;
 
   @Inject
   public ProcessStateMachine(ProcessService processService,
       ProcessDomainRepository processDomainRepository,
-      ProcessKiller processKiller) {
+      ProcessKiller processKiller,
+      ProcessScheduler processScheduler) {
     this.processDomainRepository = processDomainRepository;
 
     //noinspection unchecked
@@ -97,6 +102,7 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
         })
         .build();
     this.processKiller = processKiller;
+    this.processScheduler = processScheduler;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -143,9 +149,15 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
   private TransitionAction<CloudiatorProcess> pendingToRunning() {
 
     return (o, arguments) -> {
-      final CloudiatorProcess running = updateProcess(o, ProcessState.DELETED, null);
-      save(running);
-      return running;
+
+      try {
+        processScheduler.schedule(o);
+        final CloudiatorProcess running = updateProcess(o, ProcessState.RUNNING, null);
+        save(running);
+        return running;
+      } catch (ProcessSpawningException e) {
+        throw new ExecutionException("Error while scheduling process.", e);
+      }
     };
   }
 
@@ -168,7 +180,7 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
           final String message = throwable != null ? throwable.getMessage() : null;
 
           return save(updateProcess(o, ProcessState.ERROR, message));
-        }).build();
+        }).errorState(ProcessState.ERROR).build();
   }
 
 

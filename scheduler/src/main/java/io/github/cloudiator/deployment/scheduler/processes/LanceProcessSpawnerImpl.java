@@ -16,28 +16,29 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
-import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
-import io.github.cloudiator.deployment.domain.ProcessGroupBuilder;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.messaging.DockerInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.JobConverter;
+import io.github.cloudiator.deployment.messaging.LanceInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import org.cloudiator.messages.Process.CreateLanceProcessRequest;
 import org.cloudiator.messages.Process.LanceProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.LanceProcess;
+import org.cloudiator.messages.entities.ProcessEntities.LanceProcess.Builder;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
@@ -58,82 +59,65 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public boolean supports(Task task) {
-    try {
-      task.interfaceOfType(LanceInterface.class);
-      return true;
-    } catch (IllegalArgumentException e) {
-      LOGGER
-          .debug(
-              "Provided task does not contain a LanceInterface. Checking for DockerInterface...");
-    }
-    try {
-      task.interfaceOfType(DockerInterface.class);
-      return true;
-    } catch (IllegalArgumentException e) {
-      LOGGER
-          .debug(
-              "Provided task does neither contain a LanceInterface nor DockerInterface! Skipping LanceProcessSpawner!");
-      return false;
-    }
+  public boolean supports(TaskInterface taskInterface) {
+    return taskInterface instanceof LanceInterface || taskInterface instanceof DockerInterface;
   }
 
   @Override
-  public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
-      Set<Node> nodes) {
-
-    //Create all Lance processes of for the nodegroup
-    List<Future<CloudiatorProcess>> futures = new ArrayList<>();
-
-    for (Node node : nodes) {
-      futures.add(spawn(userId, schedule, job, task, node));
-    }
-
-    //wait until all processes are spawned
-    try {
-      List<CloudiatorProcess> spawnedLanceProcesses = null;
-      try {
-        spawnedLanceProcesses = CloudiatorFutures.waitForFutures(futures);
-      } catch (InterruptedException e) {
-        LOGGER.error("Interrupted while waiting for processes to spawn", e);
-        Thread.currentThread().interrupt();
-      }
-
-      return ProcessGroupBuilder.create().generateId().userId(userId).scheduleId(schedule)
-          .addProcesses(spawnedLanceProcesses).build();
-
-    } catch (ExecutionException e) {
-      LOGGER.error("Error while waiting for LanceProcess to spawn!", e);
-      throw new IllegalStateException(e);
-    }
-
-
+  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Set<Node> nodes) {
+    throw new UnsupportedOperationException(
+        String.format("%s does not support running processes on clusters.", this));
   }
 
 
-  private Future<CloudiatorProcess> spawn(String userId, String schedule, Job job, Task task,
-      Node node) {
+  @Override
+  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface,
+      Node node) throws ProcessSpawningException {
+
+    checkState(supports(taskInterface),
+        String.format("%s does not support task interface %s.", this, taskInterface));
 
     LOGGER.info(String
         .format("%s is spawning a new process for user: %s, Schedule %s, Task %s on Node %s", this,
             userId, schedule, task, node));
 
-    final LanceProcess lanceProcess = LanceProcess.newBuilder()
+    final Builder builder = LanceProcess.newBuilder()
         .setSchedule(schedule)
         .setTask(task.name())
         .setJob(JOB_CONVERTER.applyBack(job))
-        .setNode(NODE_TO_NODE_MESSAGE_CONVERTER.apply(node)).build();
-    final CreateLanceProcessRequest processRequest = CreateLanceProcessRequest.newBuilder()
-        .setLance(lanceProcess).setUserId(userId).build();
+        .setNode(NODE_TO_NODE_MESSAGE_CONVERTER.apply(node));
 
-    SettableFutureResponseCallback<LanceProcessCreatedResponse, CloudiatorProcess> futureResponseCallback = SettableFutureResponseCallback
+    if (taskInterface instanceof LanceInterface) {
+      builder.setLanceInterface(LanceInterfaceConverter.INSTANCE.applyBack(
+          (LanceInterface) taskInterface));
+    } else if (taskInterface instanceof DockerInterface) {
+      builder.setDockerInterface(DockerInterfaceConverter.INSTANCE.applyBack(
+          (DockerInterface) taskInterface));
+    } else {
+      throw new AssertionError(String
+          .format("Illegal type %s of task interface not supported by %s.",
+              taskInterface.getClass().getName(), this));
+    }
+
+    final CreateLanceProcessRequest processRequest = CreateLanceProcessRequest.newBuilder()
+        .setLance(builder.build()).setUserId(userId).build();
+
+    SettableFutureResponseCallback<LanceProcessCreatedResponse, CloudiatorSingleProcess> futureResponseCallback = SettableFutureResponseCallback
         .create(
-            lanceProcessCreatedResponse -> PROCESS_MESSAGE_CONVERTER
+            lanceProcessCreatedResponse -> (CloudiatorSingleProcess) PROCESS_MESSAGE_CONVERTER
                 .apply(lanceProcessCreatedResponse.getProcess()));
 
     processService.createLanceProcessAsync(processRequest, futureResponseCallback);
 
-    return futureResponseCallback;
+    try {
+      return futureResponseCallback.get();
+    } catch (InterruptedException e) {
+      throw new IllegalStateException("Execution of process spawning got interrupted.");
+    } catch (ExecutionException e) {
+      throw new ProcessSpawningException(e.getCause().getMessage(), e);
+    }
 
   }
 
@@ -141,4 +125,6 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
   public String toString() {
     return MoreObjects.toStringHelper(this).toString();
   }
+
+
 }

@@ -28,6 +28,6 @@ import org.cloudiator.matchmaking.domain.Requirement;
 
 public interface ResourcePool {
 
-  ListenableFuture<List<Node>> allocate(Schedule schedule,
+  List<ListenableFuture<Node>> allocate(Schedule schedule,
       Iterable<? extends Requirement> requirements, @Nullable String name) throws SchedulingException;
 }

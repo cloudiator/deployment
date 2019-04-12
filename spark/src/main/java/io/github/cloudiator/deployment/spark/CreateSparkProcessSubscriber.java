@@ -3,8 +3,10 @@ package io.github.cloudiator.deployment.spark;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
+import io.github.cloudiator.deployment.messaging.SparkInterfaceConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.Set;
@@ -54,16 +56,33 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final Job job = JOB_CONVERTER.apply(content.getSpark().getJob());
             final String task = content.getSpark().getTask();
 
-            Set<Node> nodes = content.getSpark().getNodesList().stream()
+            switch (content.getSpark().getRunsOnCase()) {
+
+              case NODES:
+                break;
+              case NODE:
+                throw new UnsupportedOperationException(
+                    "Running spark on single node is currently unsupported.");
+              case RUNSON_NOT_SET:
+              default:
+                throw new AssertionError(
+                    "Illegal RunsOn Case " + content.getSpark().getRunsOnCase());
+            }
+
+            Set<Node> nodes = content.getSpark().getNodes().getNodesList().stream()
                 .map(NODE_MESSAGE_CONVERTER::applyBack).collect(
                     Collectors.toSet());
+
+            final SparkInterface sparkInterface = SparkInterfaceConverter.INSTANCE
+                .apply(content.getSpark().getSparkInterface());
 
             final String schedule = content.getSpark().getSchedule();
 
             final CloudiatorProcess cloudiatorProcess = createSparkProcessStrategy
-                .execute(userId, schedule, job, job.getTask(task).orElseThrow(
+                .execute(userId, schedule, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
                         String.format("Job %s does not contain task %s", job, task))),
+                    sparkInterface,
                     nodes);
 
             final SparkProcessCreatedResponse sparkProcessCreatedResponse = SparkProcessCreatedResponse

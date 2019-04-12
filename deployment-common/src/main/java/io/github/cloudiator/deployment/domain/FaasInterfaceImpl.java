@@ -1,11 +1,11 @@
 package io.github.cloudiator.deployment.domain;
 
-import java.util.HashMap;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.google.common.base.MoreObjects;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class FaasInterfaceImpl implements FaasInterface {
 
@@ -79,11 +79,11 @@ public class FaasInterfaceImpl implements FaasInterface {
     FaasInterfaceImpl that = (FaasInterfaceImpl) o;
     return
         Objects.equals(functionName, that.functionName) &&
-        Objects.equals(sourceCodeUrl, that.sourceCodeUrl) &&
-        Objects.equals(handler, that.handler) &&
-        Objects.equals(triggers, that.triggers) &&
-        Objects.equals(timeout, that.timeout) &&
-        Objects.equals(functionEnvironment, that.functionEnvironment);
+            Objects.equals(sourceCodeUrl, that.sourceCodeUrl) &&
+            Objects.equals(handler, that.handler) &&
+            Objects.equals(triggers, that.triggers) &&
+            Objects.equals(timeout, that.timeout) &&
+            Objects.equals(functionEnvironment, that.functionEnvironment);
   }
 
   @Override
@@ -94,13 +94,18 @@ public class FaasInterfaceImpl implements FaasInterface {
 
   @Override
   public String toString() {
-    return "FaasInterfaceImpl{" +
-        "functionName='" + functionName + '\'' +
-        ", sourceCodeUrl='" + sourceCodeUrl + '\'' +
-        ", handler='" + handler + '\'' +
-        ", triggers=" + triggers +
-        ", timeout=" + timeout +
-        ", functionEnvironment=" + functionEnvironment +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("functionName", functionName)
+        .add("sourceCodeUrl", sourceCodeUrl)
+        .add("handler", handler)
+        .add("triggers", triggers)
+        .add("timeout", timeout)
+        .add("functionEnvironment", functionEnvironment)
+        .toString();
+  }
+
+  @Override
+  public ProcessMapping processMapping() {
+    return ProcessMapping.SINGLE;
   }
 }

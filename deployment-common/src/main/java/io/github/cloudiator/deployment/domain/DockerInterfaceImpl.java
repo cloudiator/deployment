@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 
@@ -45,5 +46,16 @@ public class DockerInterfaceImpl implements DockerInterface {
   @Override
   public Map<String, String> environment() {
     return environment;
+  }
+
+  @Override
+  public ProcessMapping processMapping() {
+    return ProcessMapping.SINGLE;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("dockerImage", dockerImage)
+        .add("environment", environment).toString();
   }
 }

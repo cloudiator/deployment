@@ -8,7 +8,6 @@ import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
-import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
@@ -117,16 +116,10 @@ public class CreateSparkProcessStrategy {
   }
 
 
-  private void submitSparkProcessToLivy(Task task) {
+  private void submitSparkProcessToLivy(SparkInterface sparkInterface) {
 
     //find SparkInterface
     LOGGER.debug("Submitting Spark process to Livy Server...");
-    SparkInterface sparkInterface = task.interfaceOfType(SparkInterface.class);
-
-    if (sparkInterface == null) {
-      throw new IllegalStateException(
-          "No SparkInterface in TaskInterface set was found! Aborting Spark Process submission!");
-    }
 
     //execute HTTP POST call to Livy Server
     ResponseHandler<String> handler = new BasicResponseHandler();
@@ -336,7 +329,8 @@ public class CreateSparkProcessStrategy {
   }
 
 
-  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task,
+  public CloudiatorProcess execute(String userId, String schedule, Task task,
+      SparkInterface sparkInterface,
       Set<Node> nodes) {
 
     LOGGER.info(String
@@ -349,7 +343,7 @@ public class CreateSparkProcessStrategy {
       this.installSparkWorkers(userId, nodes);
 
       LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
-      this.submitSparkProcessToLivy(task);
+      this.submitSparkProcessToLivy(sparkInterface);
 
       //TODO: get Livy Batch ID from Livy Server as soon as this is fixed in Livy or YARN is enabled
       //using temporary UUID meanwhile
@@ -357,8 +351,10 @@ public class CreateSparkProcessStrategy {
       String temporarySparkProcessUid = uuid.toString();
 
       return CloudiatorClusterProcessBuilder.create().id(temporarySparkProcessUid)
+          .originId(temporarySparkProcessUid)
           .userId(userId)
           .type(Type.SPARK)
+          .taskInterface(SparkInterface.class.getCanonicalName())
           .state(ProcessState.RUNNING)
           .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
           .taskName(task.name()).scheduleId(schedule).build();
