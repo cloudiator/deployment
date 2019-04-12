@@ -36,6 +36,7 @@ public class PublicDockerComponentSupplierTest {
   private static Task taskSimple, taskExtended;
   private static Job jobSimple, jobExtended;
   private static DockerComponent componentSimple, componentExtended;
+  private static String uId = "test";
 
   @BeforeClass
   public static void setup() {
@@ -49,9 +50,9 @@ public class PublicDockerComponentSupplierTest {
     taskExtended = TaskBuilder.newBuilder().name(taskExtendedName).addPorts(new ArrayList<>())
         .addInterface(dIfaceExtended).addRequirements(new ArrayList<>()).optimization(null).build();
 
-    jobSimple = JobBuilder.newBuilder().generateId().name(jobSimpleName)
+    jobSimple = JobBuilder.newBuilder().generateId().userId(uId).name(jobSimpleName)
         .addCommunications(new HashSet<>()).addTask(taskSimple).build();
-    jobExtended = JobBuilder.newBuilder().generateId().name(jobExtendedName)
+    jobExtended = JobBuilder.newBuilder().generateId().userId(uId).name(jobExtendedName)
         .addCommunications(new HashSet<>()).addTask(taskExtended).build();
 
     componentSimple = new PublicDockerComponentSupplier(jobSimple, taskSimple).get();
@@ -73,7 +74,7 @@ public class PublicDockerComponentSupplierTest {
     envMap.put("john","doe");
     envMap.put("port",containerPort);
     envMap.put("volume",containerVolume);
-    dockerCreateOptionsString = "--publish 8000:8001 --volume /var/lib/mysql --interactive  --restart no --env foo=bar --env john=doe";
+    dockerCreateOptionsString = "--publish 8000:8001 --volume /var/lib/mysql --interactive  --env foo=bar --env john=doe --restart no";
     dockerCreateOsCommandString = "bash";
     dockerCreateArgsString = "--noediting";
     dockerStartOptionsString = "--interactive";
