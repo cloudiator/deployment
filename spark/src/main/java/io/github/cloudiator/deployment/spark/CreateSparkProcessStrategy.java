@@ -87,7 +87,9 @@ public class CreateSparkProcessStrategy {
       final Builder builder = Installation.newBuilder()
           .setNode(nodeMessageToNodeConverter.apply(node))
           .addTool(Tool.DOCKER)
-          .addTool(Tool.SPARK_WORKER);
+          .addTool(Tool.SPARK_WORKER)
+          .addTool(Tool.ALLUXIO_CLIENT)
+          .addTool(Tool.DLMS_AGENT);
 
       final InstallationRequest installationRequest = InstallationRequest.newBuilder()
           .setUserId(userId).setInstallation(builder.build()).build();
