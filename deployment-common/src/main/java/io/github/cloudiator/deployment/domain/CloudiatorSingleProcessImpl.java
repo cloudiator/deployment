@@ -4,7 +4,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -62,5 +64,10 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("node", node);
+  }
+
+  @Override
+  public Set<String> nodes() {
+    return Collections.singleton(node);
   }
 }

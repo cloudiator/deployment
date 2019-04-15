@@ -17,21 +17,35 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.failure.NodeFailureReportingInterface;
+import io.github.cloudiator.domain.NodeState;
+import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import org.cloudiator.messaging.services.NodeService;
 
 public class NodeEventSubscriber implements Runnable {
 
   private final NodeService nodeService;
+  private final NodeFailureReportingInterface nodeFailureReportingInterface;
 
   @Inject
-  public NodeEventSubscriber(NodeService nodeService) {
+  public NodeEventSubscriber(NodeService nodeService,
+      NodeFailureReportingInterface nodeFailureReportingInterface) {
     this.nodeService = nodeService;
+    this.nodeFailureReportingInterface = nodeFailureReportingInterface;
   }
 
   @Override
   public void run() {
     nodeService.subscribeNodeEvents((id, content) -> {
 
+      NodeState toState = NodeToNodeMessageConverter.NODE_STATE_CONVERTER
+          .applyBack(content.getTo());
+
+      //check if node failure
+      if (toState.equals(NodeState.ERROR)) {
+        nodeFailureReportingInterface
+            .addNodeFailure(NodeToNodeMessageConverter.INSTANCE.applyBack(content.getNode()));
+      }
     });
   }
 }

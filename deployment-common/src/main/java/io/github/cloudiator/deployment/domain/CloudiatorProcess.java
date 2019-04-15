@@ -20,6 +20,7 @@ import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Created by daniel on 13.02.17.
@@ -58,5 +59,8 @@ public interface CloudiatorProcess extends Identifiable, Stateful {
   Optional<String> diagnostic();
 
   Optional<String> reason();
+
+  Set<String> nodes();
+
 
 }
