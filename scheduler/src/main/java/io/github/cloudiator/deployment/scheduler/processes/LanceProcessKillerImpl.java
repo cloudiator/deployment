@@ -76,9 +76,14 @@ public class LanceProcessKillerImpl implements ProcessKiller {
           String.format("Could not find node for process %s.", cloudiatorProcess));
     }
 
+    if (!cloudiatorProcess.originId().isPresent()) {
+      throw new IllegalStateException(
+          String.format("Can not delete process %s as originId is not set.", cloudiatorProcess));
+    }
+
     final DeleteLanceProcessRequest deleteLanceProcessRequest = DeleteLanceProcessRequest
         .newBuilder()
-        .setProcessId(cloudiatorProcess.id()).setUserId(userId)
+        .setProcessId(cloudiatorProcess.originId().get()).setUserId(userId)
         .setNode(NODE_MESSAGE_CONVERTER.apply(byId))
         .build();
 
