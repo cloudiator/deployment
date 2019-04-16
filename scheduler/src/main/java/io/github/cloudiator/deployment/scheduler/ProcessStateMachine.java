@@ -155,8 +155,8 @@ public class ProcessStateMachine implements
     return (o, arguments) -> {
 
       try {
-        processScheduler.schedule(o);
-        final CloudiatorProcess running = updateProcess(o, ProcessState.RUNNING, null);
+        final CloudiatorProcess running = updateProcess(processScheduler.schedule(o),
+            ProcessState.RUNNING, null);
         save(running);
         return running;
       } catch (ProcessSpawningException e) {

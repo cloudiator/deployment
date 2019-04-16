@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.lance;
 
+import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerStatus;
@@ -44,6 +45,7 @@ public class LanceProcessStatusSubscriber implements Runnable {
   private static final Logger LOGGER = LoggerFactory.getLogger(LanceProcessStatusSubscriber.class);
 
 
+  @Inject
   public LanceProcessStatusSubscriber(
       ProcessService processService, MessageInterface messageInterface,
       LanceClientConnector lanceClientConnector) {

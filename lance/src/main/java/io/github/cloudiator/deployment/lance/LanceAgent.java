@@ -31,6 +31,7 @@ public class LanceAgent {
   public static void main(String[] args) {
     INJECTOR.getInstance(CreateLanceProcessSubscriber.class).run();
     INJECTOR.getInstance(DeleteLanceProcessSubscriber.class).run();
+    INJECTOR.getInstance(LanceProcessStatusSubscriber.class).run();
   }
 
 }

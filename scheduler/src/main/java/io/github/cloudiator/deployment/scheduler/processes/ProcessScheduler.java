@@ -134,7 +134,7 @@ public class ProcessScheduler {
 
     } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
 
-      final Set<Node> nodeSet = ((CloudiatorClusterProcess) cloudiatorProcess).nodes().stream().map(
+      final Set<Node> nodeSet = cloudiatorProcess.nodes().stream().map(
           s -> getNode(cloudiatorProcess.userId(), s)).collect(Collectors.toSet());
 
       for (Node node : nodeSet) {

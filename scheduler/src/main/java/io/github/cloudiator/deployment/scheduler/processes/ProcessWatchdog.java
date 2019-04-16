@@ -112,7 +112,7 @@ public class ProcessWatchdog implements Schedulable {
               e.getMessage()), e);
     }
 
-    LOGGER.info(String.format("%s is finished its run", this));
+    LOGGER.info(String.format("%s has finished its run", this));
 
   }
 
