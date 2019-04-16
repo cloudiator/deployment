@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.scheduler.processes;
 
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
@@ -63,10 +64,15 @@ public class ProcessWatchdog implements Schedulable {
     return TimeUnit.MINUTES;
   }
 
+  @Transactional
+  List<CloudiatorProcess> getProcesses() {
+    return processDomainRepository.getAll();
+  }
+
   @Override
   public void run() {
 
-    final List<CloudiatorProcess> processes = processDomainRepository.getAll();
+    final List<CloudiatorProcess> processes = getProcesses();
     LOGGER.info(
         String.format("%s is starting a new run, watching %s process(es)", this, processes.size()));
 
@@ -96,6 +102,9 @@ public class ProcessWatchdog implements Schedulable {
                 processStateMachine.apply(cloudiatorProcess, processStatus.processState(), null);
               }
 
+            } else {
+              LOGGER.debug(
+                  String.format("State of process %s is correctly registered.", cloudiatorProcess));
             }
 
 

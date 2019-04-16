@@ -24,6 +24,7 @@ import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Predicates;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
+import java.io.IOException;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -42,16 +43,29 @@ public class LanceClientConnector {
   public LanceClientConnector() {
   }
 
-  LifecycleClient getLifecycleClient(String serverIp) {
+  LifecycleClient getLifecycleClient(String serverIp) throws IOException {
+    return getLifecycleClient(serverIp, rmiTimeout, true);
+  }
+
+  LifecycleClient getLifecycleClient(String serverIp, int rmiTimeout, boolean retry)
+      throws IOException {
 
     Callable<LifecycleClient> createLifecycleClient = new Callable<LifecycleClient>() {
       public LifecycleClient call() throws Exception {
-         final LifecycleClient lifecycleClient = LifecycleClient
+        final LifecycleClient lifecycleClient = LifecycleClient
             .getClient(serverIp, rmiTimeout);
 
-         return lifecycleClient;
+        return lifecycleClient;
       }
     };
+
+    if (!retry) {
+      try {
+        return createLifecycleClient.call();
+      } catch (Exception e) {
+        throw new IOException("Error connecting to lifecycle agent.", e);
+      }
+    }
 
     Retryer<LifecycleClient> retryer = RetryerBuilder.<LifecycleClient>newBuilder()
         .retryIfResult(Predicates.<LifecycleClient>isNull())
@@ -68,9 +82,11 @@ public class LanceClientConnector {
       lifecycleClient = retryer.call(createLifecycleClient);
 
     } catch (ExecutionException e) {
-      throw new IllegalStateException("Error creating lifecycle client! Retry Execution Exception occurred!", e);
+      throw new IOException(
+          "Could not connect to lifecycle client", e.getCause());
     } catch (RetryException e) {
-      throw new IllegalStateException("Error creating lifecycle client! Exceeded retry attempts!", e);
+      throw new IOException("Error creating lifecycle client! Exceeded retry attempts!",
+          e);
     }
     return lifecycleClient;
   }

@@ -39,12 +39,16 @@ import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.domain.Node;
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @// TODO: 16.04.19 Refactor this class
+ */
 public class CreateLanceProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
@@ -109,8 +113,13 @@ public class CreateLanceProcessStrategy {
       throw new AssertionError("Unknown task interface type " + taskInterface.getClass().getName());
     }
 
-    final LifecycleClient lifecycleClient = lanceClientConnector.getLifecycleClient(
-        node.connectTo().ip());
+    final LifecycleClient lifecycleClient;
+    try {
+      lifecycleClient = lanceClientConnector.getLifecycleClient(
+          node.connectTo().ip());
+    } catch (IOException e) {
+      throw new IllegalStateException("Error retrieving lifecycle client.", e);
+    }
 
     final ApplicationId applicationId = ApplicationId.fromString(job.id());
     final ApplicationInstanceId applicationInstanceId = ApplicationInstanceId

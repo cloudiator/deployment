@@ -21,6 +21,7 @@ import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
 import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import io.github.cloudiator.domain.Node;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,14 +40,14 @@ public class DeleteLanceProcessStrategy {
 
     LOGGER.debug(String.format("Connecting to lance agent on node %s.", node));
 
-    final LifecycleClient lifecycleClient = lanceClientConnector
-        .getLifecycleClient(node.connectTo().ip());
-
     try {
+      final LifecycleClient lifecycleClient = lanceClientConnector
+          .getLifecycleClient(node.connectTo().ip());
+
       //todo make reg deletion parameterizable
       lifecycleClient.undeploy(ComponentInstanceId.fromString(processId), false);
-    } catch (DeploymentException e) {
-      throw new IllegalStateException("Killing of process %s failed.",e);
+    } catch (DeploymentException | IOException e) {
+      throw new IllegalStateException("Killing of process %s failed.", e);
     }
 
   }

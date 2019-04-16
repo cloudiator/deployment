@@ -90,7 +90,7 @@ public class ProcessStatusCheckerImpl implements ProcessStatusChecker {
     }
 
     final ProcessStatusResponse processStatusResponse = processService
-        .queryProcessStatus(builder.build());
+        .queryProcessStatus(builder.build(), 120000L);
 
     final String information = Strings.emptyToNull(processStatusResponse.getInformation());
     return ProcessStatus.of(ProcessMessageConverter.PROCESS_STATE_CONVERTER

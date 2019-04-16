@@ -85,7 +85,7 @@ public class LanceProcessStatusSubscriber implements Runnable {
     messageInterface.subscribe(ProcessStatusQuery.class, ProcessStatusQuery.parser(),
         new MessageCallback<ProcessStatusQuery>() {
           @Override
-          public void accept(String id, ProcessStatusQuery content) {
+          public void accept(String messageId, ProcessStatusQuery content) {
 
             CloudiatorProcess cloudiatorProcess = ProcessMessageConverter.INSTANCE
                 .apply(content.getProcess());
@@ -98,13 +98,13 @@ public class LanceProcessStatusSubscriber implements Runnable {
               return;
             }
 
-            if (!(cloudiatorProcess instanceof CloudiatorSingleProcess) || content.getRunsOnCase()
+            if (!(cloudiatorProcess instanceof CloudiatorSingleProcess) || !content.getRunsOnCase()
                 .equals(
                     RunsOnCase.NODE) || !cloudiatorProcess.originId().isPresent()) {
               LOGGER.warn(String.format(
                   "Process status requests %s contains illegal lance process.",
                   content));
-              messageInterface.reply(ProcessStatusResponse.class, id,
+              messageInterface.reply(ProcessStatusResponse.class, messageId,
                   Error.newBuilder().setCode(500).setMessage("Illegal lance process provided.")
                       .build());
               return;
@@ -113,22 +113,22 @@ public class LanceProcessStatusSubscriber implements Runnable {
             final Node apply = NodeToNodeMessageConverter.INSTANCE.applyBack(content.getNode());
 
             final String ip = apply.connectTo().ip();
-            final LifecycleClient lifecycleClient = lanceClientConnector
-                .getLifecycleClient(ip);
-
             try {
+              final LifecycleClient lifecycleClient = lanceClientConnector
+                  .getLifecycleClient(ip, 5000, false);
+
               final ContainerStatus componentContainerStatus = lifecycleClient
                   .getComponentContainerStatus(
                       ComponentInstanceId.fromString(cloudiatorProcess.originId().get()), ip);
 
-              messageInterface.reply(id, ProcessStatusResponse.newBuilder()
+              messageInterface.reply(messageId, ProcessStatusResponse.newBuilder()
                   .setState(determineState(componentContainerStatus)).build());
 
             } catch (Exception e) {
               LOGGER.error(String.format(
                   "Could not retrieve status for lance process %s due to error %s. Replying with error status.",
                   cloudiatorProcess, e.getMessage()), e);
-              messageInterface.reply(id,
+              messageInterface.reply(messageId,
                   ProcessStatusResponse.newBuilder().setState(ProcessState.PROCESS_STATE_ERROR)
                       .setInformation("Unable to connect to lance agent: " + e.getMessage())
                       .build());
