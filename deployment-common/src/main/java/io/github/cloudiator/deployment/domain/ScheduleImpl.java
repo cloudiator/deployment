@@ -37,6 +37,13 @@ public class ScheduleImpl implements Schedule {
 
   private ScheduleImpl(String id, String userId, String job,
       Instantiation instantiation, ScheduleState scheduleState) {
+
+    checkNotNull(id, "id is null");
+    checkNotNull(userId, "userId is null");
+    checkNotNull(job, "job is null");
+    checkNotNull(instantiation, "instantiation is null");
+    checkNotNull(scheduleState, "scheduleState is null");
+
     this.id = id;
     this.job = job;
     this.userId = userId;
@@ -107,7 +114,7 @@ public class ScheduleImpl implements Schedule {
 
   @Override
   public ScheduleState state() {
-    return null;
+    return scheduleState;
   }
 
   @Override
