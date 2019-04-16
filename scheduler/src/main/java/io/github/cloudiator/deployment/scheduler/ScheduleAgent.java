@@ -23,6 +23,8 @@ import de.uniulm.omi.cloudiator.util.configuration.Configuration;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteScheduleRequestSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.NodeEventSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ProcessEventSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleGraphSubscriber;
@@ -69,6 +71,14 @@ public class ScheduleAgent {
 
     LOGGER.info(String.format("Starting %s.", ScheduleGraphSubscriber.class));
     INJECTOR.getInstance(ScheduleGraphSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", NodeEventSubscriber.class));
+    INJECTOR.getInstance(NodeEventSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", ProcessEventSubscriber.class));
+    INJECTOR.getInstance(ProcessEventSubscriber.class).run();
+
+
 
   }
 

@@ -19,13 +19,14 @@ package io.github.cloudiator.deployment.domain;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import java.util.Optional;
 import java.util.Set;
 
 /**
  * Created by daniel on 13.02.17.
  */
-public interface CloudiatorProcess extends Identifiable, Stateful {
+public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> {
 
   enum ProcessState implements State {
     PENDING,

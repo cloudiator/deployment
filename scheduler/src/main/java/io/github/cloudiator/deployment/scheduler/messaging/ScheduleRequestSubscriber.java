@@ -96,7 +96,7 @@ public class ScheduleRequestSubscriber implements Runnable {
             return;
           }
 
-          Schedule schedule = ScheduleImpl.create(job, instantiation);
+          Schedule schedule = ScheduleImpl.init(job, instantiation);
 
           //persist the schedule
           persistSchedule(schedule);

@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.Schedule.Builder;
@@ -25,6 +26,7 @@ import org.cloudiator.messages.entities.ProcessEntities.Schedule.Builder;
 public class ScheduleConverter implements TwoWayConverter<ProcessEntities.Schedule, Schedule> {
 
   public static final ScheduleConverter INSTANCE = new ScheduleConverter();
+  public static final ScheduleStateConverter SCHEDULE_STATE_CONVERTER = new ScheduleStateConverter();
 
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final InstantiationConverter INSTANTIATION_CONVERTER = InstantiationConverter.INSTANCE;
@@ -50,12 +52,59 @@ public class ScheduleConverter implements TwoWayConverter<ProcessEntities.Schedu
   public Schedule apply(ProcessEntities.Schedule schedule) {
 
     final Schedule result = ScheduleImpl
-        .create(schedule.getId(), schedule.getUserId(), schedule.getJob(),
-            INSTANTIATION_CONVERTER.apply(schedule.getInstantiation()));
+        .of(schedule.getId(), schedule.getUserId(), schedule.getJob(),
+            INSTANTIATION_CONVERTER.apply(schedule.getInstantiation()),
+            SCHEDULE_STATE_CONVERTER.apply(schedule.getState()));
 
     schedule.getProcessesList().stream().map(PROCESS_MESSAGE_CONVERTER)
         .forEach(result::addProcess);
 
     return result;
+  }
+
+  private static class ScheduleStateConverter implements
+      TwoWayConverter<ProcessEntities.ScheduleState, ScheduleState> {
+
+    @Override
+    public ProcessEntities.ScheduleState applyBack(ScheduleState scheduleState) {
+
+      switch (scheduleState) {
+        case PENDING:
+          return ProcessEntities.ScheduleState.SCHEDULE_STATE_PENDING;
+        case ERROR:
+          return ProcessEntities.ScheduleState.SCHEDULE_STATE_ERROR;
+        case DELETED:
+          return ProcessEntities.ScheduleState.SCHEDULE_STATE_DELETED;
+        case RUNNING:
+          return ProcessEntities.ScheduleState.SCHEDULE_STATE_RUNNING;
+        case MANUAL:
+          return ProcessEntities.ScheduleState.SCHEDULE_STATE_MANUAL;
+        case RESTORING:
+          return ProcessEntities.ScheduleState.SCHEDULE_STATE_RESTORING;
+        default:
+          throw new AssertionError("Unknown schedule state " + scheduleState);
+      }
+    }
+
+    @Override
+    public ScheduleState apply(ProcessEntities.ScheduleState scheduleState) {
+      switch (scheduleState) {
+        case SCHEDULE_STATE_ERROR:
+          return ScheduleState.ERROR;
+        case SCHEDULE_STATE_DELETED:
+          return ScheduleState.DELETED;
+        case SCHEDULE_STATE_PENDING:
+          return ScheduleState.PENDING;
+        case SCHEDULE_STATE_RUNNING:
+          return ScheduleState.RUNNING;
+        case SCHEDULE_STATE_MANUAL:
+          return ScheduleState.MANUAL;
+        case SCHEDULE_STATE_RESTORING:
+          return ScheduleState.RESTORING;
+        case UNRECOGNIZED:
+        default:
+          throw new AssertionError("Unknown schedule state " + scheduleState);
+      }
+    }
   }
 }

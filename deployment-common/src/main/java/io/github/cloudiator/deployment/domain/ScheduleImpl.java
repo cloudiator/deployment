@@ -33,23 +33,26 @@ public class ScheduleImpl implements Schedule {
   private final String job;
   private final Set<CloudiatorProcess> processes;
   private final Instantiation instantiation;
+  private ScheduleState scheduleState;
 
   private ScheduleImpl(String id, String userId, String job,
-      Instantiation instantiation) {
+      Instantiation instantiation, ScheduleState scheduleState) {
     this.id = id;
     this.job = job;
     this.userId = userId;
     this.instantiation = instantiation;
     this.processes = new HashSet<>();
+    this.scheduleState = scheduleState;
   }
 
-  public static Schedule create(Job job, Instantiation instantiation) {
-    return new ScheduleImpl(UUID.randomUUID().toString(), job.userId(), job.id(), instantiation);
+  public static Schedule init(Job job, Instantiation instantiation) {
+    return new ScheduleImpl(UUID.randomUUID().toString(), job.userId(), job.id(), instantiation,
+        ScheduleState.PENDING);
   }
 
-  public static Schedule create(String id, String userId, String jobId,
-      Instantiation instantiation) {
-    return new ScheduleImpl(id, userId, jobId, instantiation);
+  public static Schedule of(String id, String userId, String jobId,
+      Instantiation instantiation, ScheduleState scheduleState) {
+    return new ScheduleImpl(id, userId, jobId, instantiation, scheduleState);
   }
 
   @Override
@@ -100,6 +103,17 @@ public class ScheduleImpl implements Schedule {
             String.format("job %s does not contain task %s", job, cloudiatorProcess.taskId())));
 
     return null;
+  }
+
+  @Override
+  public ScheduleState state() {
+    return null;
+  }
+
+  @Override
+  public Schedule setState(ScheduleState scheduleState) {
+    this.scheduleState = scheduleState;
+    return this;
   }
 
   @Override

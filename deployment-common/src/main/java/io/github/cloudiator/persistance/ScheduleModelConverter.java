@@ -39,9 +39,9 @@ class ScheduleModelConverter implements OneWayConverter<ScheduleModel, Schedule>
     }
 
     final Schedule schedule = ScheduleImpl
-        .create(scheduleModel.domainId(), scheduleModel.tenant().getUserId(), scheduleModel.jobId(),
-            scheduleModel.instantiation());
-    for (ProcessModel processModel : scheduleModel.proccesses()) {
+        .of(scheduleModel.domainId(), scheduleModel.tenant().getUserId(), scheduleModel.jobId(),
+            scheduleModel.instantiation(), scheduleModel.state());
+    for (ProcessModel processModel : scheduleModel.processes()) {
       schedule.addProcess(PROCESS_MODEL_CONVERTER.apply(processModel));
     }
 

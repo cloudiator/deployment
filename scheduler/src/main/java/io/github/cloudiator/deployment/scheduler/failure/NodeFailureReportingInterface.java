@@ -1,4 +1,4 @@
-package io.github.cloudiator.deployment.failure;
+package io.github.cloudiator.deployment.scheduler.failure;
 
 import io.github.cloudiator.domain.Node;
 

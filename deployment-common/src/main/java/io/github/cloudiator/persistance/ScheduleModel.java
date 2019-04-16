@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.ImmutableList;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -45,6 +46,9 @@ class ScheduleModel extends Model {
   @Enumerated(EnumType.STRING)
   private Schedule.Instantiation instantiation;
 
+  @Enumerated(EnumType.STRING)
+  private ScheduleState scheduleState;
+
   @OneToMany(mappedBy = "schedule")
   private List<ProcessModel> proccesses;
 
@@ -52,7 +56,7 @@ class ScheduleModel extends Model {
   }
 
   ScheduleModel(String domainId, TenantModel tenant, String jobId,
-      Instantiation instantiation) {
+      Instantiation instantiation, ScheduleState scheduleState) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -64,10 +68,13 @@ class ScheduleModel extends Model {
 
     checkNotNull(instantiation, "instantiation is null");
 
+    checkNotNull(scheduleState, "scheduleState is null");
+
     this.domainId = domainId;
     this.tenant = tenant;
     this.jobId = jobId;
     this.instantiation = instantiation;
+    this.scheduleState = scheduleState;
   }
 
   public String domainId() {
@@ -86,7 +93,11 @@ class ScheduleModel extends Model {
     return instantiation;
   }
 
-  public List<ProcessModel> proccesses() {
+  public List<ProcessModel> processes() {
     return ImmutableList.copyOf(proccesses);
+  }
+
+  public ScheduleState state() {
+    return scheduleState;
   }
 }

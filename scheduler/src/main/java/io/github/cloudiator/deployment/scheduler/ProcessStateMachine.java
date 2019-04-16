@@ -21,7 +21,6 @@ import com.google.inject.Singleton;
 import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.util.stateMachine.ErrorAwareStateMachine;
 import de.uniulm.omi.cloudiator.util.stateMachine.ErrorTransition;
-import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.StateMachineBuilder;
 import de.uniulm.omi.cloudiator.util.stateMachine.StateMachineHook;
 import de.uniulm.omi.cloudiator.util.stateMachine.Transition.TransitionAction;
@@ -45,10 +44,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorProcess> {
+public class ProcessStateMachine implements
+    ErrorAwareStateMachine<CloudiatorProcess, ProcessState> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ProcessStateMachine.class);
-  private final ErrorAwareStateMachine<CloudiatorProcess> stateMachine;
+  private final ErrorAwareStateMachine<CloudiatorProcess, ProcessState> stateMachine;
   private final ProcessDomainRepository processDomainRepository;
   private final ProcessKiller processKiller;
   private final ProcessScheduler processScheduler;
@@ -61,35 +61,39 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
     this.processDomainRepository = processDomainRepository;
 
     //noinspection unchecked
-    stateMachine = StateMachineBuilder.<CloudiatorProcess>builder().errorTransition(error())
+    stateMachine = StateMachineBuilder.<CloudiatorProcess, ProcessState>builder()
+        .errorTransition(error())
         .addTransition(
-            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.PENDING)
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.PENDING)
                 .to(ProcessState.RUNNING)
                 .action(pendingToRunning())
                 .build())
         .addTransition(
-            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.RUNNING)
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.RUNNING)
                 .to(ProcessState.DELETED)
                 .action(delete())
                 .build())
         .addTransition(
-            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.ERROR)
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.ERROR)
                 .to(ProcessState.DELETED)
                 .action(delete())
                 .build())
-        .addHook(new StateMachineHook<CloudiatorProcess>() {
+        .addHook(new StateMachineHook<CloudiatorProcess, ProcessState>() {
           @Override
-          public void pre(CloudiatorProcess process, State to) {
+          public void pre(CloudiatorProcess process, ProcessState to) {
             //intentionally left empty
           }
 
           @Override
-          public void post(State from, CloudiatorProcess process) {
+          public void post(ProcessState from, CloudiatorProcess process) {
 
             final ProcessEvent processEvent = ProcessEvent.newBuilder()
                 .setProcess(ProcessMessageConverter.INSTANCE.applyBack(process))
                 .setFrom(ProcessMessageConverter.PROCESS_STATE_CONVERTER.applyBack(
-                    (CloudiatorProcess.ProcessState) from))
+                    from))
                 .setTo(ProcessMessageConverter.PROCESS_STATE_CONVERTER.applyBack(process.state()))
                 .build();
 
@@ -172,9 +176,9 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
     };
   }
 
-  private ErrorTransition<CloudiatorProcess> error() {
+  private ErrorTransition<CloudiatorProcess, ProcessState> error() {
 
-    return Transitions.<CloudiatorProcess>errorTransitionBuilder()
+    return Transitions.<CloudiatorProcess, ProcessState>errorTransitionBuilder()
         .action((o, arguments, throwable) -> {
 
           final String message = throwable != null ? throwable.getMessage() : null;
@@ -185,7 +189,7 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
 
 
   @Override
-  public CloudiatorProcess apply(CloudiatorProcess object, State to, Object[] arguments) {
+  public CloudiatorProcess apply(CloudiatorProcess object, ProcessState to, Object[] arguments) {
     return stateMachine.apply(object, to, arguments);
   }
 

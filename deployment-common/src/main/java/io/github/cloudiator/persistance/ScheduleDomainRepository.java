@@ -78,7 +78,7 @@ public class ScheduleDomainRepository {
     final TenantModel tenantModel = tenantModelRepository.createOrGet(domain.userId());
 
     final ScheduleModel scheduleModel = new ScheduleModel(domain.id(), tenantModel, domain.job(),
-        domain.instantiation());
+        domain.instantiation(), domain.state());
 
     scheduleModelRepository.save(scheduleModel);
 

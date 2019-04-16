@@ -17,7 +17,7 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
-import io.github.cloudiator.deployment.failure.NodeFailureReportingInterface;
+import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
 import io.github.cloudiator.domain.NodeState;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import org.cloudiator.messaging.services.NodeService;

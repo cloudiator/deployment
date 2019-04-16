@@ -17,13 +17,25 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import de.uniulm.omi.cloudiator.util.stateMachine.State;
+import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
+import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import java.util.Collection;
 import java.util.Set;
 
-public interface Schedule extends Identifiable {
+public interface Schedule extends Identifiable, Stateful<ScheduleState> {
 
   enum Instantiation {
     AUTOMATIC,
+    MANUAL
+  }
+
+  enum ScheduleState implements State {
+    PENDING,
+    RUNNING,
+    ERROR,
+    RESTORING,
+    DELETED,
     MANUAL
   }
 
@@ -41,5 +53,8 @@ public interface Schedule extends Identifiable {
 
   Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job);
 
+  @Override
+  ScheduleState state();
 
+  Schedule setState(ScheduleState scheduleState);
 }
