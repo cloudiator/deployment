@@ -37,10 +37,10 @@ import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -101,14 +101,14 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     private final Schedule schedule;
     private final Task task;
     private final TaskInterface taskInterface;
-    private final CountDownLatch countDownLatch;
+    private final Phaser phaser;
 
     protected NodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, CountDownLatch countDownLatch) {
+        TaskInterface taskInterface, Phaser phaser) {
       this.schedule = schedule;
       this.task = task;
       this.taskInterface = taskInterface;
-      this.countDownLatch = countDownLatch;
+      this.phaser = phaser;
     }
 
     @Override
@@ -121,7 +121,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         throw new IllegalStateException("Unexpected exception while waiting for result",
             e.getCause());
       } finally {
-        countDownLatch.countDown();
+        phaser.arriveAndDeregister();
       }
     }
 
@@ -130,7 +130,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       try {
         doFailure(t);
       } finally {
-        countDownLatch.countDown();
+        phaser.arriveAndDeregister();
       }
     }
 
@@ -154,8 +154,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class SingleNodeCallback extends NodeCallback<Node> {
 
     private SingleNodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, CountDownLatch countDownLatch) {
-      super(schedule, task, taskInterface, countDownLatch);
+        TaskInterface taskInterface, Phaser phaser) {
+      super(schedule, task, taskInterface, phaser);
     }
 
     @Override
@@ -181,8 +181,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class ClusterCallback extends NodeCallback<List<Node>> {
 
     private ClusterCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, CountDownLatch countDownLatch) {
-      super(schedule, task, taskInterface, countDownLatch);
+        TaskInterface taskInterface, Phaser phaser) {
+      super(schedule, task, taskInterface, phaser);
     }
 
     @Override
@@ -214,6 +214,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
     //for each task
+    Phaser phaser = new Phaser(1);
     for (Iterator<Task> iter = job.tasksInOrder(); iter.hasNext(); ) {
       final Task task = iter.next();
 
@@ -227,20 +228,19 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
             .select(task);
 
-        CountDownLatch countDownLatch;
         switch (taskInterface.processMapping()) {
           case CLUSTER:
-            countDownLatch = new CountDownLatch(1);
+            phaser.register();
             final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocate);
             Futures.addCallback(nodeFutures,
-                new ClusterCallback(schedule, task, taskInterface, countDownLatch),
+                new ClusterCallback(schedule, task, taskInterface, phaser),
                 EXECUTOR);
             break;
           case SINGLE:
-            countDownLatch = new CountDownLatch(allocate.size());
             for (ListenableFuture<Node> nodeFuture : allocate) {
+              phaser.register();
               Futures.addCallback(nodeFuture,
-                  new SingleNodeCallback(schedule, task, taskInterface, countDownLatch),
+                  new SingleNodeCallback(schedule, task, taskInterface, phaser),
                   EXECUTOR);
             }
             break;
@@ -248,19 +248,15 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
         }
 
-        LOGGER.info(String
-            .format("Waiting for a total of %s processes to finish.", countDownLatch.getCount()));
-
-        countDownLatch.await();
-
       } catch (SchedulingException e) {
         throw new InstantiationException("Error while scheduling.", e);
-      } catch (InterruptedException e) {
-        throw new IllegalStateException("Got interrupted while waiting for schedule to complete.",
-            e);
       }
-
     }
+    LOGGER.info(String
+        .format("Waiting for a total of %s processes to finish.",
+            phaser.getUnarrivedParties() - 1));
+    phaser.arriveAndAwaitAdvance();
+    LOGGER.info(String.format("Schedule %s was instantiated.", schedule));
   }
 
 }
