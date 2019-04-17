@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -26,7 +27,10 @@ import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
@@ -67,12 +71,23 @@ public class OnDemandResourcePool implements ResourcePool {
       Iterable<? extends Requirement> requirements, @Nullable String name)
       throws SchedulingException {
 
+    return allocate(schedule, requirements, Collections.emptyList(), name);
+
+  }
+
+  @Override
+  public List<ListenableFuture<Node>> allocate(Schedule schedule,
+      Iterable<? extends Requirement> requirements, Iterable<Node> existingNodes,
+      @Nullable String name) throws SchedulingException {
+
     LOGGER.info(
         String.format("%s is allocating resources matching requirements %s.", this,
             Joiner.on(",").join(requirements)));
 
     try {
-      final List<NodeCandidate> nodeCandidates = matchmaking(requirements, schedule.userId());
+      final List<NodeCandidate> nodeCandidates = calculateDiff(
+          matchmaking(requirements, existingNodes,
+              schedule.userId()), existingNodes);
 
       final List<ListenableFuture<Node>> nodeFutures = new ArrayList<>(nodeCandidates.size());
       for (NodeCandidate nodeCandidate : nodeCandidates) {
@@ -101,18 +116,37 @@ public class OnDemandResourcePool implements ResourcePool {
     }
   }
 
-  @Override
-  public List<ListenableFuture<Node>> allocate(Schedule schedule,
-      Iterable<? extends Requirement> requirements, Iterable<Node> existingResources,
-      @Nullable String name) {
-    return null;
+  private List<NodeCandidate> calculateDiff(Iterable<NodeCandidate> nodeCandidates,
+      Iterable<Node> existingNodes) throws MatchmakingException {
+
+    List<Node> nodes = Lists.newArrayList(existingNodes);
+    List<NodeCandidate> toSpawn = Lists.newLinkedList();
+    for (NodeCandidate nodeCandidate : nodeCandidates) {
+      final Optional<Node> any = nodes.stream().filter(new Predicate<Node>() {
+        @Override
+        public boolean test(Node node) {
+          return node.nodeCandidate().isPresent() && node.nodeCandidate().get()
+              .equals(nodeCandidate.getId());
+        }
+      }).findAny();
+      if (any.isPresent()) {
+        nodes.remove(any.get());
+      } else {
+        toSpawn.add(nodeCandidate);
+      }
+    }
+
+    return toSpawn;
   }
 
+
   private List<NodeCandidate> matchmaking(Iterable<? extends Requirement> requirements,
+      Iterable<Node> existingResources,
       String userId) throws MatchmakingException {
     LOGGER.debug(String
-        .format("%s is calling matchmaking engine to derive configuration for requirements %s.",
-            this, requirements));
+        .format(
+            "%s is calling matchmaking engine to derive configuration for requirements %s with existing nodes %s.",
+            this, requirements, existingResources));
 
     NodeRequirements nodeRequirements = NodeRequirements.newBuilder()
         .addAllRequirements(StreamSupport.stream(requirements.spliterator(), false)
@@ -124,6 +158,8 @@ public class OnDemandResourcePool implements ResourcePool {
       matchmakingResponse = matchmakingService.requestMatch(
           MatchmakingRequest.newBuilder()
               .setNodeRequirements(nodeRequirements)
+              .addAllExistingNodes(StreamSupport.stream(existingResources.spliterator(), false).map(
+                  NODE_CONVERTER).collect(Collectors.toList()))
               .setUserId(userId)
               .build());
 

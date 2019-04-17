@@ -33,5 +33,5 @@ public interface ResourcePool {
 
   List<ListenableFuture<Node>> allocate(Schedule schedule,
       Iterable<? extends Requirement> requirements, Iterable<Node> existingResources,
-      @Nullable String name);
+      @Nullable String name) throws SchedulingException;
 }

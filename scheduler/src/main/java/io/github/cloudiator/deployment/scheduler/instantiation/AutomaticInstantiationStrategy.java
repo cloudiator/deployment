@@ -37,10 +37,14 @@ import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.cloudiator.messages.Process.CreateProcessRequest;
 import org.cloudiator.messages.Process.ProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.NodeCluster;
@@ -92,73 +96,112 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     return processRequestFuture;
   }
 
-  private class NodeCallback implements FutureCallback<Node> {
+  private abstract class NodeCallback<T> implements FutureCallback<T> {
 
     private final Schedule schedule;
     private final Task task;
     private final TaskInterface taskInterface;
+    private final CountDownLatch countDownLatch;
 
-    private NodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface) {
+    protected NodeCallback(Schedule schedule, Task task,
+        TaskInterface taskInterface, CountDownLatch countDownLatch) {
       this.schedule = schedule;
       this.task = task;
       this.taskInterface = taskInterface;
+      this.countDownLatch = countDownLatch;
     }
 
     @Override
-    public void onSuccess(Node node) {
+    public final void onSuccess(T result) {
+      try {
+        doSuccess(result).get();
+      } catch (InterruptedException e) {
+        throw new IllegalStateException("Interrupted while waiting for result.", e);
+      } catch (ExecutionException e) {
+        throw new IllegalStateException("Unexpected exception while waiting for result",
+            e.getCause());
+      } finally {
+        countDownLatch.countDown();
+      }
+    }
 
+    @Override
+    public final void onFailure(Throwable t) {
+      try {
+        doFailure(t);
+      } finally {
+        countDownLatch.countDown();
+      }
+    }
+
+    public abstract Future<?> doSuccess(@Nullable T result);
+
+    public abstract void doFailure(Throwable t);
+
+    public Schedule schedule() {
+      return schedule;
+    }
+
+    public Task task() {
+      return task;
+    }
+
+    public TaskInterface taskInterface() {
+      return taskInterface;
+    }
+  }
+
+  private class SingleNodeCallback extends NodeCallback<Node> {
+
+    private SingleNodeCallback(Schedule schedule, Task task,
+        TaskInterface taskInterface, CountDownLatch countDownLatch) {
+      super(schedule, task, taskInterface, countDownLatch);
+    }
+
+    @Override
+    public Future<?> doSuccess(Node result) {
       LOGGER.info(String.format("Node %s was created. Starting processes.",
-          node));
+          result));
 
       final ProcessNew build = ProcessNew.newBuilder().setSchedule(
-          schedule.id()).setTask(task.name())
-          .setTaskInterface(taskInterface.getClass().getCanonicalName())
-          .setNode(node.id()).build();
+          schedule().id()).setTask(task().name())
+          .setTaskInterface(taskInterface().getClass().getCanonicalName())
+          .setNode(result.id()).build();
 
-      submitProcess(schedule, build);
-
+      return submitProcess(schedule(), build);
     }
 
     @Override
-    public void onFailure(Throwable t) {
+    public void doFailure(Throwable t) {
       throw new IllegalStateException("Unexpected exception while spawning node", t);
     }
 
   }
 
-  private class ClusterCallback implements FutureCallback<List<Node>> {
-
-    private final Schedule schedule;
-    private final Task task;
-    private final TaskInterface taskInterface;
+  private class ClusterCallback extends NodeCallback<List<Node>> {
 
     private ClusterCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface) {
-      this.schedule = schedule;
-      this.task = task;
-      this.taskInterface = taskInterface;
+        TaskInterface taskInterface, CountDownLatch countDownLatch) {
+      super(schedule, task, taskInterface, countDownLatch);
     }
 
     @Override
-    public void onSuccess(List<Node> nodes) {
-
+    public Future<?> doSuccess(List<Node> result) {
       LOGGER.info(String.format("Nodes %s were created. Starting processes.",
-          nodes));
+          result));
 
       final ProcessNew build = ProcessNew.newBuilder().setSchedule(
-          schedule.id()).setTask(task.name())
-          .setTaskInterface(taskInterface.getClass().getCanonicalName())
+          schedule().id()).setTask(task().name())
+          .setTaskInterface(taskInterface().getClass().getCanonicalName())
           .setCluster(NodeCluster.newBuilder()
-              .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
+              .addAllNodes(result.stream().map(Identifiable::id).collect(Collectors.toList()))
               .build()).build();
 
-      submitProcess(schedule, build);
-
+      return submitProcess(schedule(), build);
     }
 
     @Override
-    public void onFailure(Throwable t) {
+    public void doFailure(Throwable t) {
       throw new IllegalStateException("Unexpected exception while spawning node", t);
     }
 
@@ -184,16 +227,20 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
             .select(task);
 
+        CountDownLatch countDownLatch;
         switch (taskInterface.processMapping()) {
           case CLUSTER:
-
+            countDownLatch = new CountDownLatch(1);
             final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocate);
-            Futures.addCallback(nodeFutures, new ClusterCallback(schedule, task, taskInterface),
+            Futures.addCallback(nodeFutures,
+                new ClusterCallback(schedule, task, taskInterface, countDownLatch),
                 EXECUTOR);
             break;
           case SINGLE:
+            countDownLatch = new CountDownLatch(allocate.size());
             for (ListenableFuture<Node> nodeFuture : allocate) {
-              Futures.addCallback(nodeFuture, new NodeCallback(schedule, task, taskInterface),
+              Futures.addCallback(nodeFuture,
+                  new SingleNodeCallback(schedule, task, taskInterface, countDownLatch),
                   EXECUTOR);
             }
             break;
@@ -201,8 +248,16 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
         }
 
+        LOGGER.info(String
+            .format("Waiting for a total of %s processes to finish.", countDownLatch.getCount()));
+
+        countDownLatch.await();
+
       } catch (SchedulingException e) {
         throw new InstantiationException("Error while scheduling.", e);
+      } catch (InterruptedException e) {
+        throw new IllegalStateException("Got interrupted while waiting for schedule to complete.",
+            e);
       }
 
     }
