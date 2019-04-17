@@ -20,7 +20,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
-import java.util.Collection;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.domain.Requirement;
@@ -29,5 +28,10 @@ import org.cloudiator.matchmaking.domain.Requirement;
 public interface ResourcePool {
 
   List<ListenableFuture<Node>> allocate(Schedule schedule,
-      Iterable<? extends Requirement> requirements, @Nullable String name) throws SchedulingException;
+      Iterable<? extends Requirement> requirements, @Nullable String name)
+      throws SchedulingException;
+
+  List<ListenableFuture<Node>> allocate(Schedule schedule,
+      Iterable<? extends Requirement> requirements, Iterable<Node> existingResources,
+      @Nullable String name);
 }

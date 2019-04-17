@@ -52,10 +52,8 @@ public class LanceClientConnector {
 
     Callable<LifecycleClient> createLifecycleClient = new Callable<LifecycleClient>() {
       public LifecycleClient call() throws Exception {
-        final LifecycleClient lifecycleClient = LifecycleClient
+        return LifecycleClient
             .getClient(serverIp, rmiTimeout);
-
-        return lifecycleClient;
       }
     };
 

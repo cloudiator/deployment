@@ -101,6 +101,13 @@ public class OnDemandResourcePool implements ResourcePool {
     }
   }
 
+  @Override
+  public List<ListenableFuture<Node>> allocate(Schedule schedule,
+      Iterable<? extends Requirement> requirements, Iterable<Node> existingResources,
+      @Nullable String name) {
+    return null;
+  }
+
   private List<NodeCandidate> matchmaking(Iterable<? extends Requirement> requirements,
       String userId) throws MatchmakingException {
     LOGGER.debug(String
