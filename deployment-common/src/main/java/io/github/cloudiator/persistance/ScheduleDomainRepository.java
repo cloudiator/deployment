@@ -18,6 +18,7 @@ package io.github.cloudiator.persistance;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -70,7 +71,29 @@ public class ScheduleDomainRepository {
   }
 
   ScheduleModel saveAndGet(Schedule domain) {
-    return createScheduleModel(domain);
+
+    //check if exists
+    ScheduleModel scheduleModel = scheduleModelRepository
+        .findByIdAndUser(domain.id(), domain.userId());
+
+    if (scheduleModel == null) {
+      scheduleModel = createScheduleModel(domain);
+    } else {
+      scheduleModel = updateScheduleModel(domain, scheduleModel);
+    }
+
+    scheduleModelRepository.save(scheduleModel);
+
+    return scheduleModel;
+  }
+
+  private ScheduleModel updateScheduleModel(Schedule domain, ScheduleModel scheduleModel) {
+
+    checkState(domain.id().equals(scheduleModel.domainId()), "Domain ids are not equal");
+
+    scheduleModel.setState(domain.state());
+
+    return null;
   }
 
   private ScheduleModel createScheduleModel(Schedule domain) {

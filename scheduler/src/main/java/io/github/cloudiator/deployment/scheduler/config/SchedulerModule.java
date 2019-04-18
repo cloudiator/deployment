@@ -30,8 +30,8 @@ import io.github.cloudiator.deployment.scheduler.failure.FailureHandler;
 import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
 import io.github.cloudiator.deployment.scheduler.failure.ProcessFailureReportingInterface;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
-import io.github.cloudiator.deployment.scheduler.instantiation.CompositeInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
 import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessSpawnerImpl;
@@ -74,7 +74,7 @@ public class SchedulerModule extends AbstractModule {
     instantiationStrategyMultibinder.addBinding().to(AutomaticInstantiationStrategy.class);
     instantiationStrategyMultibinder.addBinding().to(ManualInstantiationStrategy.class);
 
-    bind(InstantiationStrategy.class).to(CompositeInstantiationStrategy.class);
+    bind(InstantiationStrategySelector.class);
 
     bind(ProcessStatusChecker.class).to(ProcessStatusCheckerImpl.class);
 

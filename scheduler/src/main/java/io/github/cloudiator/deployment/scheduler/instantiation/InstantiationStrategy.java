@@ -21,8 +21,8 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 
 public interface InstantiationStrategy {
+  
+  Instantiation supports();
 
-  boolean supports(Instantiation instantiation);
-
-  void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException;
+  Schedule instantiate(Schedule schedule) throws InstantiationException;
 }

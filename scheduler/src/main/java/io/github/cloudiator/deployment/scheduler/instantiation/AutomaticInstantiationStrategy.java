@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.util.concurrent.FutureCallback;
@@ -29,12 +30,15 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -67,18 +71,18 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
   private final ResourcePool resourcePool;
   private final ProcessService processService;
+  private final JobMessageRepository jobMessageRepository;
+  private final ScheduleDomainRepository scheduleDomainRepository;
 
   @Inject
   public AutomaticInstantiationStrategy(
-      ResourcePool resourcePool, ProcessService processService) {
+      ResourcePool resourcePool, ProcessService processService,
+      JobMessageRepository jobMessageRepository,
+      ScheduleDomainRepository scheduleDomainRepository) {
     this.resourcePool = resourcePool;
     this.processService = processService;
-  }
-
-
-  @Override
-  public boolean supports(Instantiation instantiation) {
-    return instantiation.equals(Instantiation.AUTOMATIC);
+    this.jobMessageRepository = jobMessageRepository;
+    this.scheduleDomainRepository = scheduleDomainRepository;
   }
 
   private ListenableFuture<CloudiatorProcess> submitProcess(Schedule schedule,
@@ -208,9 +212,18 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
-  public void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException {
+  public Instantiation supports() {
+    return Instantiation.AUTOMATIC;
+  }
 
-    checkState(supports(schedule.instantiation()),
+  @Override
+  public Schedule instantiate(Schedule schedule) throws InstantiationException {
+
+    Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
+
+    checkNotNull(job, "Schedule is for job %s, but this job does not exist.", schedule.job());
+
+    checkState(supports().equals(schedule.instantiation()),
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
     //for each task
@@ -255,8 +268,21 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     LOGGER.info(String
         .format("Waiting for a total of %s processes to finish.",
             phaser.getUnarrivedParties() - 1));
+
     phaser.arriveAndAwaitAdvance();
+
+    //refresh the schedule object to receive the created processes
+    Schedule createdSchedule = scheduleDomainRepository
+        .findByIdAndUser(schedule.id(), schedule.userId());
+
+    checkState(createdSchedule != null, String
+        .format("Expected schedule with id %s to exist, but received null", schedule.id()));
+
+    createdSchedule.setState(ScheduleState.RUNNING);
+
     LOGGER.info(String.format("Schedule %s was instantiated.", schedule));
+
+    return createdSchedule;
   }
 
 }

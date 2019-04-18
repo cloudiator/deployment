@@ -18,23 +18,25 @@ package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 
 public class ManualInstantiationStrategy implements InstantiationStrategy {
 
+
   @Override
-  public boolean supports(Instantiation instantiation) {
-    return instantiation.equals(Instantiation.MANUAL);
+  public Instantiation supports() {
+    return Instantiation.MANUAL;
   }
 
   @Override
-  public void instantiate(Schedule schedule, Job job, String userId) {
+  public Schedule instantiate(Schedule schedule) {
 
-    checkState(supports(schedule.instantiation()),
+    checkState(supports().equals(schedule.instantiation()),
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
-    //noop
+    return schedule.setState(ScheduleState.MANUAL);
+
   }
 }

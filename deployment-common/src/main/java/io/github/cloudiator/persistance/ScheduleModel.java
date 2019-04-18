@@ -100,4 +100,9 @@ class ScheduleModel extends Model {
   public ScheduleState state() {
     return scheduleState;
   }
+
+  public ScheduleModel setState(ScheduleState state) {
+    this.scheduleState = state;
+    return this;
+  }
 }
