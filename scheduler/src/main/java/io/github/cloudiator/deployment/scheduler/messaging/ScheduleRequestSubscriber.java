@@ -106,6 +106,7 @@ public class ScheduleRequestSubscriber implements Runnable {
               break;
             case AUTOMATIC:
               schedule = scheduleStateMachine.apply(schedule, ScheduleState.RUNNING, null);
+              break;
             default:
               throw new AssertionError("Unknown instantiation type " + schedule.instantiation());
           }
