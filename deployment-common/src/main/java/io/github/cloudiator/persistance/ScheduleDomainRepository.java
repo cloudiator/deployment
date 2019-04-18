@@ -93,7 +93,7 @@ public class ScheduleDomainRepository {
 
     scheduleModel.setState(domain.state());
 
-    return null;
+    return scheduleModel;
   }
 
   private ScheduleModel createScheduleModel(Schedule domain) {

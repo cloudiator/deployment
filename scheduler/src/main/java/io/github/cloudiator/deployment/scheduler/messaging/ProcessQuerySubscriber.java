@@ -76,6 +76,7 @@ public class ProcessQuerySubscriber implements Runnable {
     });
   }
 
+  @SuppressWarnings("WeakerAccess")
   @Transactional
   List<CloudiatorProcess> query(String userId, String scheduleId, String processId) {
 
