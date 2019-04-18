@@ -29,6 +29,7 @@ import io.github.cloudiator.deployment.scheduler.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.failure.FailureHandler;
 import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
 import io.github.cloudiator.deployment.scheduler.failure.ProcessFailureReportingInterface;
+import io.github.cloudiator.deployment.scheduler.failure.ScheduleEventReportingInterface;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
@@ -56,6 +57,7 @@ public class SchedulerModule extends AbstractModule {
 
     bind(NodeFailureReportingInterface.class).to(FailureHandler.class);
     bind(ProcessFailureReportingInterface.class).to(FailureHandler.class);
+    bind(ScheduleEventReportingInterface.class).to(FailureHandler.class);
 
     Multibinder<Schedulable> schedulableMultibinder = Multibinder
         .newSetBinder(binder(), Schedulable.class);

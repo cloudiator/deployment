@@ -22,18 +22,26 @@ import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.util.stateMachine.ErrorAwareStateMachine;
 import de.uniulm.omi.cloudiator.util.stateMachine.ErrorTransition;
 import de.uniulm.omi.cloudiator.util.stateMachine.StateMachineBuilder;
+import de.uniulm.omi.cloudiator.util.stateMachine.StateMachineHook;
 import de.uniulm.omi.cloudiator.util.stateMachine.Transition.TransitionAction;
 import de.uniulm.omi.cloudiator.util.stateMachine.Transitions;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
+import io.github.cloudiator.deployment.messaging.ScheduleConverter;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.concurrent.ExecutionException;
+import org.cloudiator.messages.Process.ScheduleEvent;
+import org.cloudiator.messaging.services.ProcessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, ScheduleState> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleStateMachine.class);
 
   private final ErrorAwareStateMachine<Schedule, ScheduleState> stateMachine;
   private final ScheduleDomainRepository scheduleDomainRepository;
@@ -42,7 +50,8 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
   @Inject
   public ScheduleStateMachine(
       ScheduleDomainRepository scheduleDomainRepository,
-      InstantiationStrategySelector instantiationStrategySelector) {
+      InstantiationStrategySelector instantiationStrategySelector,
+      ProcessService processService) {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.instantiationStrategySelector = instantiationStrategySelector;
     //noinspection unchecked
@@ -84,6 +93,28 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
                 .to(ScheduleState.RUNNING)
                 .action(restoreToRunning())
                 .build())
+        .addHook(new StateMachineHook<Schedule, ScheduleState>() {
+          @Override
+          public void pre(Schedule schedule, ScheduleState to) {
+            //intentionally left empty
+          }
+
+          @Override
+          public void post(ScheduleState from, Schedule schedule) {
+
+            final ScheduleEvent scheduleEvent = ScheduleEvent.newBuilder()
+                .setSchedule(ScheduleConverter.INSTANCE.applyBack(schedule))
+                .setFrom(ScheduleConverter.SCHEDULE_STATE_CONVERTER.applyBack(from))
+                .setTo(ScheduleConverter.SCHEDULE_STATE_CONVERTER.applyBack(schedule.state()))
+                .build();
+
+            LOGGER.debug(String
+                .format(
+                    "Executing post hook to announce schedule changed event for schedule %s. Previous state was %s, new state is %s.",
+                    schedule, from, schedule.state()));
+            processService.announceScheduleEvent(scheduleEvent);
+          }
+        })
         .build();
   }
 

@@ -63,7 +63,7 @@ public class ScheduleConverter implements TwoWayConverter<ProcessEntities.Schedu
     return result;
   }
 
-  private static class ScheduleStateConverter implements
+  public static class ScheduleStateConverter implements
       TwoWayConverter<ProcessEntities.ScheduleState, ScheduleState> {
 
     @Override
