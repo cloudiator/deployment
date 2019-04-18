@@ -40,6 +40,7 @@ public class ScheduleConverter implements TwoWayConverter<ProcessEntities.Schedu
     final Builder builder = ProcessEntities.Schedule.newBuilder();
     builder.setId(schedule.id()).setUserId(schedule.userId())
         .setInstantiation(INSTANTIATION_CONVERTER.applyBack(schedule.instantiation()))
+        .setState(SCHEDULE_STATE_CONVERTER.applyBack(schedule.state()))
         .setJob(schedule.job());
 
     schedule.processes().stream().map(PROCESS_MESSAGE_CONVERTER::applyBack)

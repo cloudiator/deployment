@@ -102,12 +102,14 @@ public class ScheduleQuerySubscriber implements Runnable {
 
   }
 
+  @SuppressWarnings("WeakerAccess")
   @Transactional
   @Nullable
   Schedule findByUserAndId(String userId, String scheduleId) {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
+  @SuppressWarnings("WeakerAccess")
   @Transactional
   Set<Schedule> findByUser(String userId) {
     return scheduleDomainRepository.findAllByUser(userId);
