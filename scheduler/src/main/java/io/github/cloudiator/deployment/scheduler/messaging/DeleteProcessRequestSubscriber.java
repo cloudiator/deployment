@@ -23,7 +23,6 @@ import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.DeleteProcessRequest;
-import org.cloudiator.messages.Process.LanceProcessDeletedResponse;
 import org.cloudiator.messages.Process.ProcessDeletedResponse;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
@@ -54,6 +53,12 @@ public class DeleteProcessRequestSubscriber implements Runnable {
 
   @SuppressWarnings("WeakerAccess")
   @Transactional
+  CloudiatorProcess getProcess(String processId, String userId) {
+    return processDomainRepository.getByIdAndUser(processId, userId);
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
   void deleteProcess(CloudiatorProcess cloudiatorProcess, String userId) {
     processDomainRepository.delete(cloudiatorProcess.id(), userId);
   }
@@ -74,8 +79,7 @@ public class DeleteProcessRequestSubscriber implements Runnable {
         try {
 
           //retrieve the process
-          final CloudiatorProcess process = processDomainRepository
-              .getByIdAndUser(processId, userId);
+          final CloudiatorProcess process = getProcess(processId, userId);
 
           if (process == null) {
             messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(404)

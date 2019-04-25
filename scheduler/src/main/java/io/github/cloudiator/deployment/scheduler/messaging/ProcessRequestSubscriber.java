@@ -87,6 +87,7 @@ public class ProcessRequestSubscriber implements Runnable {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
+  @SuppressWarnings("WeakerAccess")
   @Transactional
   CloudiatorProcess persistProcess(CloudiatorProcess process) {
     processDomainRepository.save(process);
