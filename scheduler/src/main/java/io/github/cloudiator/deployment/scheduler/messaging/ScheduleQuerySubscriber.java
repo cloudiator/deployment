@@ -26,10 +26,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.cloudiator.messages.General.Error;
-import org.cloudiator.messages.Process.ScheduleQueryRequest;
 import org.cloudiator.messages.Process.ScheduleQueryResponse;
 import org.cloudiator.messages.Process.ScheduleQueryResponse.Builder;
-import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
@@ -56,48 +54,46 @@ public class ScheduleQuerySubscriber implements Runnable {
   @Override
   public void run() {
 
-    processService.subscribeScheduleQueryRequest(new MessageCallback<ScheduleQueryRequest>() {
-      @Override
-      public void accept(String id, ScheduleQueryRequest content) {
+    processService.subscribeScheduleQueryRequest((id, content) -> {
 
-        try {
+      try {
 
-          if (Strings.isNullOrEmpty(content.getUserId())) {
-            throw new IllegalStateException("UserId in request is null or empty.");
-          }
-
-          final Builder builder = ScheduleQueryResponse.newBuilder();
-
-          if (!Strings.isNullOrEmpty(content.getScheduleId())) {
-
-            final Schedule byUserAndId = findByUserAndId(content.getUserId(), content.getScheduleId());
-            if (byUserAndId != null) {
-              builder.addSchedules(SCHEDULE_CONVERTER
-                  .applyBack(byUserAndId));
-            }
-          } else {
-            builder
-                .addAllSchedules(
-                    findByUser(content.getUserId()).stream().map(SCHEDULE_CONVERTER::applyBack)
-                        .collect(
-                            Collectors.toSet()));
-          }
-
-          messageInterface.reply(id, builder.build());
-
-
-        } catch (Exception e) {
-
-          LOGGER.error("Unexpected exception while querying schedules.", e);
-
-          messageInterface.reply(ScheduleQueryResponse.class, id, Error.newBuilder().setCode(500)
-              .setMessage(String
-                  .format("Unexpected exception during querying schedules: %s.", e.getMessage()))
-              .build());
+        if (Strings.isNullOrEmpty(content.getUserId())) {
+          throw new IllegalStateException("UserId in request is null or empty.");
         }
 
+        final Builder builder = ScheduleQueryResponse.newBuilder();
 
+        if (!Strings.isNullOrEmpty(content.getScheduleId())) {
+
+          final Schedule byUserAndId = findByUserAndId(content.getUserId(),
+              content.getScheduleId());
+          if (byUserAndId != null) {
+            builder.addSchedules(SCHEDULE_CONVERTER
+                .applyBack(byUserAndId));
+          }
+        } else {
+          builder
+              .addAllSchedules(
+                  findByUser(content.getUserId()).stream().map(SCHEDULE_CONVERTER::applyBack)
+                      .collect(
+                          Collectors.toSet()));
+        }
+
+        messageInterface.reply(id, builder.build());
+
+
+      } catch (Exception e) {
+
+        LOGGER.error("Unexpected exception while querying schedules.", e);
+
+        messageInterface.reply(ScheduleQueryResponse.class, id, Error.newBuilder().setCode(500)
+            .setMessage(String
+                .format("Unexpected exception during querying schedules: %s.", e.getMessage()))
+            .build());
       }
+
+
     });
 
   }

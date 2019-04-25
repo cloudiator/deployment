@@ -24,8 +24,8 @@ import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Predicates;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
-import java.io.IOException;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
+import java.io.IOException;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -38,7 +38,7 @@ public class LanceClientConnector {
 
   @Inject(optional = true)
   @Named("lance.rmiTimeout")
-  private int rmiTimeout = 0;
+  private int rmiTimeout = 60000;
 
   @Inject
   public LanceClientConnector() {
