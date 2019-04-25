@@ -29,6 +29,8 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.messaging.ScheduleConverter;
+import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
+import io.github.cloudiator.deployment.scheduler.failure.ScheduleRestore;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
@@ -46,12 +48,14 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
   private final ErrorAwareStateMachine<Schedule, ScheduleState> stateMachine;
   private final ScheduleDomainRepository scheduleDomainRepository;
   private final InstantiationStrategySelector instantiationStrategySelector;
+  private final ScheduleRestore scheduleRestore;
 
   @Inject
   public ScheduleStateMachine(
       ScheduleDomainRepository scheduleDomainRepository,
       InstantiationStrategySelector instantiationStrategySelector,
-      ProcessService processService) {
+      ProcessService processService,
+      ScheduleRestore scheduleRestore) {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.instantiationStrategySelector = instantiationStrategySelector;
     //noinspection unchecked
@@ -116,6 +120,7 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
           }
         })
         .build();
+    this.scheduleRestore = scheduleRestore;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -176,7 +181,7 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
     return new TransitionAction<Schedule>() {
       @Override
       public Schedule apply(Schedule o, Object[] objects) throws ExecutionException {
-        throw new UnsupportedOperationException("Restoring is currently not supported");
+        return save(o.setState(ScheduleState.RESTORING));
       }
     };
   }
@@ -185,7 +190,12 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
     return new TransitionAction<Schedule>() {
       @Override
       public Schedule apply(Schedule o, Object[] objects) throws ExecutionException {
-        throw new UnsupportedOperationException("Restoring is currently not supported");
+
+        try {
+          return save(scheduleRestore.heal(o));
+        } catch (SchedulingException e) {
+          throw new ExecutionException("Unexpected error while healing the schedule.", e);
+        }
       }
     };
   }

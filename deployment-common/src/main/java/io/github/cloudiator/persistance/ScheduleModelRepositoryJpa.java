@@ -55,4 +55,17 @@ public class ScheduleModelRepositoryJpa extends
         .getSingleResultOrNull(
             em().createQuery(query).setParameter("id", id).setParameter("userId", user));
   }
+
+  @Override
+  public ScheduleModel findByProcessAndUser(String processId, String userId) {
+
+    String query = String.format(
+        "select schedule from %s as schedule inner join schedule.tenant as tenant inner join schedule.proccesses as process where tenant.userId = :userId and process.domainId = :processId",
+        type.getName());
+
+    return (ScheduleModel) JpaResultHelper
+        .getSingleResultOrNull(
+            em().createQuery(query).setParameter("processId", processId)
+                .setParameter("userId", userId));
+  }
 }

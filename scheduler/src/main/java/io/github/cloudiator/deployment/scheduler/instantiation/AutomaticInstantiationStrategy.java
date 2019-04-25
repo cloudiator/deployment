@@ -40,6 +40,7 @@ import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -100,19 +101,20 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     return processRequestFuture;
   }
 
+
   private abstract class NodeCallback<T> implements FutureCallback<T> {
 
     private final Schedule schedule;
     private final Task task;
     private final TaskInterface taskInterface;
-    private final Phaser phaser;
+    private final Runnable afterExecute;
 
     protected NodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Phaser phaser) {
+        TaskInterface taskInterface, Runnable afterExecute) {
       this.schedule = schedule;
       this.task = task;
       this.taskInterface = taskInterface;
-      this.phaser = phaser;
+      this.afterExecute = afterExecute;
     }
 
     @Override
@@ -125,7 +127,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         throw new IllegalStateException("Unexpected exception while waiting for result",
             e.getCause());
       } finally {
-        phaser.arriveAndDeregister();
+        afterExecute.run();
       }
     }
 
@@ -134,7 +136,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       try {
         doFailure(t);
       } finally {
-        phaser.arriveAndDeregister();
+        afterExecute.run();
       }
     }
 
@@ -158,8 +160,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class SingleNodeCallback extends NodeCallback<Node> {
 
     private SingleNodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Phaser phaser) {
-      super(schedule, task, taskInterface, phaser);
+        TaskInterface taskInterface, Runnable afterExecute) {
+      super(schedule, task, taskInterface, afterExecute);
     }
 
     @Override
@@ -185,8 +187,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class ClusterCallback extends NodeCallback<List<Node>> {
 
     private ClusterCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Phaser phaser) {
-      super(schedule, task, taskInterface, phaser);
+        TaskInterface taskInterface, Runnable afterExecute) {
+      super(schedule, task, taskInterface, afterExecute);
     }
 
     @Override
@@ -217,6 +219,48 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
+  public WaitLock deployTask(Task task, Schedule schedule,
+      List<ListenableFuture<Node>> allocatedResources) {
+    //select the interface
+    final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
+        .select(task);
+
+    final Phaser phaser = new Phaser(1);
+
+    switch (taskInterface.processMapping()) {
+      case CLUSTER:
+        phaser.register();
+        final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocatedResources);
+        Futures.addCallback(nodeFutures,
+            new ClusterCallback(schedule, task, taskInterface, new Runnable() {
+              @Override
+              public void run() {
+                phaser.arriveAndDeregister();
+              }
+            }),
+            EXECUTOR);
+        break;
+      case SINGLE:
+        for (ListenableFuture<Node> nodeFuture : allocatedResources) {
+          phaser.register();
+          Futures.addCallback(nodeFuture,
+              new SingleNodeCallback(schedule, task, taskInterface, new Runnable() {
+                @Override
+                public void run() {
+                  phaser.arriveAndDeregister();
+                }
+              }),
+              EXECUTOR);
+        }
+        break;
+      default:
+        throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
+    }
+
+    return new WaitLockImpl(phaser);
+  }
+
+  @Override
   public Schedule instantiate(Schedule schedule) throws InstantiationException {
 
     Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
@@ -227,7 +271,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
     //for each task
-    Phaser phaser = new Phaser(1);
+    List<WaitLock> locks = new LinkedList<>();
     for (Iterator<Task> iter = job.tasksInOrder(); iter.hasNext(); ) {
       final Task task = iter.next();
 
@@ -237,39 +281,19 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         final List<ListenableFuture<Node>> allocate = resourcePool
             .allocate(schedule, task.requirements(job), task.name());
 
-        //select the interface
-        final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
-            .select(task);
-
-        switch (taskInterface.processMapping()) {
-          case CLUSTER:
-            phaser.register();
-            final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocate);
-            Futures.addCallback(nodeFutures,
-                new ClusterCallback(schedule, task, taskInterface, phaser),
-                EXECUTOR);
-            break;
-          case SINGLE:
-            for (ListenableFuture<Node> nodeFuture : allocate) {
-              phaser.register();
-              Futures.addCallback(nodeFuture,
-                  new SingleNodeCallback(schedule, task, taskInterface, phaser),
-                  EXECUTOR);
-            }
-            break;
-          default:
-            throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
-        }
+        locks.add(deployTask(task, schedule, allocate));
 
       } catch (SchedulingException e) {
         throw new InstantiationException("Error while scheduling.", e);
       }
     }
     LOGGER.info(String
-        .format("Waiting for a total of %s processes to finish.",
-            phaser.getUnarrivedParties() - 1));
+        .format("Waiting for a total of %s tasks to finish.",
+            locks.size()));
 
-    phaser.arriveAndAwaitAdvance();
+    final WaitLock waitLock = new CompositeWaitLock(locks);
+
+    waitLock.waitFor();
 
     //refresh the schedule object to receive the created processes
     Schedule createdSchedule = scheduleDomainRepository

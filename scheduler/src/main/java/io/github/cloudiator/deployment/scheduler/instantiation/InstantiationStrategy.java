@@ -16,13 +16,56 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
-import io.github.cloudiator.deployment.domain.Job;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.domain.Node;
+import java.util.List;
+import java.util.concurrent.Phaser;
 
 public interface InstantiationStrategy {
-  
+
+  interface WaitLock {
+
+    void waitFor();
+  }
+
+  class WaitLockImpl implements WaitLock {
+
+    private final Phaser phaser;
+
+    public WaitLockImpl(Phaser phaser) {
+      this.phaser = phaser;
+    }
+
+    @Override
+    public void waitFor() {
+      phaser.arriveAndAwaitAdvance();
+    }
+  }
+
+  class CompositeWaitLock implements WaitLock {
+
+    private final List<WaitLock> waitLocks;
+
+    public CompositeWaitLock(
+        List<WaitLock> waitLocks) {
+      this.waitLocks = waitLocks;
+    }
+
+    @Override
+    public void waitFor() {
+      for (WaitLock waitLock : waitLocks) {
+        waitLock.waitFor();
+      }
+    }
+  }
+
   Instantiation supports();
+
+  WaitLock deployTask(Task task, Schedule schedule,
+      List<ListenableFuture<Node>> allocatedResources);
 
   Schedule instantiate(Schedule schedule) throws InstantiationException;
 }

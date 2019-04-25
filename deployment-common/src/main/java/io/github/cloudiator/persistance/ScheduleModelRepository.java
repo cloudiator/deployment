@@ -16,7 +16,6 @@
 
 package io.github.cloudiator.persistance;
 
-import io.github.cloudiator.util.JpaResultHelper;
 import java.util.List;
 
 public interface ScheduleModelRepository extends ModelRepository<ScheduleModel> {
@@ -25,4 +24,6 @@ public interface ScheduleModelRepository extends ModelRepository<ScheduleModel> 
   List<ScheduleModel> findByUser(String userId);
 
   ScheduleModel findByIdAndUser(String id, String user);
+
+  ScheduleModel findByProcessAndUser(String processId, String userId);
 }

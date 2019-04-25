@@ -18,9 +18,13 @@ package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.domain.Node;
+import java.util.List;
 
 public class ManualInstantiationStrategy implements InstantiationStrategy {
 
@@ -28,6 +32,13 @@ public class ManualInstantiationStrategy implements InstantiationStrategy {
   @Override
   public Instantiation supports() {
     return Instantiation.MANUAL;
+  }
+
+  @Override
+  public WaitLock deployTask(Task task, Schedule schedule,
+      List<ListenableFuture<Node>> allocatedResources) {
+    throw new UnsupportedOperationException(
+        String.format("%s does not support scheduling a single task.", this));
   }
 
   @Override

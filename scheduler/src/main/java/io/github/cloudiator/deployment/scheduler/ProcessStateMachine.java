@@ -112,8 +112,7 @@ public class ProcessStateMachine implements
   @SuppressWarnings("WeakerAccess")
   @Transactional
   CloudiatorProcess save(CloudiatorProcess process) {
-    processDomainRepository.save(process);
-    return process;
+    return processDomainRepository.save(process);
   }
 
   private static CloudiatorProcess updateProcess(CloudiatorProcess process, ProcessState newState,

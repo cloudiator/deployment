@@ -16,14 +16,18 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.concurrent.ExecutionException;
 import org.cloudiator.messages.Process.DeleteLanceProcessRequest;
 import org.cloudiator.messages.Process.LanceProcessDeletedResponse;
@@ -39,12 +43,15 @@ public class LanceProcessKillerImpl implements ProcessKiller {
   private final ProcessService processService;
   private final NodeMessageRepository nodeMessageRepository;
   private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
+  private final ScheduleDomainRepository scheduleDomainRepository;
 
   @Inject
   public LanceProcessKillerImpl(ProcessService processService,
-      NodeMessageRepository nodeMessageRepository) {
+      NodeMessageRepository nodeMessageRepository,
+      ScheduleDomainRepository scheduleDomainRepository) {
     this.processService = processService;
     this.nodeMessageRepository = nodeMessageRepository;
+    this.scheduleDomainRepository = scheduleDomainRepository;
   }
 
   @Override
@@ -81,9 +88,18 @@ public class LanceProcessKillerImpl implements ProcessKiller {
           String.format("Can not delete process %s as originId is not set.", cloudiatorProcess));
     }
 
+    final Schedule schedule = scheduleDomainRepository.findByProcess(cloudiatorProcess);
+
+    checkState(schedule != null,
+        String.format("Could not retrieve schedule for process %s", cloudiatorProcess));
+
     final DeleteLanceProcessRequest deleteLanceProcessRequest = DeleteLanceProcessRequest
         .newBuilder()
-        .setProcessId(cloudiatorProcess.originId().get()).setUserId(userId)
+        .setProcessId(cloudiatorProcess.originId().get())
+        .setTaskId(cloudiatorProcess.taskId())
+        .setJobId(schedule.job())
+        .setScheduleId(schedule.id())
+        .setUserId(userId)
         .setNode(NODE_MESSAGE_CONVERTER.apply(byId))
         .build();
 

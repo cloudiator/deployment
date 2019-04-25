@@ -76,9 +76,9 @@ public class ProcessDomainRepository {
         Collectors.toList());
   }
 
-  public void save(CloudiatorProcess domain) {
+  public CloudiatorProcess save(CloudiatorProcess domain) {
     checkNotNull(domain, "domain is null");
-    saveAndGet(domain);
+    return PROCESS_MODEL_CONVERTER.apply(saveAndGet(domain));
   }
 
 
