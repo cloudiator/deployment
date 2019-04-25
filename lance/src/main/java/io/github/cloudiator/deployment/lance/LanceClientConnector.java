@@ -25,6 +25,7 @@ import com.google.common.base.Predicates;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
 import java.io.IOException;
+import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -89,4 +90,10 @@ public class LanceClientConnector {
     return lifecycleClient;
   }
 
+  LifecycleClientRegistryWrapper getRegWrapper() {
+    final LifecycleClientRegistryWrapper wrapper = LifecycleClient
+        .getRegWrapper();
+
+    return wrapper;
+  }
 }
