@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -32,6 +33,13 @@ public class FailureHandler implements NodeFailureReportingInterface,
     this.scheduleStateMachine = scheduleStateMachine;
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule findSchedule(String scheduleId, String userId) {
+    return scheduleDomainRepository
+        .findByIdAndUser(scheduleId, userId);
+  }
+
   @Override
   public void addNodeFailure(Node node) {
     //todo: currently ignoring node failures if the process is not also failing
@@ -43,9 +51,8 @@ public class FailureHandler implements NodeFailureReportingInterface,
   public void addProcessFailure(CloudiatorProcess cloudiatorProcess) {
     LOGGER.warn(String.format("Registering failure of process %s", cloudiatorProcess));
 
-    //retrieve the schedule affected by this failure
-    final Schedule schedule = scheduleDomainRepository
-        .findByIdAndUser(cloudiatorProcess.scheduleId(), cloudiatorProcess.userId());
+    final Schedule schedule = findSchedule(cloudiatorProcess.scheduleId(),
+        cloudiatorProcess.userId());
 
     checkNotNull(schedule, String
         .format("Process %s failed, but schedule with id %s does not exist.", cloudiatorProcess,

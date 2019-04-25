@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.execution.LoggingThreadPoolExecutor;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
@@ -296,8 +297,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     waitLock.waitFor();
 
     //refresh the schedule object to receive the created processes
-    Schedule createdSchedule = scheduleDomainRepository
-        .findByIdAndUser(schedule.id(), schedule.userId());
+    Schedule createdSchedule = refresh(schedule);
 
     checkState(createdSchedule != null, String
         .format("Expected schedule with id %s to exist, but received null", schedule.id()));
@@ -307,6 +307,13 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     LOGGER.info(String.format("Schedule %s was instantiated.", schedule));
 
     return createdSchedule;
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule refresh(Schedule schedule) {
+    return scheduleDomainRepository
+        .findByIdAndUser(schedule.id(), schedule.userId());
   }
 
 }

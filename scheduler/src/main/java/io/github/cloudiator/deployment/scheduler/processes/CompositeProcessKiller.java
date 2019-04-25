@@ -44,16 +44,11 @@ public class CompositeProcessKiller implements ProcessKiller {
   }
 
   @Override
-  public void kill(CloudiatorProcess cloudiatorProcess) {
+  public void kill(CloudiatorProcess cloudiatorProcess) throws ProcessDeletionException {
 
     for (ProcessKiller processKiller : processKillers) {
       if (processKiller.supports(cloudiatorProcess)) {
-        try {
-          processKiller.kill(cloudiatorProcess);
-        } catch (ProcessDeletionException e) {
-          String.format("%s can not kill the process %s.", processKiller, cloudiatorProcess);
-        }
-        return;
+        processKiller.kill(cloudiatorProcess);
       }
     }
 

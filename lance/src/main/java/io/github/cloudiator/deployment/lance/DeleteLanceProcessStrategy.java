@@ -17,10 +17,12 @@
 package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.lance.application.ApplicationInstanceId;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
+import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
 import io.github.cloudiator.domain.Node;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -37,26 +39,29 @@ public class DeleteLanceProcessStrategy {
     this.lanceClientConnector = lanceClientConnector;
   }
 
-  //hier noch als Params: ApplicationInstanceId, ComponentId
-  public void execute(String processId, Node node) {
 
+  public void execute(String processId, String schedule, String taskId, String jobId, Node node) {
     LOGGER.debug(String.format("Connecting to lance agent on node %s.", node));
 
     try {
-      //Wenn hier
       final LifecycleClient lifecycleClient = lanceClientConnector
           .getLifecycleClient(node.connectTo().ip());
-
-      //todo make reg deletion parameterizable
       lifecycleClient.undeploy(ComponentInstanceId.fromString(processId), false);
     } catch (DeploymentException | IOException e) {
-      final LifecycleClientRegistryWrapper regWrapper = lanceClientConnector
-      .getRegWrapper ();
-      //das hier rufen:
-      //regWrapper.unRegisterInstance(ApplicationInstanceId appInstId,
-      //  ComponentId componentId,ComponentInstanceId componentInstanceId)
-      throw new IllegalStateException("Killing of process %s failed. Now trying to delete "
-          + "entry in registry...",e);
+
+      LOGGER.warn(String
+          .format("Deleting process %s failed with exception: %s. Now deleting from registry.",
+              processId, e.getMessage()), e);
+
+      try {
+        LifecycleClientRegistryWrapper
+            .unRegisterInstance(ApplicationInstanceId.fromString(schedule),
+                ComponentIdGenerator.generate(jobId, taskId),
+                ComponentInstanceId.fromString(processId));
+      } catch (RegistrationException | DeploymentException ex) {
+        throw new IllegalStateException(
+            String.format("Deleting of process %s finally failed.", processId), e);
+      }
     }
   }
 }

@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
@@ -65,6 +66,13 @@ public class ScheduleGraphSubscriber implements Runnable {
     this.nodeMessageRepository = nodeMessageRepository;
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule retrieveSchedule(String scheduleId, String userId) {
+    return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+  }
+
+
   private boolean runsOnNode(Schedule schedule, Node node) {
 
     Set<String> nodesContainedInSchedule = new HashSet<>();
@@ -96,7 +104,7 @@ public class ScheduleGraphSubscriber implements Runnable {
 
           try {
 
-            final Schedule schedule = scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+            final Schedule schedule = retrieveSchedule(scheduleId, userId);
 
             if (schedule == null) {
               messageInterface

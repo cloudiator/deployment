@@ -56,8 +56,10 @@ public class DeleteLanceProcessSubscriber implements Runnable {
                 .format("Receiving request to delete process with id %s.", content.getProcessId()));
 
             try {
-              deleteLanceProcessStrategy.execute(content.getProcessId(),
-                  NODE_MESSAGE_CONVERTER.applyBack(content.getNode()));
+              deleteLanceProcessStrategy
+                  .execute(content.getProcessId(), content.getScheduleId(), content.getTaskId(),
+                      content.getJobId(),
+                      NODE_MESSAGE_CONVERTER.applyBack(content.getNode()));
 
               messageInterface.reply(id, LanceProcessDeletedResponse.newBuilder().build());
 

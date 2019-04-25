@@ -335,7 +335,7 @@ public class CreateLanceProcessStrategy {
             applicationInstanceId));
 
     for (Task task : job.tasks()) {
-      final ComponentId componentId = ComponentId.fromString(job.id() + "/" + task.name());
+      final ComponentId componentId = ComponentIdGenerator.generate(job.id(), task.name());
 
       try {
         lifecycleClient

@@ -58,6 +58,12 @@ public class DeleteScheduleRequestSubscriber implements Runnable {
     scheduleDomainRepository.delete(schedule, userId);
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule retrieveSchedule(String scheduleId, String userId) {
+    return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+  }
+
   @Override
   public void run() {
 
@@ -74,7 +80,7 @@ public class DeleteScheduleRequestSubscriber implements Runnable {
 
         try {
 
-          final Schedule schedule = scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+          final Schedule schedule = retrieveSchedule(scheduleId, userId);
 
           if (schedule == null) {
             messageInterface.reply(ScheduleDeleteResponse.class, id, Error.newBuilder().setCode(404)

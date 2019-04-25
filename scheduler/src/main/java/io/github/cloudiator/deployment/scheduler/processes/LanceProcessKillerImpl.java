@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.scheduler.processes;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
@@ -60,6 +61,12 @@ public class LanceProcessKillerImpl implements ProcessKiller {
     return cloudiatorProcess.type().equals(Type.LANCE);
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule findSchedule(CloudiatorProcess cloudiatorProcess) {
+    return scheduleDomainRepository.findByProcess(cloudiatorProcess);
+  }
+
   @Override
   public void kill(CloudiatorProcess cloudiatorProcess) throws ProcessDeletionException {
 
@@ -89,7 +96,7 @@ public class LanceProcessKillerImpl implements ProcessKiller {
           String.format("Can not delete process %s as originId is not set.", cloudiatorProcess));
     }
 
-    final Schedule schedule = scheduleDomainRepository.findByProcess(cloudiatorProcess);
+    final Schedule schedule = findSchedule(cloudiatorProcess);
 
     checkState(schedule != null,
         String.format("Could not retrieve schedule for process %s", cloudiatorProcess));
