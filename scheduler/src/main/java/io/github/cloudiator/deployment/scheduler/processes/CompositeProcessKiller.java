@@ -51,7 +51,7 @@ public class CompositeProcessKiller implements ProcessKiller {
         try {
           processKiller.kill(cloudiatorProcess);
         } catch (ProcessDeletionException e) {
-          String.format("%s can not kill the process %s.", this, cloudiatorProcess));
+          String.format("%s can not kill the process %s.", processKiller, cloudiatorProcess);
         }
         return;
       }
