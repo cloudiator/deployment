@@ -29,6 +29,7 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Inheritance;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 
 
@@ -59,8 +60,12 @@ abstract class ProcessModel extends Model {
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.ProcessState state;
 
+  @Nullable
+  @Lob
   private String diagnostic;
 
+  @Nullable
+  @Lob
   private String reason;
 
   /**
@@ -150,6 +155,7 @@ abstract class ProcessModel extends Model {
     return taskInterface;
   }
 
+  @Nullable
   public String getDiagnostic() {
     return diagnostic;
   }
@@ -159,6 +165,7 @@ abstract class ProcessModel extends Model {
     return this;
   }
 
+  @Nullable
   public String getReason() {
     return reason;
   }
