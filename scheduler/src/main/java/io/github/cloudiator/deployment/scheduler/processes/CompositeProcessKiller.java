@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
@@ -46,15 +48,14 @@ public class CompositeProcessKiller implements ProcessKiller {
   @Override
   public void kill(CloudiatorProcess cloudiatorProcess) throws ProcessDeletionException {
 
+    checkState(supports(cloudiatorProcess),
+        String.format("%s does not support killing the process %s.", this, cloudiatorProcess));
+
     for (ProcessKiller processKiller : processKillers) {
       if (processKiller.supports(cloudiatorProcess)) {
         processKiller.kill(cloudiatorProcess);
       }
     }
-
-    throw new IllegalStateException(
-        String.format("%s does not support killing the process %s.", this, cloudiatorProcess));
-
   }
 
   @Override
