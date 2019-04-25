@@ -38,7 +38,7 @@ public class LanceClientConnector {
 
   @Inject(optional = true)
   @Named("lance.rmiTimeout")
-  private int rmiTimeout = 60000;
+  private int rmiTimeout = 0;
 
   @Inject
   public LanceClientConnector() {
