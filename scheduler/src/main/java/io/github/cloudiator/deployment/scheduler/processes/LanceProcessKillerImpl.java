@@ -24,6 +24,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.scheduler.exceptions.ProcessDeletionException;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
@@ -60,7 +61,7 @@ public class LanceProcessKillerImpl implements ProcessKiller {
   }
 
   @Override
-  public void kill(CloudiatorProcess cloudiatorProcess) {
+  public void kill(CloudiatorProcess cloudiatorProcess) throws ProcessDeletionException {
 
     final String userId = cloudiatorProcess.userId();
 
@@ -118,7 +119,7 @@ public class LanceProcessKillerImpl implements ProcessKiller {
     } catch (InterruptedException e) {
       throw new IllegalStateException("Got interrupted while waiting for lance process deletion.");
     } catch (ExecutionException e) {
-      throw new IllegalStateException("Error while deleting lance process.", e.getCause());
+      throw new ProcessDeletionException("Error while deleting lance process.", e.getCause());
     }
 
 
