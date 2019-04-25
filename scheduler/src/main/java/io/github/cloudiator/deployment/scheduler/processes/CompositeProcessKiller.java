@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.scheduler.processes;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.scheduler.exceptions.ProcessDeletionException;
 import java.util.Set;
 
 public class CompositeProcessKiller implements ProcessKiller {
@@ -47,7 +48,11 @@ public class CompositeProcessKiller implements ProcessKiller {
 
     for (ProcessKiller processKiller : processKillers) {
       if (processKiller.supports(cloudiatorProcess)) {
-        processKiller.kill(cloudiatorProcess);
+        try {
+          processKiller.kill(cloudiatorProcess);
+        } catch (ProcessDeletionException e) {
+          String.format("%s can not kill the process %s.", processKiller, cloudiatorProcess);
+        }
         return;
       }
     }

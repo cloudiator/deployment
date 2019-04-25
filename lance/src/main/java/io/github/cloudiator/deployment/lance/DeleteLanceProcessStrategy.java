@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
+import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import io.github.cloudiator.domain.Node;
@@ -36,20 +37,26 @@ public class DeleteLanceProcessStrategy {
     this.lanceClientConnector = lanceClientConnector;
   }
 
+  //hier noch als Params: ApplicationInstanceId, ComponentId
   public void execute(String processId, Node node) {
 
     LOGGER.debug(String.format("Connecting to lance agent on node %s.", node));
 
     try {
+      //Wenn hier
       final LifecycleClient lifecycleClient = lanceClientConnector
           .getLifecycleClient(node.connectTo().ip());
 
       //todo make reg deletion parameterizable
       lifecycleClient.undeploy(ComponentInstanceId.fromString(processId), false);
     } catch (DeploymentException | IOException e) {
-      throw new IllegalStateException("Killing of process %s failed.", e);
+      final LifecycleClientRegistryWrapper regWrapper = lanceClientConnector
+      .getRegWrapper ();
+      //das hier rufen:
+      //regWrapper.unRegisterInstance(ApplicationInstanceId appInstId,
+      //  ComponentId componentId,ComponentInstanceId componentInstanceId)
+      throw new IllegalStateException("Killing of process %s failed. Now trying to delete "
+          + "entry in registry...",e);
     }
-
   }
-
 }
