@@ -168,7 +168,13 @@ public class ProcessStateMachine implements
 
     return (process, arguments) -> {
 
-      processKiller.kill(process);
+      try {
+        processKiller.kill(process);
+      } catch (Exception e) {
+        LOGGER.warn(String
+            .format("Exception while deleting process %s. Still marking process as deleted.", e));
+      }
+
       delete(process);
 
       return updateProcess(process, ProcessState.DELETED, null);

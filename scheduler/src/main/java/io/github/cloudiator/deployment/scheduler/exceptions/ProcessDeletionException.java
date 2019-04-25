@@ -14,15 +14,26 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler.processes;
+package io.github.cloudiator.deployment.scheduler.exceptions;
 
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.scheduler.exceptions.ProcessDeletionException;
+public class ProcessDeletionException extends Exception {
 
-public interface ProcessKiller {
+  public ProcessDeletionException() {
+  }
 
-  boolean supports(CloudiatorProcess cloudiatorProcess);
+  public ProcessDeletionException(String s) {
+    super(s);
+  }
 
-  void kill(CloudiatorProcess cloudiatorProcess) throws ProcessDeletionException;
+  public ProcessDeletionException(String s, Throwable throwable) {
+    super(s, throwable);
+  }
 
+  public ProcessDeletionException(Throwable throwable) {
+    super(throwable);
+  }
+
+  public ProcessDeletionException(String s, Throwable throwable, boolean b, boolean b1) {
+    super(s, throwable, b, b1);
+  }
 }
