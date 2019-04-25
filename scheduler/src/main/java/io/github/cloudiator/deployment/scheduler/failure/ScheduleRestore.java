@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.Job;
@@ -83,6 +84,12 @@ public class ScheduleRestore {
     this.scheduleDomainRepository = scheduleDomainRepository;
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule findByIdAndUser(String scheduleId, String userId) {
+    return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+  }
+
   public Schedule heal(Schedule schedule) throws SchedulingException {
 
     final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
@@ -123,7 +130,7 @@ public class ScheduleRestore {
     cleanup(processToBeCleaned, nodesToBeCleaned);
 
     return Objects
-        .requireNonNull(scheduleDomainRepository.findByIdAndUser(schedule.id(), schedule.userId()))
+        .requireNonNull(findByIdAndUser(schedule.id(), schedule.userId()))
         .setState(
             ScheduleState.RUNNING);
   }
