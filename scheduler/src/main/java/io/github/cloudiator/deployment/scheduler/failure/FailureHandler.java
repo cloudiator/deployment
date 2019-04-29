@@ -48,7 +48,7 @@ public class FailureHandler implements NodeFailureReportingInterface,
   }
 
   @Override
-  public void addProcessFailure(CloudiatorProcess cloudiatorProcess) {
+  public synchronized void addProcessFailure(CloudiatorProcess cloudiatorProcess) {
     LOGGER.warn(String.format("Registering failure of process %s", cloudiatorProcess));
 
     final Schedule schedule = findSchedule(cloudiatorProcess.scheduleId(),
@@ -68,6 +68,12 @@ public class FailureHandler implements NodeFailureReportingInterface,
           .format("Process %s failed. Ignoring it as schedule is in state %s", cloudiatorProcess,
               schedule.state()));
     }
+  }
+
+  private void handleAffectedProcesses(CloudiatorProcess cloudiatorProcess) {
+
+
+
   }
 
   @Override

@@ -8,12 +8,14 @@ import de.uniulm.omi.cloudiator.lance.container.spec.os.OperatingSystem;
 import de.uniulm.omi.cloudiator.lance.lifecycle.bash.BashBasedHandlerBuilder;
 import de.uniulm.omi.cloudiator.lance.lifecycle.detector.PortUpdateHandler;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.PortRequired;
 
 public class ComponentSupplierUtils {
 
-  private ComponentSupplierUtils(){}
+  private ComponentSupplierUtils() {
+  }
 
   public static PortType derivePortType(Job job, PortProvided provided) {
     if (job.attachedCommunications(provided).isEmpty()) {
@@ -33,8 +35,8 @@ public class ComponentSupplierUtils {
     return OutPort.NO_SINKS;
   }
 
-  public static PortUpdateHandler portUpdateHandler(PortRequired portRequired) {
-    if (!portRequired.updateAction().isPresent()) {
+  public static PortUpdateHandler portUpdateHandler(LanceInterface lanceInterface) {
+    if (!lanceInterface.portUpdateAction().isPresent()) {
       return DeploymentHelper.getEmptyPortUpdateHandler();
     }
 
@@ -42,7 +44,7 @@ public class ComponentSupplierUtils {
     //todo it is possible to set one per operating system!
     BashBasedHandlerBuilder portUpdateBuilder = new BashBasedHandlerBuilder();
     portUpdateBuilder.setOperatingSystem(OperatingSystem.UBUNTU_14_04);
-    portUpdateBuilder.addCommand(portRequired.updateAction().get());
+    portUpdateBuilder.addCommand(lanceInterface.portUpdateAction().get());
     return portUpdateBuilder.buildPortUpdateHandler();
   }
 }

@@ -31,6 +31,7 @@ public class LanceInterfaceBuilder {
   private String stop;
   private String postStop;
   private String shutdown;
+  private String portUpdateAction;
   private LanceContainerType containerType;
 
   private LanceInterfaceBuilder() {
@@ -110,10 +111,16 @@ public class LanceInterfaceBuilder {
     return this;
   }
 
+  public LanceInterfaceBuilder portUpdateAction(String portUpdateAction) {
+    this.portUpdateAction = portUpdateAction;
+    return this;
+  }
+
   public LanceInterface build() {
     return new LanceInterfaceImpl(containerType, init, preInstall, install, postInstall, preStart,
         start,
-        startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown);
+        startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown,
+        portUpdateAction);
   }
 
 

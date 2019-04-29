@@ -10,7 +10,8 @@ import io.github.cloudiator.deployment.domain.Task;
 import java.util.function.Supplier;
 
 //dockerhub
-public class PublicDockerComponentSupplier extends DockerComponentSupplier implements Supplier<DockerComponent> {
+public class PublicDockerComponentSupplier extends DockerComponentSupplier implements
+    Supplier<DockerComponent> {
 
   PublicDockerComponentSupplier(Job job, Task task) {
     super(job, task);
@@ -18,7 +19,8 @@ public class PublicDockerComponentSupplier extends DockerComponentSupplier imple
 
   @Override
   public DockerComponent get() {
-    DockerComponent.Builder builder = new DockerComponent.Builder(deriveEntireCommands(), getActualImageName());
+    DockerComponent.Builder builder = new DockerComponent.Builder(deriveEntireCommands(),
+        getActualImageName());
     builder.name(task.name());
     builder.myId(ComponentId.fromString(job.id() + "/" + task.name()));
     builder.imageFolder(getImageNameSpace());
@@ -32,8 +34,9 @@ public class PublicDockerComponentSupplier extends DockerComponentSupplier imple
 
     // add all outports / required ports
     for (PortRequired required : task.requiredPorts()) {
-      builder.addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(required),
-          PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
+      //todo: PortUpdateHandler required?
+      //builder.addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(dockerInterface()),
+      //    PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
     }
 
     builder.deploySequentially(true);

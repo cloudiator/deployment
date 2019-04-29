@@ -76,6 +76,11 @@ public class SparkInterfaceImpl implements SparkInterface {
   }
 
   @Override
+  public boolean isStaticallyConfigured() {
+    return true;
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("file", file).add("className", className)
         .add("arguments", arguments).add("sparkArguments", sparkArguments)

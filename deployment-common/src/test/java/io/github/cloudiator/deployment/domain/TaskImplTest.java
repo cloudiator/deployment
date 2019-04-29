@@ -53,7 +53,7 @@ public class TaskImplTest {
     PortProvided provided = PortProvidedBuilder.newBuilder().name("PortProvided").port(1234)
         .build();
     PortRequired required = PortRequiredBuilder.newBuilder().name("PortRequired").isMandatory(true)
-        .updateAction("./update.sh").build();
+        .build();
 
     Task task = TaskBuilder.newBuilder().addInterface(lanceInterface).name("providedPortTests")
         .addPort(provided).addPort(required).behaviour(Behaviours.service(true))
@@ -77,7 +77,7 @@ public class TaskImplTest {
     PortProvided provided = PortProvidedBuilder.newBuilder().name("PortProvided").port(1234)
         .build();
     PortRequired required = PortRequiredBuilder.newBuilder().name("PortRequired").isMandatory(true)
-        .updateAction("./update.sh").build();
+        .build();
 
     Task thisTask = TaskBuilder.newBuilder().addInterface(lanceInterface).name("providedPortTests")
         .addPort(provided).addPort(required).behaviour(Behaviours.service(true))

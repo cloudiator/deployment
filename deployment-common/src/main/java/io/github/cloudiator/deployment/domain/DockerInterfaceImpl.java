@@ -54,6 +54,11 @@ public class DockerInterfaceImpl implements DockerInterface {
   }
 
   @Override
+  public boolean isStaticallyConfigured() {
+    return true;
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("dockerImage", dockerImage)
         .add("environment", environment).toString();

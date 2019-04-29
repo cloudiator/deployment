@@ -63,5 +63,4 @@ public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> 
 
   Set<String> nodes();
 
-
 }

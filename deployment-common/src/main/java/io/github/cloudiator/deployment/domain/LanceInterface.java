@@ -51,4 +51,5 @@ public interface LanceInterface extends TaskInterface {
 
   Optional<String> shutdown();
 
+  Optional<String> portUpdateAction();
 }

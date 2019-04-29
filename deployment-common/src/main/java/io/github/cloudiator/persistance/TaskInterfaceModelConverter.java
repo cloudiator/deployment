@@ -71,7 +71,8 @@ class TaskInterfaceModelConverter implements
         .start(lanceTaskInterfaceModel.getStart())
         .startDetection(lanceTaskInterfaceModel.getStartDetection())
         .stop(lanceTaskInterfaceModel.getStop())
-        .stopDetection(lanceTaskInterfaceModel.getStopDetection()).build();
+        .stopDetection(lanceTaskInterfaceModel.getStopDetection())
+        .portUpdateAction(lanceTaskInterfaceModel.getPortUpdateAction()).build();
   }
 
   private FaasInterface faasInterface(FaasTaskInterfaceModel faasTaskInterfaceModel) {

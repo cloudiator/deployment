@@ -13,7 +13,6 @@ job:
     - type: PortRequired
       name: LOADBALANCERREQWIKI
       isMandatory: 'false'
-      updateAction: "./mediawiki-tutorial/scripts/lance/nginx.sh configure"
     interfaces:
     - containerType: DOCKER
       type: LanceInterface
@@ -21,6 +20,7 @@ job:
         https://github.com/dbaur/mediawiki-tutorial.git
       install: "./mediawiki-tutorial/scripts/lance/nginx.sh install"
       start: "./mediawiki-tutorial/scripts/lance/nginx.sh startBlocking"
+      updateAction: "./mediawiki-tutorial/scripts/lance/nginx.sh configure"
     requirements:
     - constraint: nodes->forAll(hardware.cores >= 2)
       type: OclRequirement

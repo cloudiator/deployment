@@ -55,8 +55,7 @@ public class PortDomainRepository {
 
   private PortRequiredModel createPortRequiredModel(PortRequired portRequired,
       TaskModel taskModel) {
-    return new PortRequiredModel(portRequired.name(), taskModel,
-        portRequired.updateAction().orElse(null), portRequired.isMandatory());
+    return new PortRequiredModel(portRequired.name(), taskModel, portRequired.isMandatory());
   }
 
   private PortProvidedModel createPortProvidedModel(PortProvided portProvided,

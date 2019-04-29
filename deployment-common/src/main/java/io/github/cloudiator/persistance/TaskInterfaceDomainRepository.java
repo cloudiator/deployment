@@ -70,7 +70,7 @@ public class TaskInterfaceDomainRepository {
         domain.start(), domain.startDetection().orElse(null), domain.stopDetection().orElse(null),
         domain.postStart().orElse(null),
         domain.preStop().orElse(null), domain.stop().orElse(null), domain.postStop().orElse(null),
-        domain.shutdown().orElse(null));
+        domain.shutdown().orElse(null), domain.portUpdateAction().orElse(null));
 
   }
 

@@ -23,4 +23,6 @@ public interface TaskInterface {
 
   ProcessMapping processMapping();
 
+  boolean isStaticallyConfigured();
+
 }

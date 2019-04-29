@@ -16,7 +16,6 @@
 
 package io.github.cloudiator.deployment.messaging;
 
-import com.google.common.base.Strings;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.PortProvided;
@@ -36,10 +35,6 @@ public class PortConverter implements TwoWayConverter<TaskEntities.Port, Port> {
       final Builder builder = TaskEntities.PortRequired.newBuilder();
       builder.setName(port.name())
           .setIsMandatory(((PortRequired) port).isMandatory());
-      if (((PortRequired) port).updateAction().isPresent()) {
-        builder.setUpdateAction(((PortRequired) port).updateAction().get());
-      }
-
       final TaskEntities.PortRequired portRequired = builder.build();
       return TaskEntities.Port.newBuilder().setPortRequired(portRequired).build();
     } else if (port instanceof PortProvided) {
@@ -67,9 +62,6 @@ public class PortConverter implements TwoWayConverter<TaskEntities.Port, Port> {
             .name(portRequired.getName())
             .isMandatory(portRequired.getIsMandatory());
 
-        if (!Strings.isNullOrEmpty(portRequired.getUpdateAction())) {
-          builder.updateAction(portRequired.getUpdateAction());
-        }
         return builder.build();
 
       case PORT_NOT_SET:

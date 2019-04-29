@@ -91,14 +91,14 @@ public class MediaWikiJob {
 
   public static PortRequired loadbalancerreqwiki() {
     return PortRequiredBuilder.newBuilder()
-        .name("LOADBALANCERREQWIKI").isMandatory(false).updateAction("./updateAction").build();
+        .name("LOADBALANCERREQWIKI").isMandatory(false).build();
   }
 
   public static Task loadBalancerTask() {
 
     final LanceInterface lbInterface = LanceInterfaceBuilder.newBuilder()
         .containerType(LanceContainerType.DOCKER).preInstall("./preInstall")
-        .install("./install").start("./start").build();
+        .install("./install").start("./start").portUpdateAction("./updateAction").build();
 
     final OclRequirement lbRequirementCores = OclRequirement
         .of("nodes->forAll(hardware.cores >= 1)");

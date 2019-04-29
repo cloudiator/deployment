@@ -34,8 +34,9 @@ public class PrivateDockerComponentSupplier extends DockerComponentSupplier impl
 
     // add all outports / required ports
     for (PortRequired required : task.requiredPorts()) {
-      builder.addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(required),
-          PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
+      //todo: PortUpdateHandler required?
+      //builder.addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(required),
+      //    PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
     }
 
     RemoteDockerComponent.DockerRegistry dReg = new RemoteDockerComponent.DockerRegistry(getHostName(), getPort(), getCredentials().username, getCredentials().password, true);

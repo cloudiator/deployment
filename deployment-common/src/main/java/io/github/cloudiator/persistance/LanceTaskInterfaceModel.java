@@ -73,6 +73,10 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
   @Nullable
   @Lob
   private String shutdown;
+  @Nullable
+  @Lob
+  private
+  String portUpdateAction;
 
   /**
    * Empty constructor for hibernate.
@@ -86,7 +90,7 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
       @Nullable String install, @Nullable String postInstall, @Nullable String preStart,
       String start, @Nullable String startDetection, @Nullable String stopDetection,
       @Nullable String postStart, @Nullable String preStop, @Nullable String stop,
-      @Nullable String postStop, @Nullable String shutdown) {
+      @Nullable String postStop, @Nullable String shutdown, @Nullable String portUpdateAction) {
     super(task);
 
     checkNotNull(start, "start is null");
@@ -106,6 +110,7 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
     this.stop = stop;
     this.postStop = postStop;
     this.shutdown = shutdown;
+    this.portUpdateAction = portUpdateAction;
   }
 
   @Nullable
@@ -226,5 +231,10 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
 
   public LanceContainerType getLanceContainerType() {
     return lanceContainerType;
+  }
+
+  @Nullable
+  public String getPortUpdateAction() {
+    return portUpdateAction;
   }
 }

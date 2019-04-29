@@ -51,6 +51,8 @@ class LanceInterfaceImpl implements LanceInterface {
   private final String postStop;
   @Nullable
   private final String shutdown;
+  @Nullable
+  private final String portUpdateAction;
 
   LanceInterfaceImpl(LanceContainerType containerType, @Nullable String init,
       @Nullable String preInstall,
@@ -59,7 +61,7 @@ class LanceInterfaceImpl implements LanceInterface {
       @Nullable String startDetection,
       @Nullable String stopDetection, @Nullable String postStart, @Nullable String preStop,
       @Nullable String stop,
-      @Nullable String postStop, @Nullable String shutdown) {
+      @Nullable String postStop, @Nullable String shutdown, @Nullable String portUpdateAction) {
 
     checkNotNull(containerType, "containerType is null");
     this.lanceContainerType = containerType;
@@ -80,6 +82,7 @@ class LanceInterfaceImpl implements LanceInterface {
     this.stop = stop;
     this.postStop = postStop;
     this.shutdown = shutdown;
+    this.portUpdateAction = portUpdateAction;
   }
 
   @Override
@@ -154,6 +157,11 @@ class LanceInterfaceImpl implements LanceInterface {
   }
 
   @Override
+  public Optional<String> portUpdateAction() {
+    return Optional.ofNullable(portUpdateAction);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
@@ -175,14 +183,16 @@ class LanceInterfaceImpl implements LanceInterface {
         Objects.equals(preStop, that.preStop) &&
         Objects.equals(stop, that.stop) &&
         Objects.equals(postStop, that.postStop) &&
-        Objects.equals(shutdown, that.shutdown);
+        Objects.equals(shutdown, that.shutdown) &&
+        Objects.equals(portUpdateAction, that.portUpdateAction);
   }
 
   @Override
   public int hashCode() {
 
     return Objects.hash(lanceContainerType, init, preInstall, install, postInstall, preStart, start,
-        startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown);
+        startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown,
+        portUpdateAction);
   }
 
   @Override
@@ -202,11 +212,17 @@ class LanceInterfaceImpl implements LanceInterface {
         .add("stop", stop)
         .add("postStop", postStop)
         .add("shutdown", shutdown)
+        .add("portUpdateAction", portUpdateAction)
         .toString();
   }
 
   @Override
   public ProcessMapping processMapping() {
     return ProcessMapping.SINGLE;
+  }
+
+  @Override
+  public boolean isStaticallyConfigured() {
+    return !portUpdateAction().isPresent();
   }
 }

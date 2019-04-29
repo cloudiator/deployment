@@ -108,4 +108,9 @@ public class FaasInterfaceImpl implements FaasInterface {
   public ProcessMapping processMapping() {
     return ProcessMapping.SINGLE;
   }
+
+  @Override
+  public boolean isStaticallyConfigured() {
+    return true;
+  }
 }
