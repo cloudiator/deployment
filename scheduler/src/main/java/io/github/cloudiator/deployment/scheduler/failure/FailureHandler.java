@@ -1,17 +1,29 @@
 package io.github.cloudiator.deployment.scheduler.failure;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
+import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.graph.Graphs;
+import io.github.cloudiator.deployment.graph.ScheduleGraph;
+import io.github.cloudiator.deployment.messaging.JobMessageRepository;
+import io.github.cloudiator.deployment.scheduler.ProcessStateMachine;
 import io.github.cloudiator.deployment.scheduler.ScheduleStateMachine;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,13 +36,22 @@ public class FailureHandler implements NodeFailureReportingInterface,
 
   private final ScheduleDomainRepository scheduleDomainRepository;
   private final ScheduleStateMachine scheduleStateMachine;
+  private final JobMessageRepository jobMessageRepository;
+  private final NodeMessageRepository nodeMessageRepository;
+  private final ProcessStateMachine processStateMachine;
 
   @Inject
   public FailureHandler(
       ScheduleDomainRepository scheduleDomainRepository,
-      ScheduleStateMachine scheduleStateMachine) {
+      ScheduleStateMachine scheduleStateMachine,
+      JobMessageRepository jobMessageRepository,
+      NodeMessageRepository nodeMessageRepository,
+      ProcessStateMachine processStateMachine) {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.scheduleStateMachine = scheduleStateMachine;
+    this.jobMessageRepository = jobMessageRepository;
+    this.nodeMessageRepository = nodeMessageRepository;
+    this.processStateMachine = processStateMachine;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -58,6 +79,8 @@ public class FailureHandler implements NodeFailureReportingInterface,
         .format("Process %s failed, but schedule with id %s does not exist.", cloudiatorProcess,
             cloudiatorProcess.scheduleId()));
 
+    handleAffectedProcesses(schedule, cloudiatorProcess);
+
     //if the schedule is not in state running ignore it
     if (schedule.state().equals(ScheduleState.RUNNING)) {
       //wait for multiple processes to fail?
@@ -70,10 +93,31 @@ public class FailureHandler implements NodeFailureReportingInterface,
     }
   }
 
-  private void handleAffectedProcesses(CloudiatorProcess cloudiatorProcess) {
+  private void handleAffectedProcesses(Schedule schedule, CloudiatorProcess cloudiatorProcess) {
 
+    final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
 
+    checkState(job != null,
+        String.format("Schedule references job %s but this job does not exist.",
+            schedule.job()));
 
+    final Set<Node> nodes = nodeMessageRepository.getAll(schedule.userId()).stream()
+        .filter(schedule::runsOnNode).collect(Collectors.toSet());
+
+    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job, nodes);
+
+    final List<CloudiatorProcess> dependentProcesses = scheduleGraph
+        .getDependentProcesses(cloudiatorProcess);
+
+    for (CloudiatorProcess dependentProcess : dependentProcesses) {
+      Task task = schedule.getTask(dependentProcess, job);
+      final TaskInterface taskInterface = task.interfaceOfName(cloudiatorProcess.taskInterface());
+
+      if (taskInterface.isStaticallyConfigured()) {
+        processStateMachine.fail(dependentProcess, null, new IllegalStateException(
+            String.format("Failure as dependency process %s has failed.", cloudiatorProcess)));
+      }
+    }
   }
 
   @Override

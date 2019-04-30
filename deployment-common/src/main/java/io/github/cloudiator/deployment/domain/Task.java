@@ -35,7 +35,7 @@ public interface Task {
   Set<Port> ports();
 
   Set<TaskInterface> interfaces();
-  
+
   default <T extends TaskInterface> T interfaceOfType(Class<T> type) {
     //noinspection unchecked
     return interfaces().stream().filter(
@@ -43,6 +43,15 @@ public interface Task {
         .collect(StreamUtil.getOnly())
         .orElseThrow(() -> new IllegalArgumentException(
             String.format("Task %s does not supply a interface of type %s.", this, type)));
+  }
+
+  default TaskInterface interfaceOfName(String name) {
+    try {
+      //noinspection unchecked
+      return interfaceOfType((Class<? extends TaskInterface>) Class.forName(name));
+    } catch (ClassNotFoundException | ClassCastException e) {
+      throw new IllegalArgumentException("Could not resolve task interface with name " + name);
+    }
   }
 
   Set<Requirement> requirements();

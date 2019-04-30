@@ -20,6 +20,7 @@ import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
+import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.Set;
 
@@ -51,10 +52,12 @@ public interface Schedule extends Identifiable, Stateful<ScheduleState> {
 
   Schedule addProcesses(Collection<? extends CloudiatorProcess> processes);
 
-  Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job);
-
   @Override
   ScheduleState state();
 
   Schedule setState(ScheduleState scheduleState);
+
+  boolean runsOnNode(Node node);
+
+  Task getTask(CloudiatorProcess cloudiatorProcess, Job job);
 }

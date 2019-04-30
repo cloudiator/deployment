@@ -21,9 +21,6 @@ import static com.google.common.base.Preconditions.checkState;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
-import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.graph.Graphs;
@@ -32,10 +29,7 @@ import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.ScheduleGraphRequest;
@@ -73,27 +67,6 @@ public class ScheduleGraphSubscriber implements Runnable {
   }
 
 
-  private boolean runsOnNode(Schedule schedule, Node node) {
-
-    Set<String> nodesContainedInSchedule = new HashSet<>();
-    schedule.processes().forEach(new Consumer<CloudiatorProcess>() {
-      @Override
-      public void accept(CloudiatorProcess cloudiatorProcess) {
-        if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
-          nodesContainedInSchedule.add(((CloudiatorSingleProcess) cloudiatorProcess).node());
-        } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
-          nodesContainedInSchedule.addAll(((CloudiatorClusterProcess) cloudiatorProcess).nodes());
-        } else {
-          throw new AssertionError(
-              "Unknown process type " + cloudiatorProcess.getClass().getSimpleName());
-        }
-      }
-    });
-
-    return nodesContainedInSchedule.contains(node.id());
-
-  }
-
   @Override
   public void run() {
     messageInterface.subscribe(ScheduleGraphRequest.class, ScheduleGraphRequest.parser(),
@@ -121,12 +94,7 @@ public class ScheduleGraphSubscriber implements Runnable {
                     schedule.job()));
 
             final Set<Node> nodes = nodeMessageRepository.getAll(userId).stream()
-                .filter(new Predicate<Node>() {
-                  @Override
-                  public boolean test(Node node) {
-                    return runsOnNode(schedule, node);
-                  }
-                }).collect(Collectors.toSet());
+                .filter(schedule::runsOnNode).collect(Collectors.toSet());
 
             final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job, nodes);
 

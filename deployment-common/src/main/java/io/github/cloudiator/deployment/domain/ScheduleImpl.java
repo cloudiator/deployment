@@ -16,11 +16,11 @@
 
 package io.github.cloudiator.deployment.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
+import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -95,24 +95,6 @@ public class ScheduleImpl implements Schedule {
   }
 
   @Override
-  public Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job) {
-
-    //todo: implement
-
-    checkNotNull(cloudiatorProcess, "cloudiatorProcess is null");
-    checkNotNull(job, "job is null");
-
-    checkArgument(job().equals(job.id()),
-        String.format("job %s does not match job id %s", job, job()));
-
-    final Task task = job.getTask(cloudiatorProcess.taskId())
-        .orElseThrow(() -> new IllegalStateException(
-            String.format("job %s does not contain task %s", job, cloudiatorProcess.taskId())));
-
-    return null;
-  }
-
-  @Override
   public ScheduleState state() {
     return scheduleState;
   }
@@ -121,6 +103,27 @@ public class ScheduleImpl implements Schedule {
   public Schedule setState(ScheduleState scheduleState) {
     this.scheduleState = scheduleState;
     return this;
+  }
+
+  @Override
+  public boolean runsOnNode(Node node) {
+
+    for (CloudiatorProcess cloudiatorProcess : processes) {
+      if (cloudiatorProcess.nodes().contains(node.id())) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  @Override
+  public Task getTask(CloudiatorProcess cloudiatorProcess, Job job) {
+
+    return job.getTask(cloudiatorProcess.taskId()).orElseThrow(() -> new IllegalArgumentException(
+        String.format("Job %s does not contain the task the process %s is referencing.", job,
+            cloudiatorProcess)));
+    
   }
 
   @Override

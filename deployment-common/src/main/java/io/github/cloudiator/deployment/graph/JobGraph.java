@@ -13,10 +13,13 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import org.jgrapht.Graph;
 import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
+import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
 /**
@@ -43,6 +46,14 @@ public class JobGraph {
 
   private CycleDetector<Task, CommunicationEdge> cycleDetector() {
     return new CycleDetector<>(mandatoryTaskGraph);
+  }
+
+  public Graph<Task, CommunicationEdge> reverse() {
+    return new EdgeReversedGraph<>(taskGraph);
+  }
+
+  public List<Task> getDependentTasks(Task task) {
+    return org.jgrapht.Graphs.successorListOf(taskGraph, task);
   }
 
   public Iterator<Task> evaluationOrder() {

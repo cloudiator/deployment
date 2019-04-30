@@ -36,12 +36,15 @@ import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
+import org.jgrapht.graph.EdgeReversedGraph;
 
 /**
  * Created by daniel on 15.07.16.
@@ -121,6 +124,13 @@ public class ScheduleGraph {
     return objectNode;
   }
 
+  public Graph<CloudiatorProcess, CommunicationInstanceEdge> reverse() {
+    return new EdgeReversedGraph<>(scheduleGraph);
+  }
+
+  public List<CloudiatorProcess> getDependentProcesses(CloudiatorProcess cloudiatorProcess) {
+    return org.jgrapht.Graphs.successorListOf(scheduleGraph, cloudiatorProcess);
+  }
 
   private static class GraphFactory {
 
