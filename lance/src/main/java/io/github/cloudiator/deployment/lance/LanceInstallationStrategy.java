@@ -59,9 +59,9 @@ public class LanceInstallationStrategy {
     final Builder builder = Installation.newBuilder()
         .setNode(nodeToNodeMessageConverter.apply(node))
         .addTool(Tool.LANCE)
-        .addTool(Tool.DOCKER)
-        .addTool(Tool.ALLUXIO_CLIENT)
-        .addTool(Tool.DLMS_AGENT);
+        .addTool(Tool.DOCKER);
+        //.addTool(Tool.ALLUXIO_CLIENT)
+        //.addTool(Tool.DLMS_AGENT);
     doExecute(builder, userId);
   }
 
