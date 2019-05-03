@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
+import io.github.cloudiator.deployment.config.Constants;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
@@ -22,6 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import javax.inject.Named;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
@@ -72,6 +74,10 @@ public class CreateSparkProcessStrategy {
 
   private InstallationRequestService installationRequestService;
 
+  @Named(Constants.INSTALL_MELODIC_TOOLS)
+  @Inject(optional = true)
+  boolean installMelodicTools = false;
+
   @Inject
   CreateSparkProcessStrategy(InstallationRequestService installationRequestService) {
     this.installationRequestService = installationRequestService;
@@ -89,6 +95,12 @@ public class CreateSparkProcessStrategy {
           .setNode(NODE_MESSAGE_CONVERTER.apply(node))
           .addTool(Tool.DOCKER)
           .addTool(Tool.SPARK_WORKER);
+
+      if(installMelodicTools){
+        builder
+            .addTool(Tool.ALLUXIO_CLIENT)
+            .addTool(Tool.DLMS_AGENT);
+      }
 
       final InstallationRequest installationRequest = InstallationRequest.newBuilder()
           .setUserId(userId).setInstallation(builder.build()).build();
