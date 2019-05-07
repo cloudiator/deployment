@@ -34,15 +34,18 @@ public class ProcessDomainRepository {
   private final ScheduleModelRepository scheduleModelRepository;
   private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
   private final IpAddressDomainRepository ipAddressDomainRepository;
+  private final IpGroupModelRepository ipGroupModelRepository;
 
   @Inject
   ProcessDomainRepository(
       ProcessModelRepository processModelRepository,
       ScheduleModelRepository scheduleModelRepository,
-      IpAddressDomainRepository ipAddressDomainRepository) {
+      IpAddressDomainRepository ipAddressDomainRepository,
+      IpGroupModelRepository ipGroupModelRepository) {
     this.processModelRepository = processModelRepository;
     this.scheduleModelRepository = scheduleModelRepository;
     this.ipAddressDomainRepository = ipAddressDomainRepository;
+    this.ipGroupModelRepository = ipGroupModelRepository;
   }
 
   public void delete(String processId, String userId) {
@@ -130,6 +133,7 @@ public class ProcessDomainRepository {
     IpGroupModel ipGroupModel = null;
     if (!domain.ipAddresses().isEmpty()) {
       ipGroupModel = ipAddressDomainRepository.saveAndGet(domain.ipAddresses());
+      ipGroupModelRepository.save(ipGroupModel);
     }
     return ipGroupModel;
   }

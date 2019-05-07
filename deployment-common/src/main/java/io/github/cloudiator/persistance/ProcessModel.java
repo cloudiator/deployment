@@ -24,6 +24,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import javax.annotation.Nullable;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -31,6 +32,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Inheritance;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 
 
 /**
@@ -72,6 +74,7 @@ abstract class ProcessModel extends Model {
   private String endpoint;
 
   @Nullable
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
   private IpGroupModel ipGroupModel;
 
 
