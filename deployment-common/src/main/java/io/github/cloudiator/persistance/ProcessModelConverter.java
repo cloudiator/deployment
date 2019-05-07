@@ -20,11 +20,13 @@ import de.uniulm.omi.cloudiator.util.OneWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorProcess> {
 
   static final ProcessModelConverter INSTANCE = new ProcessModelConverter();
+  private static final IpAddressConverter IP_ADDRESS_CONVERTER = new IpAddressConverter();
 
   private ProcessModelConverter() {
   }
@@ -50,6 +52,9 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
           .state(processModel.getState())
           .diagnostic(processModel.getDiagnostic())
           .reason(processModel.getReason())
+          .addAllIpAddresses(
+              processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
+                  Collectors.toSet()))
           .build();
     } else if (processModel instanceof ProcessClusterModel) {
 
@@ -65,6 +70,9 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
           .state(processModel.getState())
           .diagnostic(processModel.getDiagnostic())
           .reason(processModel.getReason())
+          .addAllIpAddresses(
+              processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
+                  Collectors.toSet()))
           .build();
     } else {
       throw new AssertionError(

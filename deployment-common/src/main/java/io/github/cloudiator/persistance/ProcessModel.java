@@ -23,6 +23,8 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import java.util.Collections;
+import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -198,4 +200,12 @@ abstract class ProcessModel extends Model {
   public IpGroupModel getIpGroupModel() {
     return ipGroupModel;
   }
+
+  public Set<IpAddressModel> getIpAddresses() {
+    if (ipGroupModel == null) {
+      return Collections.emptySet();
+    }
+    return ipGroupModel.getIpAddresses();
+  }
+
 }
