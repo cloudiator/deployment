@@ -3,13 +3,13 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 public class DockerInterfaceBuilder {
 
   private String dockerImage;
   private Map<String, String> environment;
+  private String portUpdateAction;
 
   private DockerInterfaceBuilder() {
     environment = new HashMap<>();
@@ -36,7 +36,12 @@ public class DockerInterfaceBuilder {
     return this;
   }
 
+  public DockerInterfaceBuilder portUpdateAction(String portUpdateAction) {
+    this.portUpdateAction = portUpdateAction;
+    return this;
+  }
+
   public DockerInterface build() {
-    return new DockerInterfaceImpl(dockerImage, environment);
+    return new DockerInterfaceImpl(dockerImage, environment, portUpdateAction);
   }
 }

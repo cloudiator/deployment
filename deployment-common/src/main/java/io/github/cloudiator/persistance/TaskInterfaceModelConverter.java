@@ -92,7 +92,8 @@ class TaskInterfaceModelConverter implements
   private DockerInterface dockerInterface(DockerTaskInterfaceModel dockerTaskInterfaceModel) {
     return DockerInterfaceBuilder.newBuilder()
         .dockerImage(dockerTaskInterfaceModel.getDockerImage())
-        .environment(dockerTaskInterfaceModel.getEnvVars()).build();
+        .environment(dockerTaskInterfaceModel.getEnvVars())
+        .portUpdateAction(dockerTaskInterfaceModel.getPortUpdateAction()).build();
   }
 
   private SparkInterface sparkInterface(SparkTaskInterfaceModel sparkTaskInterfaceModel) {

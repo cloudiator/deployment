@@ -68,6 +68,13 @@ abstract class ProcessModel extends Model {
   @Lob
   private String reason;
 
+  @Nullable
+  private String endpoint;
+
+  @Nullable
+  private IpGroupModel ipGroupModel;
+
+
   /**
    * Empty constructor for hibernate
    */
@@ -77,7 +84,8 @@ abstract class ProcessModel extends Model {
   public ProcessModel(String domainId, String orginId, ScheduleModel schedule, String task,
       String taskInterface,
       CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
-      @Nullable String diagnostic, @Nullable String reason) {
+      @Nullable String diagnostic, @Nullable String reason, @Nullable String endpoint,
+      @Nullable IpGroupModel ipGroupModel) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -98,13 +106,16 @@ abstract class ProcessModel extends Model {
     this.type = type;
     this.diagnostic = diagnostic;
     this.reason = reason;
+    this.endpoint = endpoint;
+    this.ipGroupModel = ipGroupModel;
 
   }
 
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
-        .add("task", task).add("taskInterface", taskInterface).add("state", state);
+        .add("task", task).add("taskInterface", taskInterface).add("state", state)
+        .add("endpoint", endpoint).add("ipAddresses", ipGroupModel);
   }
 
   @Override
@@ -173,5 +184,15 @@ abstract class ProcessModel extends Model {
   public ProcessModel setType(Type type) {
     this.type = type;
     return this;
+  }
+
+  @Nullable
+  public String getEndpoint() {
+    return endpoint;
+  }
+
+  @Nullable
+  public IpGroupModel getIpGroupModel() {
+    return ipGroupModel;
   }
 }

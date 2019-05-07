@@ -101,10 +101,7 @@ public class FailureHandler implements NodeFailureReportingInterface,
         String.format("Schedule references job %s but this job does not exist.",
             schedule.job()));
 
-    final Set<Node> nodes = nodeMessageRepository.getAll(schedule.userId()).stream()
-        .filter(schedule::runsOnNode).collect(Collectors.toSet());
-
-    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job, nodes);
+    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job);
 
     final List<CloudiatorProcess> dependentProcesses = scheduleGraph
         .getDependentProcesses(cloudiatorProcess);

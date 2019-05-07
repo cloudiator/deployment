@@ -47,9 +47,11 @@ class ProcessClusterModel extends ProcessModel {
   public ProcessClusterModel(String domainId, String originId, ScheduleModel schedule, String task,
       String taskInterface,
       ProcessState state, Type type,
-      List<String> nodes, @Nullable String diagnostic, @Nullable String reason) {
+      List<String> nodes, @Nullable String diagnostic, @Nullable String reason,
+      @Nullable String endpoint,
+      IpGroupModel ipGroupModel) {
     super(domainId, originId, schedule, task, taskInterface, state, type,
-        diagnostic, reason);
+        diagnostic, reason, endpoint, ipGroupModel);
 
     checkNotNull(nodes, "nodes is null");
 

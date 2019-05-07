@@ -18,7 +18,11 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CloudiatorSingleProcessBuilder {
 
@@ -33,8 +37,11 @@ public class CloudiatorSingleProcessBuilder {
   private Type type;
   private String reason;
   private String diagnostic;
+  private Set<IpAddress> ipAddresses;
+  private String endpoint;
 
   private CloudiatorSingleProcessBuilder() {
+    this.ipAddresses = new HashSet<>();
   }
 
   private CloudiatorSingleProcessBuilder(CloudiatorSingleProcess cloudiatorSingleProcess) {
@@ -49,6 +56,8 @@ public class CloudiatorSingleProcessBuilder {
     this.type = cloudiatorSingleProcess.type();
     this.reason = cloudiatorSingleProcess.reason().orElse(null);
     this.diagnostic = cloudiatorSingleProcess.diagnostic().orElse(null);
+    this.endpoint = cloudiatorSingleProcess.endpoint().orElse(null);
+    this.ipAddresses = new HashSet<>(cloudiatorSingleProcess.ipAddresses());
   }
 
   public static CloudiatorSingleProcessBuilder create() {
@@ -115,11 +124,27 @@ public class CloudiatorSingleProcessBuilder {
     return this;
   }
 
+  public CloudiatorSingleProcessBuilder endpoint(String endpoint) {
+    this.endpoint = endpoint;
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder addAllIpAddresses(
+      Collection<? extends IpAddress> ipAddresses) {
+    this.ipAddresses.addAll(ipAddresses);
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder addIpAddress(IpAddress ipAddress) {
+    this.ipAddresses.add(ipAddress);
+    return this;
+  }
+
   public CloudiatorSingleProcess build() {
     return new CloudiatorSingleProcessImpl(id, originId, userId, scheduleId, taskName,
         taskInterface, state, type,
         node,
-        diagnostic, reason);
+        diagnostic, reason, endpoint, ipAddresses);
   }
 
 }

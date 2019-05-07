@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,9 +37,12 @@ public class CloudiatorClusterProcessBuilder {
   private Type type;
   private String reason;
   private String diagnostic;
+  private Set<IpAddress> ipAddresses;
+  private String endpoint;
 
   private CloudiatorClusterProcessBuilder() {
     this.nodes = new HashSet<>();
+    this.ipAddresses = new HashSet<>();
   }
 
   private CloudiatorClusterProcessBuilder(CloudiatorClusterProcess cloudiatorClusterProcess) {
@@ -53,6 +57,8 @@ public class CloudiatorClusterProcessBuilder {
     this.type = cloudiatorClusterProcess.type();
     this.reason = cloudiatorClusterProcess.reason().orElse(null);
     this.diagnostic = cloudiatorClusterProcess.diagnostic().orElse(null);
+    this.endpoint = cloudiatorClusterProcess.endpoint().orElse(null);
+    this.ipAddresses = new HashSet<>(cloudiatorClusterProcess.ipAddresses());
   }
 
   public static CloudiatorClusterProcessBuilder create() {
@@ -125,10 +131,26 @@ public class CloudiatorClusterProcessBuilder {
     return this;
   }
 
+  public CloudiatorClusterProcessBuilder endpoint(String endpoint) {
+    this.endpoint = endpoint;
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder addAllIpAddresses(
+      Collection<? extends IpAddress> ipAddresses) {
+    this.ipAddresses.addAll(ipAddresses);
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder addIpAddress(IpAddress ipAddress) {
+    this.ipAddresses.add(ipAddress);
+    return this;
+  }
+
   public CloudiatorClusterProcess build() {
     return new CloudiatorClusterProcessImpl(id, originId, userId, scheduleId, taskName,
         taskInterface, state, type,
-        nodes, diagnostic, reason);
+        nodes, diagnostic, reason, endpoint, ipAddresses);
   }
 
 }

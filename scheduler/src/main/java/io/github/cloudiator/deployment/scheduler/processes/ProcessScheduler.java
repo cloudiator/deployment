@@ -129,7 +129,10 @@ public class ProcessScheduler {
 
       return CloudiatorSingleProcessBuilder.of((CloudiatorSingleProcess) cloudiatorProcess)
           .state(ProcessState.RUNNING)
-          .originId(spawned.originId().orElse(null)).type(spawned.type()).build();
+          .originId(spawned.originId().orElse(null)).type(spawned.type())
+          .endpoint(spawned.endpoint().orElse(null))
+          .addAllIpAddresses(node.ipAddresses())
+          .build();
 
 
     } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
@@ -150,7 +153,9 @@ public class ProcessScheduler {
 
       return CloudiatorClusterProcessBuilder.of((CloudiatorClusterProcess) cloudiatorProcess)
           .state(ProcessState.RUNNING)
-          .originId(spawned.originId().orElse(null)).type(spawned.type()).build();
+          .originId(spawned.originId().orElse(null)).type(spawned.type())
+          .endpoint(spawned.endpoint().orElse(null))
+          .build();
 
     } else {
       throw new AssertionError(

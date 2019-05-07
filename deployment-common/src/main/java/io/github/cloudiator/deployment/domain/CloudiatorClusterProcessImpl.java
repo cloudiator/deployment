@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -21,9 +22,10 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
   CloudiatorClusterProcessImpl(String id, @Nullable String originId, String userId,
       String scheduleId, String taskName, String lifecycleInterface,
       CloudiatorProcess.ProcessState state, Type type, Set<String> nodes,
-      @Nullable String diagnostic, @Nullable String reason) {
+      @Nullable String diagnostic, @Nullable String reason, @Nullable String endpoint,
+      Set<IpAddress> ipAddresses) {
     super(id, originId, userId, scheduleId, taskName, lifecycleInterface, state, type, diagnostic,
-        reason);
+        reason, endpoint, ipAddresses);
 
     checkNotNull(nodes, "nodes is null");
     this.nodes = new HashSet<>(nodes);

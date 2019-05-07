@@ -16,11 +16,9 @@
 
 package io.github.cloudiator.deployment.messaging;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.DockerInterface;
-import io.github.cloudiator.deployment.domain.DockerInterfaceImpl;
+import io.github.cloudiator.deployment.domain.DockerInterfaceBuilder;
 import org.cloudiator.messages.entities.TaskEntities;
 import org.cloudiator.messages.entities.TaskEntities.DockerInterface.Builder;
 
@@ -31,15 +29,22 @@ public class DockerInterfaceConverter implements
 
   @Override
   public TaskEntities.DockerInterface applyBack(DockerInterface dockerInterface) {
-    TaskEntities.DockerInterface result = TaskEntities.DockerInterface.newBuilder()
-        .setDockerImage(dockerInterface.dockerImage()).putAllEnvironment(dockerInterface.environment()).build();
+    final Builder builder = TaskEntities.DockerInterface.newBuilder()
+        .setDockerImage(dockerInterface.dockerImage())
+        .putAllEnvironment(dockerInterface.environment());
 
-    return result;
+    if (dockerInterface.portUpdateAction().isPresent()) {
+      builder.setPortUpdateAction(dockerInterface.portUpdateAction().get());
+    }
+
+    return builder.build();
   }
 
   @Override
   public DockerInterface apply(TaskEntities.DockerInterface dockerInterface) {
-    DockerInterface result = new DockerInterfaceImpl(dockerInterface.getDockerImage(), dockerInterface.getEnvironmentMap());
-    return result;
+
+    return DockerInterfaceBuilder.newBuilder().dockerImage(dockerInterface.getDockerImage())
+        .environment(dockerInterface.getEnvironmentMap())
+        .portUpdateAction(dockerInterface.getPortUpdateAction()).build();
   }
 }

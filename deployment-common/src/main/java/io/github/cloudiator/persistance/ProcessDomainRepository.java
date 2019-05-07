@@ -26,20 +26,23 @@ import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 public class ProcessDomainRepository {
 
   private final ProcessModelRepository processModelRepository;
   private final ScheduleModelRepository scheduleModelRepository;
   private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
+  private final IpAddressDomainRepository ipAddressDomainRepository;
 
   @Inject
   ProcessDomainRepository(
       ProcessModelRepository processModelRepository,
-      ScheduleModelRepository scheduleModelRepository) {
+      ScheduleModelRepository scheduleModelRepository,
+      IpAddressDomainRepository ipAddressDomainRepository) {
     this.processModelRepository = processModelRepository;
     this.scheduleModelRepository = scheduleModelRepository;
-
+    this.ipAddressDomainRepository = ipAddressDomainRepository;
   }
 
   public void delete(String processId, String userId) {
@@ -122,6 +125,16 @@ public class ProcessDomainRepository {
 
   }
 
+  @Nullable
+  private IpGroupModel generateIpModel(CloudiatorProcess domain) {
+    IpGroupModel ipGroupModel = null;
+    if (!domain.ipAddresses().isEmpty()) {
+      ipGroupModel = ipAddressDomainRepository.saveAndGet(domain.ipAddresses());
+    }
+    return ipGroupModel;
+  }
+
+
   private ProcessModel createProcessModel(CloudiatorProcess domain) {
 
     //TODO: fetch this by the message!?
@@ -134,14 +147,16 @@ public class ProcessDomainRepository {
       return new ProcessSingleModel(domain.id(), domain.originId().orElse(null), scheduleModel,
           domain.taskId(), domain.taskInterface(), domain.state(),
           domain.type(), ((CloudiatorSingleProcess) domain).node(),
-          domain.diagnostic().orElse(null), domain.reason().orElse(null));
+          domain.diagnostic().orElse(null), domain.reason().orElse(null),
+          domain.endpoint().orElse(null), generateIpModel(domain));
 
     } else if (domain instanceof CloudiatorClusterProcess) {
 
       return new ProcessClusterModel(domain.id(), domain.originId().orElse(null), scheduleModel,
           domain.taskId(), domain.taskInterface(), domain.state(),
           domain.type(), new ArrayList<>(((CloudiatorClusterProcess) domain).nodes()),
-          domain.diagnostic().orElse(null), domain.reason().orElse(null));
+          domain.diagnostic().orElse(null), domain.reason().orElse(null),
+          domain.endpoint().orElse(null), generateIpModel(domain));
 
     } else {
       throw new AssertionError(

@@ -20,7 +20,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress.IpAddressType;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 abstract class CloudiatorProcessImpl implements CloudiatorProcess {
@@ -38,11 +43,15 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   private final String diagnostic;
   @Nullable
   private final String reason;
+  @Nullable
+  private final String endpoint;
+  private final Set<IpAddress> ipAddresses;
 
   CloudiatorProcessImpl(String id, @Nullable String originId, String userId, String scheduleId,
       String taskName, String taskInterface,
-      CloudiatorProcess.ProcessState state, Type type, @Nullable String diagnostic,
-      @Nullable String reason) {
+      ProcessState state, Type type, @Nullable String diagnostic,
+      @Nullable String reason, @Nullable String endpoint,
+      Set<IpAddress> ipAddresses) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
@@ -74,6 +83,10 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
     this.diagnostic = diagnostic;
     this.reason = reason;
+    this.endpoint = endpoint;
+
+    checkNotNull(ipAddresses, "ipAddresses is null");
+    this.ipAddresses = ipAddresses;
   }
 
   @Override
@@ -127,6 +140,21 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     return Optional.ofNullable(reason);
   }
 
+  @Override
+  public Collection<IpAddress> ipAddresses() {
+    return ImmutableSet.copyOf(ipAddresses);
+  }
+
+  @Override
+  public Optional<String> endpoint() {
+    if (endpoint == null) {
+      return ipAddresses.stream().filter(ipAddress -> ipAddress.type().equals(IpAddressType.PUBLIC))
+          .map(
+              IpAddress::ip).findFirst();
+    }
+    return Optional.of(endpoint);
+  }
+
   protected MoreObjects.ToStringHelper stringHelper() {
     return MoreObjects.toStringHelper(this).add("id", id).add("originId", originId)
         .add("userId", userId)
@@ -134,7 +162,8 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
         .add("taskName", taskName)
         .add("taskInterface", taskInterface)
         .add("state", state).add("type", type)
-        .add("diagnostic", diagnostic).add("reason", reason);
+        .add("diagnostic", diagnostic).add("reason", reason)
+        .add("endpoint", endpoint).add("ipAddresses", ipAddresses);
   }
 
   @Override

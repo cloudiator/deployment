@@ -92,7 +92,8 @@ public class TaskInterfaceDomainRepository {
 
   private DockerTaskInterfaceModel createDockerInterfaceModel(DockerInterface domain,
       TaskModel taskModel) {
-    return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(), domain.environment());
+    return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(), domain.environment(),
+        domain.portUpdateAction().orElse(null));
   }
 
   private SparkTaskInterfaceModel createSparkInterfaceModel(SparkInterface domain,

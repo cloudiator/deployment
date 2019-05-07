@@ -43,8 +43,10 @@ class ProcessSingleModel extends ProcessModel {
       String taskInterface,
       ProcessState state, Type type,
       String node, @Nullable String diagnostic,
-      @Nullable String reason) {
-    super(domainId, originId, schedule, task, taskInterface, state, type, diagnostic, reason);
+      @Nullable String reason, @Nullable String endpoint,
+      @Nullable IpGroupModel ipGroupModel) {
+    super(domainId, originId, schedule, task, taskInterface, state, type, diagnostic, reason,
+        endpoint, ipGroupModel);
 
     this.node = node;
   }

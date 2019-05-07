@@ -26,11 +26,8 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.graph.Graphs;
 import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
-import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.ScheduleGraphRequest;
 import org.cloudiator.messages.Process.ScheduleGraphResponse;
@@ -93,10 +90,7 @@ public class ScheduleGraphSubscriber implements Runnable {
                 String.format("Schedule references job %s but this job does not exist.",
                     schedule.job()));
 
-            final Set<Node> nodes = nodeMessageRepository.getAll(userId).stream()
-                .filter(schedule::runsOnNode).collect(Collectors.toSet());
-
-            final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job, nodes);
+            final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job);
 
             messageInterface.reply(id, ScheduleGraphResponse.newBuilder()
                 .setJson(OBJECT_MAPPER.writeValueAsString(scheduleGraph.toJson())).build());

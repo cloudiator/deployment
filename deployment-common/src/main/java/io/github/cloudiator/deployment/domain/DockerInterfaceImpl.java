@@ -22,13 +22,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 public class DockerInterfaceImpl implements DockerInterface {
 
   private final String dockerImage;
   private final Map<String, String> environment;
+  @Nullable
+  private final String portUpdateAction;
 
-  public DockerInterfaceImpl(String dockerImage, Map<String, String> environment) {
+  DockerInterfaceImpl(String dockerImage, Map<String, String> environment,
+      @Nullable String portUpdateAction) {
 
     checkNotNull(dockerImage, "dockerImage is null");
     checkArgument(!dockerImage.isEmpty(), "dockerImage is empty");
@@ -36,6 +41,8 @@ public class DockerInterfaceImpl implements DockerInterface {
 
     checkNotNull(environment, "environment is null");
     this.environment = ImmutableMap.copyOf(environment);
+
+    this.portUpdateAction = portUpdateAction;
   }
 
   @Override
@@ -49,18 +56,23 @@ public class DockerInterfaceImpl implements DockerInterface {
   }
 
   @Override
+  public Optional<String> portUpdateAction() {
+    return Optional.ofNullable(portUpdateAction);
+  }
+
+  @Override
   public ProcessMapping processMapping() {
     return ProcessMapping.SINGLE;
   }
 
   @Override
   public boolean isStaticallyConfigured() {
-    return true;
+    return !portUpdateAction().isPresent();
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("dockerImage", dockerImage)
-        .add("environment", environment).toString();
+        .add("environment", environment).add("portUpdateAction", portUpdateAction).toString();
   }
 }
