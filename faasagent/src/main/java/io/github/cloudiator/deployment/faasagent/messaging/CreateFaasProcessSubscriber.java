@@ -30,6 +30,7 @@ import org.cloudiator.messages.Process.CreateFaasProcessRequest;
 import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessState;
+import org.cloudiator.messages.entities.ProcessEntities.ProcessType;
 import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
@@ -101,6 +102,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
             final FaasProcessCreatedResponse faasProcessCreatedResponse =
                 FaasProcessCreatedResponse.newBuilder()
                     .setProcess(Process.newBuilder()
+                        .setType(ProcessType.FAAS)
                         .setId(apiId)
                         .setOriginId(apiId)
                         .setTaskInterface(FaasInterface.class.getCanonicalName())
