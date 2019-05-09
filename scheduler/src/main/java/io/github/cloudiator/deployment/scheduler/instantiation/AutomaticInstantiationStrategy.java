@@ -45,10 +45,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.Phaser;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -233,11 +233,11 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       List<ListenableFuture<Node>> allocatedResources,
       @Nullable DependencyGraph.Dependencies dependencies) {
 
-    final Phaser phaser = new Phaser(1);
+    CountDownLatch countDownLatch;
 
     switch (taskInterface.processMapping()) {
       case CLUSTER:
-        phaser.register();
+        countDownLatch = new CountDownLatch(1);
         final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocatedResources);
         Futures.addCallback(nodeFutures,
             new ClusterCallback(schedule, task, taskInterface, new Runnable() {
@@ -254,14 +254,17 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             }, new Runnable() {
               @Override
               public void run() {
-                phaser.arriveAndDeregister();
+                countDownLatch.countDown();
+                if (dependencies != null) {
+                  dependencies.fulfill();
+                }
               }
             }),
             EXECUTOR);
         break;
       case SINGLE:
+        countDownLatch = new CountDownLatch(allocatedResources.size());
         for (ListenableFuture<Node> nodeFuture : allocatedResources) {
-          phaser.register();
           Futures.addCallback(nodeFuture,
               new SingleNodeCallback(schedule, task, taskInterface, new Runnable() {
                 @Override
@@ -277,7 +280,12 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
               }, new Runnable() {
                 @Override
                 public void run() {
-                  phaser.arriveAndDeregister();
+                  countDownLatch.countDown();
+                  if (countDownLatch.getCount() == 0) {
+                    if (dependencies != null) {
+                      dependencies.fulfill();
+                    }
+                  }
                 }
               }),
               EXECUTOR);
@@ -287,7 +295,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
     }
 
-    return new WaitLockImpl(phaser);
+    return new WaitLockImpl(countDownLatch);
   }
 
   @Override
@@ -333,7 +341,11 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
     final WaitLock waitLock = new CompositeWaitLock(waitLocks.values());
 
-    waitLock.waitFor();
+    try {
+      waitLock.waitFor();
+    } catch (InterruptedException e) {
+      throw new InstantiationException("Interrupt while waiting for processes to start.", e);
+    }
 
     //refresh the schedule object to receive the created processes
     Schedule createdSchedule = refresh(schedule);

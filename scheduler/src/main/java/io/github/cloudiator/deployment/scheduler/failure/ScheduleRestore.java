@@ -32,6 +32,7 @@ import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph;
+import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy.CompositeWaitLock;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy.WaitLock;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
@@ -99,7 +100,7 @@ public class ScheduleRestore {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
-  public Schedule heal(Schedule schedule) throws MatchmakingException {
+  public Schedule heal(Schedule schedule) throws InstantiationException {
 
     final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
 
@@ -129,8 +130,13 @@ public class ScheduleRestore {
         }
       }
 
-      final List<NodeCandidate> matchmaking = matchmakingEngine
-          .matchmaking(task.requirements(job), reusableNodes, schedule.userId());
+      final List<NodeCandidate> matchmaking;
+      try {
+        matchmaking = matchmakingEngine
+            .matchmaking(task.requirements(job), reusableNodes, schedule.userId());
+      } catch (MatchmakingException e) {
+        throw new InstantiationException("Matchmaking failed.", e);
+      }
 
       final List<ListenableFuture<Node>> allocate = resourcePool
           .allocate(schedule, matchmaking, reusableNodes, task.name());
@@ -142,7 +148,11 @@ public class ScheduleRestore {
 
     }
 
-    new CompositeWaitLock(waitLocks).waitFor();
+    try {
+      new CompositeWaitLock(waitLocks).waitFor();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
 
     cleanup(processToBeCleaned, nodesToBeCleaned);
 

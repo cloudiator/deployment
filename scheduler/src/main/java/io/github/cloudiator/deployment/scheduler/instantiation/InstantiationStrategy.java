@@ -24,27 +24,27 @@ import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.CountDownLatch;
 import javax.annotation.Nullable;
 
 public interface InstantiationStrategy {
 
   interface WaitLock {
 
-    void waitFor();
+    void waitFor() throws InterruptedException;
   }
 
   class WaitLockImpl implements WaitLock {
 
-    private final Phaser phaser;
+    private final CountDownLatch countDownLatch;
 
-    public WaitLockImpl(Phaser phaser) {
-      this.phaser = phaser;
+    public WaitLockImpl(CountDownLatch countDownLatch) {
+      this.countDownLatch = countDownLatch;
     }
 
     @Override
-    public void waitFor() {
-      phaser.arriveAndAwaitAdvance();
+    public void waitFor() throws InterruptedException {
+      countDownLatch.await();
     }
   }
 
@@ -58,7 +58,7 @@ public interface InstantiationStrategy {
     }
 
     @Override
-    public void waitFor() {
+    public void waitFor() throws InterruptedException {
       for (WaitLock waitLock : waitLocks) {
         waitLock.waitFor();
       }
@@ -68,7 +68,8 @@ public interface InstantiationStrategy {
   Instantiation supports();
 
   WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
-      List<ListenableFuture<Node>> allocatedResources, @Nullable DependencyGraph.Dependencies dependencies);
+      List<ListenableFuture<Node>> allocatedResources,
+      @Nullable DependencyGraph.Dependencies dependencies);
 
   Schedule instantiate(Schedule schedule) throws InstantiationException;
 }

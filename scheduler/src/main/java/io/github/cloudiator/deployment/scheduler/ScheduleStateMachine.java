@@ -29,7 +29,6 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.messaging.ScheduleConverter;
-import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
 import io.github.cloudiator.deployment.scheduler.failure.ScheduleRestore;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
@@ -193,7 +192,7 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
 
         try {
           return save(scheduleRestore.heal(o));
-        } catch (MatchmakingException e) {
+        } catch (InstantiationException e) {
           throw new ExecutionException("Unexpected error while healing the schedule.", e);
         }
       }

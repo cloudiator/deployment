@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
@@ -24,8 +26,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DependencyGraph {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(DependencyGraph.class);
 
   private final Job job;
   private final Map<Task, TaskLock> locks = new HashMap<>();
@@ -69,11 +75,10 @@ public class DependencyGraph {
 
     public void await() throws InterruptedException {
       synchronized (this) {
-        if (fulfilled) {
-          return;
+        if (!fulfilled) {
+          this.wait();
         }
       }
-      this.wait();
     }
   }
 
@@ -95,7 +100,7 @@ public class DependencyGraph {
 
     }
 
-    return new Dependencies(downStreams, new UpStream(locks.get(task)));
+    return new Dependencies(task, downStreams, new UpStream(locks.get(task)));
   }
 
   public interface Dependency {
@@ -120,6 +125,13 @@ public class DependencyGraph {
     public Task getTask() {
       return taskLock.getTask();
     }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("task", taskLock.getTask())
+          .toString();
+    }
   }
 
   public static class UpStream implements Dependency {
@@ -138,25 +150,43 @@ public class DependencyGraph {
     public Task getTask() {
       return taskLock.getTask();
     }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this).add("task", getTask())
+          .toString();
+    }
   }
 
   public static class Dependencies {
 
+    private final Task task;
     private final Set<DownStream> dependencies;
     private final UpStream upStream;
 
-    private Dependencies(Set<DownStream> dependencies, UpStream upStream) {
+    private Dependencies(Task task, Set<DownStream> dependencies, UpStream upStream) {
+      this.task = task;
       this.dependencies = dependencies;
       this.upStream = upStream;
     }
 
     public void await() throws InterruptedException {
+
+      LOGGER.info(
+          String.format("Task %s is waiting for these downstream components: %s", task,
+              Joiner.on(",").join(dependencies)));
+
       for (DownStream downStream : dependencies) {
         downStream.await();
       }
+
+      LOGGER.info(
+          String.format("Task %s has finished waiting for these downstream components: %s", task,
+              Joiner.on(",").join(dependencies)));
     }
 
     public void fulfill() {
+      LOGGER.info(String.format("Task %s is now fulfilling it's dependencies.", task));
       upStream.fulfill();
     }
 
