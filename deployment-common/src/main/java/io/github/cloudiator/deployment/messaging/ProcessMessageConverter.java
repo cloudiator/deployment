@@ -129,11 +129,11 @@ public class ProcessMessageConverter implements
           cloudiatorSingleProcessBuilder.diagnostic(process.getDiagnostic());
         }
 
-        if (Strings.isNullOrEmpty(process.getReason())) {
+        if (!Strings.isNullOrEmpty(process.getReason())) {
           cloudiatorSingleProcessBuilder.reason(process.getReason());
         }
 
-        if (Strings.isNullOrEmpty(process.getEndpoint())) {
+        if (!Strings.isNullOrEmpty(process.getEndpoint())) {
           cloudiatorSingleProcessBuilder.endpoint(process.getEndpoint());
         }
 
@@ -163,11 +163,11 @@ public class ProcessMessageConverter implements
           cloudiatorClusterProcessBuilder.diagnostic(process.getDiagnostic());
         }
 
-        if (Strings.isNullOrEmpty(process.getReason())) {
+        if (!Strings.isNullOrEmpty(process.getReason())) {
           cloudiatorClusterProcessBuilder.reason(process.getReason());
         }
 
-        if (Strings.isNullOrEmpty(process.getEndpoint())) {
+        if (!Strings.isNullOrEmpty(process.getEndpoint())) {
           cloudiatorClusterProcessBuilder.endpoint(process.getEndpoint());
         }
 

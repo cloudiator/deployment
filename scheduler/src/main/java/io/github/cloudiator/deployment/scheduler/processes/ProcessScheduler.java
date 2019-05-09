@@ -29,12 +29,14 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
+import io.github.cloudiator.deployment.domain.Environment;
+import io.github.cloudiator.deployment.domain.EnvironmentGenerator;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
-import io.github.cloudiator.deployment.scheduler.instantiation.TaskInterfaceSelectionPlaceholder;
+import io.github.cloudiator.deployment.scheduler.instantiation.TaskInterfaceSelection;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeState;
@@ -110,7 +112,7 @@ public class ProcessScheduler {
               schedule.job(), cloudiatorProcess.taskId()));
     }
 
-    final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
+    final TaskInterface taskInterface = new TaskInterfaceSelection()
         .select(optionalTask.get());
 
     if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
@@ -123,8 +125,13 @@ public class ProcessScheduler {
             String.format("Node %s is in illegal state %s.", node, node.state()));
       }
 
+      //decorate the environment
+      final Environment environment = EnvironmentGenerator.of(job, schedule)
+          .generate(cloudiatorProcess);
+
       final CloudiatorSingleProcess spawned = processSpawner
-          .spawn(cloudiatorProcess.userId(), schedule.id(), job, optionalTask.get(), taskInterface,
+          .spawn(cloudiatorProcess.userId(), schedule.id(), job, optionalTask.get(),
+              taskInterface.decorateEnvironment(environment),
               node);
 
       return CloudiatorSingleProcessBuilder.of((CloudiatorSingleProcess) cloudiatorProcess)

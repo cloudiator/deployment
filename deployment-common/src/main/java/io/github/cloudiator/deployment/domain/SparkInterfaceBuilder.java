@@ -23,8 +23,21 @@ public class SparkInterfaceBuilder {
     sparkConfiguration = new HashMap<>();
   }
 
+  private SparkInterfaceBuilder(SparkInterface sparkInterface) {
+    file = sparkInterface.file();
+    className = sparkInterface.className().orElse(null);
+    arguments = new LinkedList<>(sparkInterface.arguments());
+    sparkArguments = new HashMap<>(sparkInterface.sparkArguments());
+    sparkConfiguration = new HashMap<>(sparkInterface.sparkConfiguration());
+    processMapping = sparkInterface.processMapping();
+  }
+
   public static SparkInterfaceBuilder newBuilder() {
     return new SparkInterfaceBuilder();
+  }
+
+  public static SparkInterfaceBuilder of(SparkInterface sparkInterface) {
+    return new SparkInterfaceBuilder(sparkInterface);
   }
 
   public SparkInterfaceBuilder file(String file) {

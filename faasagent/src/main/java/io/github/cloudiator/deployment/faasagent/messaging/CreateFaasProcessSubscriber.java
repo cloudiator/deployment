@@ -1,5 +1,6 @@
 package io.github.cloudiator.deployment.faasagent.messaging;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
@@ -14,6 +15,7 @@ import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.Trigger;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.ApplicationTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
+import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
 import io.github.cloudiator.deployment.messaging.FaasInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.JobConverter;
@@ -25,6 +27,7 @@ import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Map;
 import org.cloudiator.messages.General;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
 import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
@@ -90,14 +93,17 @@ public class CreateFaasProcessSubscriber implements Runnable {
             final Cloud cloud = cloudMessageRepository.getById(userId, function.cloudId());
 
             ApplicationTemplate appTemplate = convertToTemplate(content, function);
-            String apiId = faasDeployerFactory
-                .create(appTemplate.region, cloud)
+            final FaasDeployer faasDeployer = faasDeployerFactory
+                .create(appTemplate.region, cloud);
+            String apiId = faasDeployer
                 .deployApp(appTemplate);
 
             final Function newFunction = FunctionBuilder.newBuilder(function)
                 .stackId(appTemplate.name).build();
 
             persistFunction(newFunction, userId);
+
+            final Map<String, String> apiEndpoints = faasDeployer.getApiEndpoints(appTemplate);
 
             final FaasProcessCreatedResponse faasProcessCreatedResponse =
                 FaasProcessCreatedResponse.newBuilder()
@@ -109,7 +115,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
                         .setUserId(userId)
                         .setState(ProcessState.PROCESS_STATE_RUNNING)
                         .setSchedule(content.getFaas().getSchedule())
-                        //TODO: add refactor to nodegroup here
+                        .setEndpoint(Joiner.on(",").join(apiEndpoints.values()))
                         .setNode(content.getFaas().getNode().getId())
                         .setTask(content.getFaas().getTask()))
                     .build();

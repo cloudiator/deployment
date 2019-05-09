@@ -113,4 +113,19 @@ public class FaasInterfaceImpl implements FaasInterface {
   public boolean isStaticallyConfigured() {
     return true;
   }
+
+  @Override
+  public boolean requiresManualWait(TaskInterface dependency) {
+    return true;
+  }
+
+  @Override
+  public boolean requiresEnvironmentHandling(TaskInterface dependency) {
+    return true;
+  }
+
+  @Override
+  public TaskInterface decorateEnvironment(Environment environment) {
+    return this;
+  }
 }

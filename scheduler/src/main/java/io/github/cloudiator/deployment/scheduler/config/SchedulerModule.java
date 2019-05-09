@@ -24,8 +24,8 @@ import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecuto
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import de.uniulm.omi.cloudiator.util.execution.ScheduledThreadPoolExecutorExecutionService;
 import io.github.cloudiator.deployment.scheduler.Init;
-import io.github.cloudiator.deployment.scheduler.OnDemandResourcePool;
-import io.github.cloudiator.deployment.scheduler.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.OnDemandResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.failure.FailureHandler;
 import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
 import io.github.cloudiator.deployment.scheduler.failure.ProcessFailureReportingInterface;

@@ -16,6 +16,12 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import io.github.cloudiator.deployment.graph.Graphs;
+import io.github.cloudiator.deployment.graph.ScheduleGraph;
+import io.github.cloudiator.deployment.graph.ScheduleGraph.CommunicationInstanceEdge;
+
 public class EnvironmentGenerator {
 
   private static final String PUBLIC_DOWNSTREAM = "PUBLIC_%s";
@@ -23,17 +29,34 @@ public class EnvironmentGenerator {
   private final Job job;
   private final Schedule schedule;
 
-  public EnvironmentGenerator(Job job, Schedule schedule) {
+  private EnvironmentGenerator(Job job, Schedule schedule) {
     this.job = job;
     this.schedule = schedule;
+  }
+
+  public static EnvironmentGenerator of(Job job, Schedule schedule) {
+    checkNotNull(job, "job is null");
+    checkNotNull(schedule, "schedule is null");
+
+    return new EnvironmentGenerator(job, schedule);
   }
 
 
   public Environment generate(CloudiatorProcess cloudiatorProcess) {
 
-    //Graphs.scheduleGraph()
+    Environment environment = new Environment();
+    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job);
 
-    return null;
+    for (CloudiatorProcess dependency : scheduleGraph.getDependencies(cloudiatorProcess)) {
+
+      final CommunicationInstanceEdge edge = scheduleGraph.getEdge(dependency, cloudiatorProcess);
+      if (dependency.endpoint().isPresent()) {
+        environment.put(String.format(PUBLIC_DOWNSTREAM, edge.getCommunication().portRequired()),
+            dependency.endpoint().get());
+      }
+    }
+
+    return environment;
 
   }
 

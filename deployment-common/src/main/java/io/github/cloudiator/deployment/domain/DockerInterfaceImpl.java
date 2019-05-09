@@ -71,6 +71,27 @@ public class DockerInterfaceImpl implements DockerInterface {
   }
 
   @Override
+  public boolean requiresManualWait(TaskInterface dependency) {
+    return false;
+  }
+
+  @Override
+  public boolean requiresEnvironmentHandling(TaskInterface dependency) {
+
+    //todo check with later implementation
+    if (dependency instanceof DockerInterface || dependency instanceof LanceInterface) {
+      return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public TaskInterface decorateEnvironment(Environment environment) {
+    return this;
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("dockerImage", dockerImage)
         .add("environment", environment).add("portUpdateAction", portUpdateAction).toString();

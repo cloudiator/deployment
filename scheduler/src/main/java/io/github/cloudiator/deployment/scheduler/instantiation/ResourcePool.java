@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler;
+package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeCandidate;
 import java.util.List;
 import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.domain.Requirement;
@@ -28,10 +29,9 @@ import org.cloudiator.matchmaking.domain.Requirement;
 public interface ResourcePool {
 
   List<ListenableFuture<Node>> allocate(Schedule schedule,
-      Iterable<? extends Requirement> requirements, @Nullable String name)
-      throws SchedulingException;
+      Iterable<? extends NodeCandidate> nodeCandidates, @Nullable String name);
 
   List<ListenableFuture<Node>> allocate(Schedule schedule,
-      Iterable<? extends Requirement> requirements, Iterable<Node> existingResources,
-      @Nullable String name) throws SchedulingException;
+      Iterable<? extends NodeCandidate> nodeCandidates, Iterable<? extends Node> existingResources,
+      @Nullable String name);
 }

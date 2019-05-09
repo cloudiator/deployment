@@ -25,4 +25,10 @@ public interface TaskInterface {
 
   boolean isStaticallyConfigured();
 
+  boolean requiresManualWait(TaskInterface dependency);
+
+  boolean requiresEnvironmentHandling(TaskInterface dependency);
+
+  TaskInterface decorateEnvironment(Environment environment);
+
 }

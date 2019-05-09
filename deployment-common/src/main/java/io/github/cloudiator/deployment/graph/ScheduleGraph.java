@@ -30,18 +30,13 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.Node;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
@@ -60,7 +55,11 @@ public class ScheduleGraph {
 
   public static class CommunicationInstanceEdge extends DefaultEdge {
 
-    public CommunicationInstanceEdge() {
+    private final Communication communication;
+
+    public CommunicationInstanceEdge(
+        Communication communication) {
+      this.communication = communication;
     }
 
     public CloudiatorProcess source() {
@@ -69,6 +68,10 @@ public class ScheduleGraph {
 
     public CloudiatorProcess target() {
       return (CloudiatorProcess) super.getTarget();
+    }
+
+    public Communication getCommunication() {
+      return communication;
     }
   }
 
@@ -113,6 +116,14 @@ public class ScheduleGraph {
     return org.jgrapht.Graphs.successorListOf(scheduleGraph, cloudiatorProcess);
   }
 
+  public List<CloudiatorProcess> getDependencies(CloudiatorProcess cloudiatorProcess) {
+    return org.jgrapht.Graphs.predecessorListOf(scheduleGraph, cloudiatorProcess);
+  }
+
+  public CommunicationInstanceEdge getEdge(CloudiatorProcess source, CloudiatorProcess target) {
+    return scheduleGraph.getEdge(source, target);
+  }
+
   private static class GraphFactory {
 
     public static DirectedPseudograph<CloudiatorProcess, CommunicationInstanceEdge> of(
@@ -140,7 +151,8 @@ public class ScheduleGraph {
 
             for (CloudiatorProcess otherProcess : schedule.processes()) {
               if (otherProcess.taskId().equals(requiredTask.name())) {
-                instanceGraph.addEdge(cloudiatorProcess, otherProcess);
+                instanceGraph.addEdge(cloudiatorProcess, otherProcess,
+                    new CommunicationInstanceEdge(communication));
               }
             }
           }

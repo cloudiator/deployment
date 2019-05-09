@@ -28,19 +28,25 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
-import io.github.cloudiator.deployment.scheduler.ResourcePool;
-import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
+import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
+import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy.CompositeWaitLock;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy.WaitLock;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
+import io.github.cloudiator.deployment.scheduler.instantiation.MatchmakingEngine;
+import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.TaskInterfaceSelection;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeCandidate;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -67,6 +73,7 @@ public class ScheduleRestore {
   private final ProcessService processService;
   private final NodeService nodeService;
   private final ScheduleDomainRepository scheduleDomainRepository;
+  private final MatchmakingEngine matchmakingEngine;
 
   @Inject
   public ScheduleRestore(ResourcePool resourcePool,
@@ -74,7 +81,8 @@ public class ScheduleRestore {
       NodeMessageRepository nodeMessageRepository,
       InstantiationStrategySelector instantiationStrategySelector,
       ProcessService processService, NodeService nodeService,
-      ScheduleDomainRepository scheduleDomainRepository) {
+      ScheduleDomainRepository scheduleDomainRepository,
+      MatchmakingEngine matchmakingEngine) {
     this.resourcePool = resourcePool;
     this.jobMessageRepository = jobMessageRepository;
     this.nodeMessageRepository = nodeMessageRepository;
@@ -82,6 +90,7 @@ public class ScheduleRestore {
     this.processService = processService;
     this.nodeService = nodeService;
     this.scheduleDomainRepository = scheduleDomainRepository;
+    this.matchmakingEngine = matchmakingEngine;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -90,7 +99,7 @@ public class ScheduleRestore {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
-  public Schedule heal(Schedule schedule) throws SchedulingException {
+  public Schedule heal(Schedule schedule) throws MatchmakingException {
 
     final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
 
@@ -101,6 +110,10 @@ public class ScheduleRestore {
     Set<CloudiatorProcess> processToBeCleaned = new HashSet<>();
     Set<Node> nodesToBeCleaned = new HashSet<>();
     List<WaitLock> waitLocks = new LinkedList<>();
+
+    final Map<Task, TaskInterface> taskInterfaceSelection = new TaskInterfaceSelection()
+        .select(job);
+    final DependencyGraph dependencyGraph = DependencyGraph.of(job, taskInterfaceSelection);
 
     for (Task task : job.tasks()) {
 
@@ -116,11 +129,15 @@ public class ScheduleRestore {
         }
       }
 
+      final List<NodeCandidate> matchmaking = matchmakingEngine
+          .matchmaking(task.requirements(job), reusableNodes, schedule.userId());
+
       final List<ListenableFuture<Node>> allocate = resourcePool
-          .allocate(schedule, task.requirements(job), reusableNodes, task.name());
+          .allocate(schedule, matchmaking, reusableNodes, task.name());
 
       final WaitLock waitLock = instantiationStrategySelector.get(schedule.instantiation())
-          .deployTask(task, schedule, allocate);
+          .deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
+              dependencyGraph.forTask(task));
       waitLocks.add(waitLock);
 
     }

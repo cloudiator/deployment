@@ -81,6 +81,28 @@ public class SparkInterfaceImpl implements SparkInterface {
   }
 
   @Override
+  public boolean requiresManualWait(TaskInterface dependency) {
+    return true;
+  }
+
+  @Override
+  public boolean requiresEnvironmentHandling(TaskInterface dependency) {
+    return true;
+  }
+
+  @Override
+  public TaskInterface decorateEnvironment(Environment environment) {
+
+    final SparkInterfaceBuilder sparkInterfaceBuilder = SparkInterfaceBuilder.of(this);
+    environment.forEach((key, value) -> {
+      sparkInterfaceBuilder.addArgument("--" + key);
+      sparkInterfaceBuilder.addArgument(value);
+    });
+
+    return sparkInterfaceBuilder.build();
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("file", file).add("className", className)
         .add("arguments", arguments).add("sparkArguments", sparkArguments)

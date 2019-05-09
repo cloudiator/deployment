@@ -56,6 +56,10 @@ public class JobGraph {
     return org.jgrapht.Graphs.successorListOf(taskGraph, task);
   }
 
+  public List<Task> getDependencies(Task task) {
+    return org.jgrapht.Graphs.predecessorListOf(taskGraph, task);
+  }
+
   public Iterator<Task> evaluationOrder() {
     return new TopologicalOrderIterator<>(
         mandatoryTaskGraph, new Comparator<Task>() {

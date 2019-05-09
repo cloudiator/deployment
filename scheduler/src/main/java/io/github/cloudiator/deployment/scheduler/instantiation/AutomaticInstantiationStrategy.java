@@ -36,13 +36,15 @@ import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
-import io.github.cloudiator.deployment.scheduler.ResourcePool;
-import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
+import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.domain.NodeCandidate;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -66,6 +68,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       .getLogger(AutomaticInstantiationStrategy.class);
   private static final ExecutorService EXECUTOR = new LoggingThreadPoolExecutor(0,
       2147483647, 60L, TimeUnit.SECONDS, new SynchronousQueue());
+  private final MatchmakingEngine matchmakingEngine;
 
   static {
     MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
@@ -78,9 +81,11 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
   @Inject
   public AutomaticInstantiationStrategy(
+      MatchmakingEngine matchmakingEngine,
       ResourcePool resourcePool, ProcessService processService,
       JobMessageRepository jobMessageRepository,
       ScheduleDomainRepository scheduleDomainRepository) {
+    this.matchmakingEngine = matchmakingEngine;
     this.resourcePool = resourcePool;
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
@@ -108,19 +113,22 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     private final Schedule schedule;
     private final Task task;
     private final TaskInterface taskInterface;
+    private final Runnable beforeExecute;
     private final Runnable afterExecute;
 
     protected NodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable afterExecute) {
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute) {
       this.schedule = schedule;
       this.task = task;
       this.taskInterface = taskInterface;
+      this.beforeExecute = beforeExecute;
       this.afterExecute = afterExecute;
     }
 
     @Override
     public final void onSuccess(T result) {
       try {
+        beforeExecute.run();
         doSuccess(result).get();
       } catch (InterruptedException e) {
         throw new IllegalStateException("Interrupted while waiting for result.", e);
@@ -135,6 +143,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     @Override
     public final void onFailure(Throwable t) {
       try {
+        beforeExecute.run();
         doFailure(t);
       } finally {
         afterExecute.run();
@@ -161,8 +170,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class SingleNodeCallback extends NodeCallback<Node> {
 
     private SingleNodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable afterExecute) {
-      super(schedule, task, taskInterface, afterExecute);
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute) {
+      super(schedule, task, taskInterface, beforeExecute, afterExecute);
     }
 
     @Override
@@ -188,8 +197,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class ClusterCallback extends NodeCallback<List<Node>> {
 
     private ClusterCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable afterExecute) {
-      super(schedule, task, taskInterface, afterExecute);
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute) {
+      super(schedule, task, taskInterface, beforeExecute, afterExecute);
     }
 
     @Override
@@ -220,11 +229,9 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
-  public WaitLock deployTask(Task task, Schedule schedule,
-      List<ListenableFuture<Node>> allocatedResources) {
-    //select the interface
-    final TaskInterface taskInterface = new TaskInterfaceSelectionPlaceholder()
-        .select(task);
+  public WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
+      List<ListenableFuture<Node>> allocatedResources,
+      @Nullable DependencyGraph.Dependencies dependencies) {
 
     final Phaser phaser = new Phaser(1);
 
@@ -234,6 +241,17 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocatedResources);
         Futures.addCallback(nodeFutures,
             new ClusterCallback(schedule, task, taskInterface, new Runnable() {
+              @Override
+              public void run() {
+                if (dependencies != null) {
+                  try {
+                    dependencies.await();
+                  } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
+                  }
+                }
+              }
+            }, new Runnable() {
               @Override
               public void run() {
                 phaser.arriveAndDeregister();
@@ -246,6 +264,17 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
           phaser.register();
           Futures.addCallback(nodeFuture,
               new SingleNodeCallback(schedule, task, taskInterface, new Runnable() {
+                @Override
+                public void run() {
+                  if (dependencies != null) {
+                    try {
+                      dependencies.await();
+                    } catch (InterruptedException e) {
+                      throw new IllegalStateException(e);
+                    }
+                  }
+                }
+              }, new Runnable() {
                 @Override
                 public void run() {
                   phaser.arriveAndDeregister();
@@ -271,28 +300,38 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     checkState(supports().equals(schedule.instantiation()),
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
+    Map<Task, WaitLock> waitLocks = new HashMap<>();
+
+    final Map<Task, TaskInterface> taskInterfaceSelection = new TaskInterfaceSelection()
+        .select(job);
+    final DependencyGraph dependencyGraph = DependencyGraph.of(job, taskInterfaceSelection);
+
     //for each task
-    List<WaitLock> locks = new LinkedList<>();
     for (Iterator<Task> iter = job.tasksInOrder(); iter.hasNext(); ) {
       final Task task = iter.next();
 
       LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
 
       try {
+
+        final List<NodeCandidate> matchmakingResult = matchmakingEngine
+            .matchmaking(task.requirements(job), Collections.emptyList(), schedule.userId());
+
         final List<ListenableFuture<Node>> allocate = resourcePool
-            .allocate(schedule, task.requirements(job), task.name());
+            .allocate(schedule, matchmakingResult, task.name());
 
-        locks.add(deployTask(task, schedule, allocate));
+        waitLocks.put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
+            dependencyGraph.forTask(task)));
 
-      } catch (SchedulingException e) {
+      } catch (MatchmakingException e) {
         throw new InstantiationException("Error while scheduling.", e);
       }
     }
     LOGGER.info(String
         .format("Waiting for a total of %s tasks to finish.",
-            locks.size()));
+            waitLocks.size()));
 
-    final WaitLock waitLock = new CompositeWaitLock(locks);
+    final WaitLock waitLock = new CompositeWaitLock(waitLocks.values());
 
     waitLock.waitFor();
 

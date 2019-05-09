@@ -72,8 +72,18 @@ abstract class ProcessModel extends Model {
   @Lob
   private String reason;
 
+  public ProcessModel setEndpoint(@Nullable String endpoint) {
+    this.endpoint = endpoint;
+    return this;
+  }
+
   @Nullable
   private String endpoint;
+
+  public ProcessModel setIpGroupModel(@Nullable IpGroupModel ipGroupModel) {
+    this.ipGroupModel = ipGroupModel;
+    return this;
+  }
 
   @Nullable
   @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)

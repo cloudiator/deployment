@@ -123,6 +123,8 @@ public class ProcessDomainRepository {
     processModel.setOriginId(domain.originId().orElse(null));
     processModel.setDiagnostic(domain.diagnostic().orElse(null));
     processModel.setType(domain.type());
+    processModel.setIpGroupModel(generateIpModel(domain));
+    processModel.setEndpoint(domain.endpoint().orElse(null));
 
     return processModel;
 

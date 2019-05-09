@@ -17,18 +17,19 @@
 package io.github.cloudiator.deployment.domain;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class Environment implements Map<String,String> {
+public class Environment implements Map<String, String> {
 
-  private final Map<String,String> delegate;
+  private final Map<String, String> delegate;
 
-  public Environment(Map<String, String> delegate) {
-    this.delegate = delegate;
+  public Environment() {
+    this.delegate = new HashMap<>();
   }
 
   @Override

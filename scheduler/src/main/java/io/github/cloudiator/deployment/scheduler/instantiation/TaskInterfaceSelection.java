@@ -16,10 +16,22 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
+import java.util.HashMap;
+import java.util.Map;
 
-public class TaskInterfaceSelectionPlaceholder {
+public class TaskInterfaceSelection {
+
+  public Map<Task, TaskInterface> select(Job job) {
+    Map<Task, TaskInterface> selection = new HashMap<>();
+    for (Task task : job.tasks()) {
+      selection.put(task, select(task));
+    }
+    return selection;
+  }
+
 
   public TaskInterface select(Task task) {
 

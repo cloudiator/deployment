@@ -23,11 +23,13 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
 import io.github.cloudiator.domain.Node;
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class ManualInstantiationStrategy implements InstantiationStrategy {
-
 
   @Override
   public Instantiation supports() {
@@ -35,17 +37,18 @@ public class ManualInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
-  public WaitLock deployTask(Task task, Schedule schedule,
-      List<ListenableFuture<Node>> allocatedResources) {
+  public WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
+      List<ListenableFuture<Node>> allocatedResources, @Nullable Dependencies dependencies) {
     throw new UnsupportedOperationException(
         String.format("%s does not support scheduling a single task.", this));
   }
+
 
   @Override
   public Schedule instantiate(Schedule schedule) {
 
     checkState(supports().equals(schedule.instantiation()),
-        String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
+        String.format("%s does not support instantiation type %s.", this, schedule.instantiation()));
 
     return schedule.setState(ScheduleState.MANUAL);
 

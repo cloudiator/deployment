@@ -52,6 +52,7 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
           .state(processModel.getState())
           .diagnostic(processModel.getDiagnostic())
           .reason(processModel.getReason())
+          .endpoint(processModel.getEndpoint())
           .addAllIpAddresses(
               processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
                   Collectors.toSet()))
@@ -70,6 +71,7 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
           .state(processModel.getState())
           .diagnostic(processModel.getDiagnostic())
           .reason(processModel.getReason())
+          .endpoint(processModel.getEndpoint())
           .addAllIpAddresses(
               processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
                   Collectors.toSet()))

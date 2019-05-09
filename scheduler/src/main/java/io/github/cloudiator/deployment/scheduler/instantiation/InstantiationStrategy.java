@@ -20,9 +20,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.domain.Node;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Phaser;
+import javax.annotation.Nullable;
 
 public interface InstantiationStrategy {
 
@@ -47,10 +50,10 @@ public interface InstantiationStrategy {
 
   class CompositeWaitLock implements WaitLock {
 
-    private final List<WaitLock> waitLocks;
+    private final Collection<? extends WaitLock> waitLocks;
 
     public CompositeWaitLock(
-        List<WaitLock> waitLocks) {
+        Collection<? extends WaitLock> waitLocks) {
       this.waitLocks = waitLocks;
     }
 
@@ -64,8 +67,8 @@ public interface InstantiationStrategy {
 
   Instantiation supports();
 
-  WaitLock deployTask(Task task, Schedule schedule,
-      List<ListenableFuture<Node>> allocatedResources);
+  WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
+      List<ListenableFuture<Node>> allocatedResources, @Nullable DependencyGraph.Dependencies dependencies);
 
   Schedule instantiate(Schedule schedule) throws InstantiationException;
 }
