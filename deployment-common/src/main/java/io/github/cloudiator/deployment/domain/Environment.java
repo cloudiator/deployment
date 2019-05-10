@@ -162,4 +162,9 @@ public class Environment implements Map<String, String> {
       BiFunction<? super String, ? super String, ? extends String> biFunction) {
     return delegate.merge(s, s2, biFunction);
   }
+
+  @Override
+  public String toString() {
+    return delegate.toString();
+  }
 }
