@@ -31,11 +31,6 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
     this.nodes = new HashSet<>(nodes);
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(id, userId, scheduleId, taskName, nodes);
-  }
-
 
   @Override
   public boolean equals(Object o) {
@@ -46,11 +41,27 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
       return false;
     }
     CloudiatorClusterProcessImpl that = (CloudiatorClusterProcessImpl) o;
-    return Objects.equals(id, that.id) &&
-        Objects.equals(userId, that.userId) &&
-        Objects.equals(scheduleId, that.scheduleId) &&
-        Objects.equals(taskName, that.taskName) &&
-        Objects.equals(nodes, that.nodes);
+    return id().equals(that.id()) &&
+        originId().equals(that.originId()) &&
+        userId().equals(that.userId()) &&
+        scheduleId().equals(that.scheduleId()) &&
+        taskId().equals(that.taskId()) &&
+        taskInterface().equals(that.taskInterface()) &&
+        state() == that.state() &&
+        type() == that.type() &&
+        Objects.equals(diagnostic(), that.diagnostic()) &&
+        Objects.equals(reason(), that.reason()) &&
+        Objects.equals(endpoint(), that.endpoint()) &&
+        ipAddresses().equals(that.ipAddresses()) &&
+        nodes().equals(that.nodes());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects
+        .hash(id(), originId(), userId(), scheduleId(), taskId(), taskInterface(), state(), type(),
+            diagnostic(),
+            reason(), endpoint(), ipAddresses(), nodes());
   }
 
   @Override

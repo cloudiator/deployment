@@ -24,21 +24,22 @@ import com.google.common.collect.ImmutableSet;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress.IpAddressType;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 
 abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
-  protected final String id;
+  private final String id;
   @Nullable
   private final String originId;
-  protected final String userId;
-  protected final String scheduleId;
-  protected final String taskName;
-  protected final String taskInterface;
-  protected final CloudiatorProcess.ProcessState state;
-  protected final Type type;
+  private final String userId;
+  private final String scheduleId;
+  private final String taskName;
+  private final String taskInterface;
+  private final CloudiatorProcess.ProcessState state;
+  private final Type type;
   @Nullable
   private final String diagnostic;
   @Nullable

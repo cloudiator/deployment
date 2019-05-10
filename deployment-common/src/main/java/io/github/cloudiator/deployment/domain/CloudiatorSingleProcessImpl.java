@@ -41,12 +41,6 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
 
 
   @Override
-  public int hashCode() {
-    return Objects.hash(id, userId, scheduleId, taskName, node);
-  }
-
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
@@ -54,12 +48,28 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CloudiatorSingleProcessImpl that = (CloudiatorSingleProcessImpl) o;
-    return Objects.equals(id, that.id) &&
-        Objects.equals(userId, that.userId) &&
-        Objects.equals(scheduleId, that.scheduleId) &&
-        Objects.equals(taskName, that.taskName) &&
-        Objects.equals(node, that.node);
+    CloudiatorSingleProcess that = (CloudiatorSingleProcess) o;
+    return id().equals(that.id()) &&
+        originId().equals(that.originId()) &&
+        userId().equals(that.userId()) &&
+        scheduleId().equals(that.scheduleId()) &&
+        taskId().equals(that.taskId()) &&
+        taskInterface().equals(that.taskInterface()) &&
+        state() == that.state() &&
+        type() == that.type() &&
+        Objects.equals(diagnostic(), that.diagnostic()) &&
+        Objects.equals(reason(), that.reason()) &&
+        Objects.equals(endpoint(), that.endpoint()) &&
+        ipAddresses().equals(that.ipAddresses()) &&
+        node().equals(that.node());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects
+        .hash(id(), originId(), userId(), scheduleId(), taskId(), taskInterface(), state(), type(),
+            diagnostic(),
+            reason(), endpoint(), ipAddresses(), node());
   }
 
   @Override
