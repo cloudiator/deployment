@@ -76,17 +76,6 @@ public class DockerInterfaceImpl implements DockerInterface {
   }
 
   @Override
-  public boolean requiresEnvironmentHandling(TaskInterface dependency) {
-
-    //todo check with later implementation
-    if (dependency instanceof DockerInterface || dependency instanceof LanceInterface) {
-      return false;
-    }
-
-    return true;
-  }
-
-  @Override
   public TaskInterface decorateEnvironment(Environment environment) {
     return this;
   }

@@ -120,11 +120,6 @@ public class FaasInterfaceImpl implements FaasInterface {
   }
 
   @Override
-  public boolean requiresEnvironmentHandling(TaskInterface dependency) {
-    return true;
-  }
-
-  @Override
   public TaskInterface decorateEnvironment(Environment environment) {
     return this;
   }

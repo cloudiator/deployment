@@ -27,8 +27,6 @@ public interface TaskInterface {
 
   boolean requiresManualWait(TaskInterface dependency);
 
-  boolean requiresEnvironmentHandling(TaskInterface dependency);
-
   TaskInterface decorateEnvironment(Environment environment);
 
 }
