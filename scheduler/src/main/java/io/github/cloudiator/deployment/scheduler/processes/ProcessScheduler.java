@@ -129,6 +129,9 @@ public class ProcessScheduler {
       final Environment environment = EnvironmentGenerator.of(job, schedule)
           .generate(cloudiatorProcess);
 
+      LOGGER.debug(
+          String.format("Generated environment %s for process %s", environment, cloudiatorProcess));
+
       final CloudiatorSingleProcess spawned = processSpawner
           .spawn(cloudiatorProcess.userId(), schedule.id(), job, optionalTask.get(),
               taskInterface.decorateEnvironment(environment),
