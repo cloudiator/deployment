@@ -115,6 +115,10 @@ public class ProcessScheduler {
     final TaskInterface taskInterface = new TaskInterfaceSelection()
         .select(optionalTask.get());
 
+    //decorate the environment
+    final Environment environment = EnvironmentGenerator.of(job, schedule)
+        .generate(cloudiatorProcess);
+
     if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
 
       final Node node = getNode(cloudiatorProcess.userId(),
@@ -124,10 +128,6 @@ public class ProcessScheduler {
         throw new ProcessSpawningException(
             String.format("Node %s is in illegal state %s.", node, node.state()));
       }
-
-      //decorate the environment
-      final Environment environment = EnvironmentGenerator.of(job, schedule)
-          .generate(cloudiatorProcess);
 
       LOGGER.debug(
           String.format("Generated environment %s for process %s", environment, cloudiatorProcess));
@@ -158,7 +158,8 @@ public class ProcessScheduler {
       }
 
       final CloudiatorClusterProcess spawned = processSpawner
-          .spawn(cloudiatorProcess.userId(), schedule.id(), job, optionalTask.get(), taskInterface,
+          .spawn(cloudiatorProcess.userId(), schedule.id(), job, optionalTask.get(),
+              taskInterface.decorateEnvironment(environment),
               nodeSet);
 
       return CloudiatorClusterProcessBuilder.of((CloudiatorClusterProcess) cloudiatorProcess)
