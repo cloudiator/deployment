@@ -298,7 +298,7 @@ public class CreateLanceProcessStrategy {
         .userId(deploymentInfo.getUserId())
         .node(deploymentInfo.getNode().id())
         .type(Type.LANCE)
-        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).build();
+        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).startNow().build();
   }
 
   private CloudiatorProcess failProcess(@Nullable ComponentInstanceId cId,
@@ -324,7 +324,7 @@ public class CreateLanceProcessStrategy {
         .type(Type.LANCE)
         .taskInterface(deploymentInfo.getTaskInterface().getClass().getCanonicalName())
         .diagnostic(e.getMessage())
-        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).build();
+        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).startNow().build();
   }
 
   private void registerApplicationComponentsForApplicationInstance(

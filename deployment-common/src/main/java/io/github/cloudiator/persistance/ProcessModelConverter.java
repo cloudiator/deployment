@@ -56,6 +56,8 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
           .addAllIpAddresses(
               processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
                   Collectors.toSet()))
+          .start(processModel.getStart())
+          .stop(processModel.getStop())
           .build();
     } else if (processModel instanceof ProcessClusterModel) {
 
@@ -75,6 +77,8 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
           .addAllIpAddresses(
               processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
                   Collectors.toSet()))
+          .start(processModel.getStart())
+          .stop(processModel.getStop())
           .build();
     } else {
       throw new AssertionError(

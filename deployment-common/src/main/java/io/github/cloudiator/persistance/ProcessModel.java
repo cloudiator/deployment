@@ -24,8 +24,10 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -35,6 +37,8 @@ import javax.persistence.Inheritance;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 
 /**
@@ -72,6 +76,17 @@ abstract class ProcessModel extends Model {
   @Lob
   private String reason;
 
+  @Basic
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(nullable = false)
+  private Date start;
+
+  @Basic
+  @Temporal(TemporalType.TIMESTAMP)
+  @Nullable
+  private Date stop;
+
+
   public ProcessModel setEndpoint(@Nullable String endpoint) {
     this.endpoint = endpoint;
     return this;
@@ -100,7 +115,7 @@ abstract class ProcessModel extends Model {
       String taskInterface,
       CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
       @Nullable String diagnostic, @Nullable String reason, @Nullable String endpoint,
-      @Nullable IpGroupModel ipGroupModel) {
+      @Nullable IpGroupModel ipGroupModel, Date start, @Nullable Date stop) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -111,6 +126,7 @@ abstract class ProcessModel extends Model {
     checkArgument(!task.isEmpty(), "task is empty");
 
     checkNotNull(type, "type is null");
+    checkNotNull(start, "start is null");
 
     this.domainId = domainId;
     this.originId = orginId;
@@ -123,6 +139,8 @@ abstract class ProcessModel extends Model {
     this.reason = reason;
     this.endpoint = endpoint;
     this.ipGroupModel = ipGroupModel;
+    this.start = start;
+    this.stop = stop;
 
   }
 
@@ -130,7 +148,8 @@ abstract class ProcessModel extends Model {
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
         .add("task", task).add("taskInterface", taskInterface).add("state", state)
-        .add("endpoint", endpoint).add("ipAddresses", ipGroupModel);
+        .add("endpoint", endpoint).add("ipAddresses", ipGroupModel).add("start", start)
+        .add("stop", stop);
   }
 
   @Override
@@ -218,4 +237,22 @@ abstract class ProcessModel extends Model {
     return ipGroupModel.getIpAddresses();
   }
 
+  public Date getStart() {
+    return start;
+  }
+
+  public ProcessModel setStart(Date start) {
+    this.start = start;
+    return this;
+  }
+
+  @Nullable
+  public Date getStop() {
+    return stop;
+  }
+
+  public ProcessModel setStop(@Nullable Date stop) {
+    this.stop = stop;
+    return this;
+  }
 }

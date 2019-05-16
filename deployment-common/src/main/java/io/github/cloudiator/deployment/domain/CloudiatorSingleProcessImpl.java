@@ -6,6 +6,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -24,9 +25,10 @@ public class CloudiatorSingleProcessImpl extends CloudiatorProcessImpl implement
       String taskName,
       String taskInterface,
       ProcessState state, Type type, String node, @Nullable String diagnostic,
-      @Nullable String reason, @Nullable String endpoint, Set<IpAddress> ipAddresses) {
+      @Nullable String reason, @Nullable String endpoint, Set<IpAddress> ipAddresses, Date start,
+      @Nullable Date stop) {
     super(id, originId, userId, scheduleId, taskName, taskInterface, state, type, diagnostic,
-        reason, endpoint, ipAddresses);
+        reason, endpoint, ipAddresses, start, stop);
 
     checkNotNull(node, "node is null");
     checkArgument(!node.isEmpty(), "node is empty");

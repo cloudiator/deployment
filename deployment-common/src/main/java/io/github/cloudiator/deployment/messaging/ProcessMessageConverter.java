@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.messaging;
 
 import com.google.common.base.Strings;
+import com.google.protobuf.util.Timestamps;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
@@ -25,6 +26,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.messaging.IpAddressMessageToIpAddress;
+import java.util.Date;
 import java.util.stream.Collectors;
 import org.cloudiator.messages.entities.ProcessEntities;
 import org.cloudiator.messages.entities.ProcessEntities.NodeCluster;
@@ -80,6 +82,7 @@ public class ProcessMessageConverter implements
         .addAllIpAddresses(
             cloudiatorProcess.ipAddresses().stream().map(IP_ADDRESS_CONVERTER::applyBack).collect(
                 Collectors.toSet()))
+        .setStart(Timestamps.fromMillis(cloudiatorProcess.start().getTime()))
     ;
 
     if (cloudiatorProcess.originId().isPresent()) {
@@ -96,6 +99,10 @@ public class ProcessMessageConverter implements
 
     if (cloudiatorProcess.endpoint().isPresent()) {
       builder.setEndpoint(cloudiatorProcess.endpoint().get());
+    }
+
+    if (cloudiatorProcess.stop().isPresent()) {
+      builder.setStop(Timestamps.fromMillis(cloudiatorProcess.stop().get().getTime()));
     }
 
     return builder.build();
@@ -119,7 +126,8 @@ public class ProcessMessageConverter implements
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()))
             .addAllIpAddresses(
                 process.getIpAddressesList().stream().map(IP_ADDRESS_CONVERTER).collect(
-                    Collectors.toSet()));
+                    Collectors.toSet()))
+            .start(new Date(Timestamps.toMillis(process.getStart())));
 
         if (!Strings.isNullOrEmpty(process.getOriginId())) {
           cloudiatorSingleProcessBuilder.originId(process.getOriginId());
@@ -135,6 +143,10 @@ public class ProcessMessageConverter implements
 
         if (!Strings.isNullOrEmpty(process.getEndpoint())) {
           cloudiatorSingleProcessBuilder.endpoint(process.getEndpoint());
+        }
+
+        if (process.hasStop()) {
+          cloudiatorSingleProcessBuilder.stop(new Date(Timestamps.toMillis(process.getStop())));
         }
 
         return cloudiatorSingleProcessBuilder.build();
@@ -153,7 +165,8 @@ public class ProcessMessageConverter implements
             .type(ProcessTypeConverter.INSTANCE.apply(process.getType()))
             .addAllIpAddresses(
                 process.getIpAddressesList().stream().map(IP_ADDRESS_CONVERTER).collect(
-                    Collectors.toSet()));
+                    Collectors.toSet()))
+            .start(new Date(Timestamps.toMillis(process.getStart())));
 
         if (!Strings.isNullOrEmpty(process.getOriginId())) {
           cloudiatorClusterProcessBuilder.originId(process.getOriginId());
@@ -169,6 +182,10 @@ public class ProcessMessageConverter implements
 
         if (!Strings.isNullOrEmpty(process.getEndpoint())) {
           cloudiatorClusterProcessBuilder.endpoint(process.getEndpoint());
+        }
+
+        if (process.hasStop()) {
+          cloudiatorClusterProcessBuilder.stop(new Date(Timestamps.toMillis(process.getStop())));
         }
 
         return cloudiatorClusterProcessBuilder.build();

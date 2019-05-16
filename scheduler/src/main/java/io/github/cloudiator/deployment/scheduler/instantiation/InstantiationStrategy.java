@@ -17,59 +17,71 @@
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 
 public interface InstantiationStrategy {
 
-  interface WaitLock {
-
-    void waitFor() throws InterruptedException;
-  }
-
-  class WaitLockImpl implements WaitLock {
+  class WaitLockImpl<T> implements Future<T> {
 
     private final CountDownLatch countDownLatch;
+    private final T t;
 
-    public WaitLockImpl(CountDownLatch countDownLatch) {
+    public WaitLockImpl(CountDownLatch countDownLatch, T t) {
       this.countDownLatch = countDownLatch;
+      this.t = t;
     }
 
     @Override
-    public void waitFor() throws InterruptedException {
+    public boolean cancel(boolean b) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return countDownLatch.getCount() == 0;
+    }
+
+    @Override
+    public T get() throws InterruptedException {
       countDownLatch.await();
-    }
-  }
-
-  class CompositeWaitLock implements WaitLock {
-
-    private final Collection<? extends WaitLock> waitLocks;
-
-    public CompositeWaitLock(
-        Collection<? extends WaitLock> waitLocks) {
-      this.waitLocks = waitLocks;
+      return t;
     }
 
     @Override
-    public void waitFor() throws InterruptedException {
-      for (WaitLock waitLock : waitLocks) {
-        waitLock.waitFor();
+    public T get(long l, TimeUnit timeUnit)
+        throws InterruptedException, TimeoutException {
+      final boolean await = countDownLatch.await(l, timeUnit);
+      if (!await) {
+        throw new TimeoutException();
       }
+      return t;
     }
   }
 
   Instantiation supports();
 
-  WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
+  Future<Collection<CloudiatorProcess>> deployTask(Task task, TaskInterface taskInterface,
+      Schedule schedule,
       List<ListenableFuture<Node>> allocatedResources,
-      @Nullable DependencyGraph.Dependencies dependencies);
+      @Nullable Dependencies dependencies);
 
   Schedule instantiate(Schedule schedule) throws InstantiationException;
 }

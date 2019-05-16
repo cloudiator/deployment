@@ -96,7 +96,7 @@ public class CreateSparkProcessStrategy {
           .addTool(Tool.DOCKER)
           .addTool(Tool.SPARK_WORKER);
 
-      if(installMelodicTools){
+      if (installMelodicTools) {
         builder
             .addTool(Tool.ALLUXIO_CLIENT)
             .addTool(Tool.DLMS_AGENT);
@@ -369,7 +369,7 @@ public class CreateSparkProcessStrategy {
           .taskInterface(SparkInterface.class.getCanonicalName())
           .state(ProcessState.RUNNING)
           .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
-          .taskName(task.name()).scheduleId(schedule).build();
+          .taskName(task.name()).scheduleId(schedule).startNow().build();
 
     } catch (Exception e) {
       throw new IllegalStateException("Could not deploy task " + task, e);

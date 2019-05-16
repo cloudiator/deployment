@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import com.google.protobuf.util.Timestamps;
 import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
 import de.uniulm.omi.cloudiator.sword.domain.Cloud;
 import io.github.cloudiator.deployment.domain.FaasInterface;
@@ -108,6 +109,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
             final FaasProcessCreatedResponse faasProcessCreatedResponse =
                 FaasProcessCreatedResponse.newBuilder()
                     .setProcess(Process.newBuilder()
+                        .setStart(Timestamps.fromMillis(System.currentTimeMillis()))
                         .setType(ProcessType.FAAS)
                         .setId(apiId)
                         .setOriginId(apiId)

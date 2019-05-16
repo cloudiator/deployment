@@ -125,6 +125,8 @@ public class ProcessDomainRepository {
     processModel.setType(domain.type());
     processModel.setIpGroupModel(generateIpModel(domain));
     processModel.setEndpoint(domain.endpoint().orElse(null));
+    processModel.setStart(processModel.getStart());
+    processModel.setStop(processModel.getStop());
 
     return processModel;
 
@@ -154,7 +156,8 @@ public class ProcessDomainRepository {
           domain.taskId(), domain.taskInterface(), domain.state(),
           domain.type(), ((CloudiatorSingleProcess) domain).node(),
           domain.diagnostic().orElse(null), domain.reason().orElse(null),
-          domain.endpoint().orElse(null), generateIpModel(domain));
+          domain.endpoint().orElse(null), generateIpModel(domain), domain.start(),
+          domain.stop().orElse(null));
 
     } else if (domain instanceof CloudiatorClusterProcess) {
 
@@ -162,7 +165,8 @@ public class ProcessDomainRepository {
           domain.taskId(), domain.taskInterface(), domain.state(),
           domain.type(), new ArrayList<>(((CloudiatorClusterProcess) domain).nodes()),
           domain.diagnostic().orElse(null), domain.reason().orElse(null),
-          domain.endpoint().orElse(null), generateIpModel(domain));
+          domain.endpoint().orElse(null), generateIpModel(domain), domain.start(),
+          domain.stop().orElse(null));
 
     } else {
       throw new AssertionError(

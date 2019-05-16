@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -49,9 +50,9 @@ class ProcessClusterModel extends ProcessModel {
       ProcessState state, Type type,
       List<String> nodes, @Nullable String diagnostic, @Nullable String reason,
       @Nullable String endpoint,
-      IpGroupModel ipGroupModel) {
+      IpGroupModel ipGroupModel, Date start, @Nullable Date stop) {
     super(domainId, originId, schedule, task, taskInterface, state, type,
-        diagnostic, reason, endpoint, ipGroupModel);
+        diagnostic, reason, endpoint, ipGroupModel, start, stop);
 
     checkNotNull(nodes, "nodes is null");
 

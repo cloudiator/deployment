@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress.IpAddressType;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -47,12 +47,16 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   @Nullable
   private final String endpoint;
   private final Set<IpAddress> ipAddresses;
+  private final Date start;
+  @Nullable
+  private final Date stop;
+
 
   CloudiatorProcessImpl(String id, @Nullable String originId, String userId, String scheduleId,
       String taskName, String taskInterface,
       ProcessState state, Type type, @Nullable String diagnostic,
       @Nullable String reason, @Nullable String endpoint,
-      Set<IpAddress> ipAddresses) {
+      Set<IpAddress> ipAddresses, Date start, @Nullable Date stop) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
@@ -88,6 +92,11 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
     checkNotNull(ipAddresses, "ipAddresses is null");
     this.ipAddresses = ipAddresses;
+
+    checkNotNull(start, "start is null");
+    this.start = start;
+
+    this.stop = stop;
   }
 
   @Override
@@ -156,6 +165,16 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     return Optional.of(endpoint);
   }
 
+  @Override
+  public Date start() {
+    return start;
+  }
+
+  @Override
+  public Optional<Date> stop() {
+    return Optional.ofNullable(stop);
+  }
+
   protected MoreObjects.ToStringHelper stringHelper() {
     return MoreObjects.toStringHelper(this).add("id", id).add("originId", originId)
         .add("userId", userId)
@@ -164,7 +183,8 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
         .add("taskInterface", taskInterface)
         .add("state", state).add("type", type)
         .add("diagnostic", diagnostic).add("reason", reason)
-        .add("endpoint", endpoint).add("ipAddresses", ipAddresses);
+        .add("endpoint", endpoint).add("ipAddresses", ipAddresses)
+        .add("start", start).add("stop", stop);
   }
 
   @Override

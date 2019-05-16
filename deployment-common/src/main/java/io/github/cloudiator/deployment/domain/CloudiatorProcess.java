@@ -22,6 +22,7 @@ import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 
@@ -68,5 +69,9 @@ public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> 
   Optional<String> endpoint();
 
   Collection<IpAddress> ipAddresses();
+
+  Date start();
+
+  Optional<Date> stop();
 
 }

@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,6 +40,9 @@ public class CloudiatorSingleProcessBuilder {
   private String diagnostic;
   private Set<IpAddress> ipAddresses;
   private String endpoint;
+  private Date start;
+  private Date stop;
+
 
   private CloudiatorSingleProcessBuilder() {
     this.ipAddresses = new HashSet<>();
@@ -58,6 +62,8 @@ public class CloudiatorSingleProcessBuilder {
     this.diagnostic = cloudiatorSingleProcess.diagnostic().orElse(null);
     this.endpoint = cloudiatorSingleProcess.endpoint().orElse(null);
     this.ipAddresses = new HashSet<>(cloudiatorSingleProcess.ipAddresses());
+    this.start = cloudiatorSingleProcess.start();
+    this.stop = cloudiatorSingleProcess.stop().orElse(null);
   }
 
   public static CloudiatorSingleProcessBuilder create() {
@@ -140,11 +146,26 @@ public class CloudiatorSingleProcessBuilder {
     return this;
   }
 
+  public CloudiatorSingleProcessBuilder start(Date start) {
+    this.start = start;
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder stop(Date stop) {
+    this.stop = stop;
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder startNow() {
+    this.start = new Date();
+    return this;
+  }
+
   public CloudiatorSingleProcess build() {
     return new CloudiatorSingleProcessImpl(id, originId, userId, scheduleId, taskName,
         taskInterface, state, type,
         node,
-        diagnostic, reason, endpoint, ipAddresses);
+        diagnostic, reason, endpoint, ipAddresses, start, stop);
   }
 
 }

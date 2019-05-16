@@ -26,6 +26,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import de.uniulm.omi.cloudiator.util.execution.LoggingThreadPoolExecutor;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
@@ -39,11 +40,14 @@ import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
+import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +57,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.cloudiator.messages.Process.CreateProcessRequest;
@@ -120,21 +125,25 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     private final TaskInterface taskInterface;
     private final Runnable beforeExecute;
     private final Runnable afterExecute;
+    private final Consumer<CloudiatorProcess> onSuccess;
 
     protected NodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute) {
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute,
+        Consumer<CloudiatorProcess> onSuccess) {
       this.schedule = schedule;
       this.task = task;
       this.taskInterface = taskInterface;
       this.beforeExecute = beforeExecute;
       this.afterExecute = afterExecute;
+      this.onSuccess = onSuccess;
     }
 
     @Override
     public final void onSuccess(T result) {
       try {
         beforeExecute.run();
-        doSuccess(result).get();
+        final CloudiatorProcess cloudiatorProcess = doSuccess(result).get();
+        onSuccess.accept(cloudiatorProcess);
       } catch (InterruptedException e) {
         throw new IllegalStateException("Interrupted while waiting for result.", e);
       } catch (ExecutionException e) {
@@ -155,7 +164,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       }
     }
 
-    public abstract Future<?> doSuccess(@Nullable T result);
+    public abstract Future<CloudiatorProcess> doSuccess(@Nullable T result);
 
     public abstract void doFailure(Throwable t);
 
@@ -175,12 +184,13 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class SingleNodeCallback extends NodeCallback<Node> {
 
     private SingleNodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute) {
-      super(schedule, task, taskInterface, beforeExecute, afterExecute);
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute,
+        Consumer<CloudiatorProcess> onSuccess) {
+      super(schedule, task, taskInterface, beforeExecute, afterExecute, onSuccess);
     }
 
     @Override
-    public Future<?> doSuccess(Node result) {
+    public Future<CloudiatorProcess> doSuccess(Node result) {
       LOGGER.info(String.format("Node %s was created. Starting processes.",
           result));
 
@@ -202,12 +212,13 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class ClusterCallback extends NodeCallback<List<Node>> {
 
     private ClusterCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute) {
-      super(schedule, task, taskInterface, beforeExecute, afterExecute);
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute,
+        Consumer<CloudiatorProcess> onSuccess) {
+      super(schedule, task, taskInterface, beforeExecute, afterExecute, onSuccess);
     }
 
     @Override
-    public Future<?> doSuccess(List<Node> result) {
+    public Future<CloudiatorProcess> doSuccess(List<Node> result) {
       LOGGER.info(String.format("Nodes %s were created. Starting processes.",
           result));
 
@@ -234,57 +245,55 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
-  public WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
+  public Future<Collection<CloudiatorProcess>> deployTask(Task task,
+      TaskInterface taskInterface,
+      Schedule schedule,
       List<ListenableFuture<Node>> allocatedResources,
-      DependencyGraph.Dependencies dependencies) {
+      Dependencies dependencies) {
 
     CountDownLatch countDownLatch;
+    final HashSet<CloudiatorProcess> processes = new HashSet<>();
+
+    Consumer<CloudiatorProcess> onSuccessConsumer = new Consumer<CloudiatorProcess>() {
+      @Override
+      public void accept(CloudiatorProcess cloudiatorProcess) {
+        processes.add(cloudiatorProcess);
+      }
+    };
 
     switch (taskInterface.processMapping()) {
       case CLUSTER:
         countDownLatch = new CountDownLatch(1);
         final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocatedResources);
         Futures.addCallback(nodeFutures,
-            new ClusterCallback(schedule, task, taskInterface, new Runnable() {
-              @Override
-              public void run() {
-                try {
-                  dependencies.await();
-                } catch (InterruptedException e) {
-                  throw new IllegalStateException(e);
-                }
+            new ClusterCallback(schedule, task, taskInterface, () -> {
+              try {
+                dependencies.await();
+              } catch (InterruptedException e) {
+                throw new IllegalStateException(e);
               }
-            }, new Runnable() {
-              @Override
-              public void run() {
-                countDownLatch.countDown();
-                dependencies.fulfill();
-              }
-            }),
+            }, () -> {
+              countDownLatch.countDown();
+              dependencies.fulfill();
+            }, onSuccessConsumer),
             EXECUTOR);
         break;
       case SINGLE:
         countDownLatch = new CountDownLatch(allocatedResources.size());
         for (ListenableFuture<Node> nodeFuture : allocatedResources) {
           Futures.addCallback(nodeFuture,
-              new SingleNodeCallback(schedule, task, taskInterface, new Runnable() {
-                @Override
-                public void run() {
-                  try {
-                    dependencies.await();
-                  } catch (InterruptedException e) {
-                    throw new IllegalStateException(e);
-                  }
+              new SingleNodeCallback(schedule, task, taskInterface, () -> {
+                try {
+                  dependencies.await();
+                } catch (InterruptedException e) {
+                  throw new IllegalStateException(e);
                 }
-              }, new Runnable() {
-                @Override
-                public void run() {
-                  countDownLatch.countDown();
-                  if (countDownLatch.getCount() == 0) {
-                    dependencies.fulfill();
-                  }
+              }, () -> {
+                countDownLatch.countDown();
+                if (countDownLatch.getCount() == 0) {
+                  dependencies.fulfill();
                 }
-              }),
+              }, onSuccessConsumer),
               EXECUTOR);
         }
         break;
@@ -292,7 +301,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
     }
 
-    return new WaitLockImpl(countDownLatch);
+    return new WaitLockImpl<>(countDownLatch, processes);
   }
 
   @Override
@@ -305,7 +314,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     checkState(supports().equals(schedule.instantiation()),
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
-    Map<Task, WaitLock> waitLocks = new HashMap<>();
+    Map<Task, Future<Collection<CloudiatorProcess>>> taskFutureMap = new HashMap<>();
 
     final Map<Task, TaskInterface> taskInterfaceSelection = new TaskInterfaceSelection()
         .select(job);
@@ -326,8 +335,9 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
           final List<ListenableFuture<Node>> allocate = resourcePool
               .allocate(schedule, matchmakingResult, task.name());
 
-          waitLocks.put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
-              dependencyGraph.forTask(task)));
+          taskFutureMap
+              .put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
+                  dependencyGraph.forTask(task)));
 
         } catch (MatchmakingException e) {
           throw new InstantiationException("Error while scheduling.", e);
@@ -340,14 +350,12 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     }
     LOGGER.info(String
         .format("Waiting for a total of %s tasks to finish.",
-            waitLocks.size()));
-
-    final WaitLock waitLock = new CompositeWaitLock(waitLocks.values());
+            taskFutureMap.size()));
 
     try {
-      waitLock.waitFor();
-    } catch (InterruptedException e) {
-      throw new InstantiationException("Interrupt while waiting for processes to start.", e);
+      CloudiatorFutures.waitForFutures(taskFutureMap.values());
+    } catch (ExecutionException | InterruptedException e) {
+      throw new InstantiationException("Instantiation failed.", e);
     }
 
     //refresh the schedule object to receive the created processes

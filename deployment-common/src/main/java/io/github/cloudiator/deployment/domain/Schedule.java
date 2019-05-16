@@ -60,4 +60,6 @@ public interface Schedule extends Identifiable, Stateful<ScheduleState> {
   boolean runsOnNode(Node node);
 
   Task getTask(CloudiatorProcess cloudiatorProcess, Job job);
+
+  Set<CloudiatorProcess> processesForTask(Task task);
 }

@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.scheduler.instantiation;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
@@ -26,7 +27,9 @@ import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
 import io.github.cloudiator.domain.Node;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Future;
 import javax.annotation.Nullable;
 
 public class ManualInstantiationStrategy implements InstantiationStrategy {
@@ -37,7 +40,7 @@ public class ManualInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
-  public WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
+  public Future<Collection<CloudiatorProcess>> deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
       List<ListenableFuture<Node>> allocatedResources, @Nullable Dependencies dependencies) {
     throw new UnsupportedOperationException(
         String.format("%s does not support scheduling a single task.", this));

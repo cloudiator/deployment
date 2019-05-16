@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.Job;
@@ -33,8 +34,6 @@ import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
-import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy.CompositeWaitLock;
-import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy.WaitLock;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
 import io.github.cloudiator.deployment.scheduler.instantiation.MatchmakingEngine;
 import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
@@ -43,6 +42,7 @@ import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import org.cloudiator.messages.Node.NodeDeleteMessage;
 import org.cloudiator.messages.Node.NodeDeleteResponseMessage;
@@ -114,7 +115,7 @@ public class ScheduleRestore {
 
     Set<CloudiatorProcess> processToBeCleaned = new HashSet<>();
     Set<Node> nodesToBeCleaned = new HashSet<>();
-    List<WaitLock> waitLocks = new LinkedList<>();
+    List<Future<Collection<CloudiatorProcess>>> futures = new LinkedList<>();
 
     final Map<Task, TaskInterface> taskInterfaceSelection = new TaskInterfaceSelection()
         .select(job);
@@ -145,21 +146,22 @@ public class ScheduleRestore {
       final List<ListenableFuture<Node>> allocate = resourcePool
           .allocate(schedule, matchmaking, reusableNodes, task.name());
 
-      final WaitLock waitLock = instantiationStrategySelector.get(schedule.instantiation())
+      final Future<Collection<CloudiatorProcess>> collectionFuture = instantiationStrategySelector
+          .get(schedule.instantiation())
           .deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
               dependencyGraph.forTask(task));
-      waitLocks.add(waitLock);
+      futures.add(collectionFuture);
 
     }
 
     try {
-      new CompositeWaitLock(waitLocks).waitFor();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+      CloudiatorFutures.waitForFutures(futures);
+    } catch (ExecutionException | InterruptedException e) {
+      throw new InstantiationException("Instantiation failed.", e);
+    } finally {
+      cleanup(processToBeCleaned, nodesToBeCleaned);
     }
-
-    cleanup(processToBeCleaned, nodesToBeCleaned);
-
+    
     return Objects
         .requireNonNull(findByIdAndUser(schedule.id(), schedule.userId()))
         .setState(

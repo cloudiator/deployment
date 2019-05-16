@@ -33,7 +33,7 @@ public class TaskDoesNotDependOnPeriodicTaskValidator extends AbstractModelValid
     for (Task task : job.tasks()) {
 
       //get dependencies
-      final List<Task> dependencies = jobGraph.getDependencies(task);
+      final List<Task> dependencies = jobGraph.getDependencies(task, false);
 
       for (Task dependency : dependencies) {
 

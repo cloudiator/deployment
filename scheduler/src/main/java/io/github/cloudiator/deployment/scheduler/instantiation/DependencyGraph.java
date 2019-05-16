@@ -93,7 +93,7 @@ public class DependencyGraph {
     final JobGraph jobGraph = JobGraph.of(job);
     final HashSet<DownStream> downStreams = new HashSet<>();
 
-    for (Task dependency : jobGraph.getDependencies(task)) {
+    for (Task dependency : jobGraph.getDependencies(task, true)) {
 
       //check if we need to wait here
       final TaskInterface dependencyInterface = selectedInterfaces.get(dependency);

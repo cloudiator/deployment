@@ -20,6 +20,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
+import java.util.Date;
 import java.util.UUID;
 
 public class MediaWikiSchedule {
@@ -31,29 +32,33 @@ public class MediaWikiSchedule {
   private static final String LB_NODE_ID = UUID.randomUUID().toString();
   private static final String WIKI_NODE_ID = UUID.randomUUID().toString();
   private static final String DATABASE_NODE_ID = UUID.randomUUID().toString();
+  private static final Date NOW = new Date();
 
   public static CloudiatorProcess wikiProcess() {
-    return CloudiatorSingleProcessBuilder.create().node(LB_NODE_ID).userId(MediaWikiJob.wikiJob().userId()).scheduleId(SCHEDULE_ID)
+    return CloudiatorSingleProcessBuilder.create().node(LB_NODE_ID)
+        .userId(MediaWikiJob.wikiJob().userId()).scheduleId(SCHEDULE_ID)
         .taskName(MediaWikiJob.wikiTask().name())
         .endpoint("http://wiki.com").originId(WIKI_ID)
         .taskInterface(LanceInterface.class.getCanonicalName()).type(
-            Type.LANCE).id(WIKI_ID).state(ProcessState.RUNNING).build();
+            Type.LANCE).id(WIKI_ID).state(ProcessState.RUNNING).start(NOW).build();
   }
 
   public static CloudiatorProcess lbProcess() {
-    return CloudiatorSingleProcessBuilder.create().node(WIKI_NODE_ID).userId(MediaWikiJob.wikiJob().userId()).scheduleId(SCHEDULE_ID)
+    return CloudiatorSingleProcessBuilder.create().node(WIKI_NODE_ID)
+        .userId(MediaWikiJob.wikiJob().userId()).scheduleId(SCHEDULE_ID)
         .taskName(MediaWikiJob.loadBalancerTask().name())
         .endpoint("http://lb.com").originId(LB_ID)
         .taskInterface(LanceInterface.class.getCanonicalName()).type(
-            Type.LANCE).id(LB_ID).state(ProcessState.RUNNING).build();
+            Type.LANCE).id(LB_ID).state(ProcessState.RUNNING).start(NOW).build();
   }
 
   public static CloudiatorProcess dbProcess() {
-    return CloudiatorSingleProcessBuilder.create().node(DATABASE_NODE_ID).userId(MediaWikiJob.wikiJob().userId()).scheduleId(SCHEDULE_ID)
+    return CloudiatorSingleProcessBuilder.create().node(DATABASE_NODE_ID)
+        .userId(MediaWikiJob.wikiJob().userId()).scheduleId(SCHEDULE_ID)
         .taskName(MediaWikiJob.databaseTask().name())
         .endpoint("http://db.com").originId(DATABASE_ID)
         .taskInterface(LanceInterface.class.getCanonicalName()).type(
-            Type.LANCE).id(DATABASE_ID).state(ProcessState.RUNNING).build();
+            Type.LANCE).id(DATABASE_ID).state(ProcessState.RUNNING).start(NOW).build();
   }
 
   public static Schedule schedule() {

@@ -56,7 +56,10 @@ public class JobGraph {
     return org.jgrapht.Graphs.successorListOf(taskGraph, task);
   }
 
-  public List<Task> getDependencies(Task task) {
+  public List<Task> getDependencies(Task task, boolean mandatory) {
+    if (mandatory) {
+      return org.jgrapht.Graphs.predecessorListOf(mandatoryTaskGraph, task);
+    }
     return org.jgrapht.Graphs.predecessorListOf(taskGraph, task);
   }
 

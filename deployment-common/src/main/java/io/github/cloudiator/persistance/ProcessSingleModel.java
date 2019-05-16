@@ -19,6 +19,7 @@ package io.github.cloudiator.persistance;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import java.util.Date;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -44,9 +45,9 @@ class ProcessSingleModel extends ProcessModel {
       ProcessState state, Type type,
       String node, @Nullable String diagnostic,
       @Nullable String reason, @Nullable String endpoint,
-      @Nullable IpGroupModel ipGroupModel) {
+      @Nullable IpGroupModel ipGroupModel, Date start, @Nullable Date stop) {
     super(domainId, originId, schedule, task, taskInterface, state, type, diagnostic, reason,
-        endpoint, ipGroupModel);
+        endpoint, ipGroupModel, start, stop);
 
     this.node = node;
   }

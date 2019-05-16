@@ -21,17 +21,22 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PeriodicBehaviour;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.graph.JobGraph;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
-import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy.WaitLock;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,15 +92,17 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
     LOGGER.info(String.format("%s is starting a new execution.", this));
 
+    if (!canExecute()) {
+      return;
+    }
+
     try {
 
       final TaskInterface taskInterface = new TaskInterfaceSelection().select(task);
 
-      final WaitLock waitLock = automaticInstantiationStrategy
+      final Future<Collection<CloudiatorProcess>> collectionFuture = automaticInstantiationStrategy
           .deployTask(task, taskInterface, schedule, allocateResources(),
               DependencyGraph.noDependencies(task));
-
-      waitLock.waitFor();
 
     } catch (Exception e) {
       LOGGER.error(String.format("Unexpected exception while running %s.", this), e);
@@ -112,6 +119,34 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
   }
 
   private boolean canExecute() {
+
+    final JobGraph jobGraph = JobGraph.of(job);
+
+    for (Task dependency : jobGraph.getDependencies(task, true)) {
+
+      final Set<CloudiatorProcess> cloudiatorProcesses = getSchedule().processesForTask(dependency);
+
+      if (cloudiatorProcesses.isEmpty()) {
+        LOGGER.warn(
+            String.format(
+                "Can not execute task %s of schedule %s as dependency %s has no running processes.",
+                task, schedule, dependency));
+        return false;
+      }
+
+      for (CloudiatorProcess cloudiatorProcess : cloudiatorProcesses) {
+        if (!cloudiatorProcess.state().equals(ProcessState.RUNNING)) {
+          LOGGER.warn(
+              String.format(
+                  "Can not execute task %s of schedule %s as dependency %s has failed or pending processes.",
+                  task, schedule, dependency));
+          return false;
+        }
+      }
+
+
+    }
+
     return true;
   }
 

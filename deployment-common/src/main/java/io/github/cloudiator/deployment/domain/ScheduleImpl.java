@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ScheduleImpl implements Schedule {
 
@@ -123,7 +124,14 @@ public class ScheduleImpl implements Schedule {
     return job.getTask(cloudiatorProcess.taskId()).orElseThrow(() -> new IllegalArgumentException(
         String.format("Job %s does not contain the task the process %s is referencing.", job,
             cloudiatorProcess)));
-    
+
+  }
+
+  @Override
+  public Set<CloudiatorProcess> processesForTask(Task task) {
+    return processes.stream().filter(
+        cloudiatorProcess -> cloudiatorProcess.taskId().equals(task.name()))
+        .collect(Collectors.toSet());
   }
 
   @Override
