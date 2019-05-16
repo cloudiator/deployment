@@ -22,8 +22,6 @@ import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +59,15 @@ public class FailureHandler implements NodeFailureReportingInterface,
         .findByIdAndUser(scheduleId, userId);
   }
 
+  Job findJob(Schedule schedule) {
+    final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
+
+    checkState(job != null,
+        String.format("Schedule references job %s but this job does not exist.",
+            schedule.job()));
+    return job;
+  }
+
   @Override
   public void addNodeFailure(Node node) {
     //todo: currently ignoring node failures if the process is not also failing
@@ -79,7 +86,7 @@ public class FailureHandler implements NodeFailureReportingInterface,
         .format("Process %s failed, but schedule with id %s does not exist.", cloudiatorProcess,
             cloudiatorProcess.scheduleId()));
 
-    handleAffectedProcesses(schedule, cloudiatorProcess);
+    handleAffectedProcesses(schedule, findJob(schedule), cloudiatorProcess);
 
     //if the schedule is not in state running ignore it
     if (schedule.state().equals(ScheduleState.RUNNING)) {
@@ -93,13 +100,8 @@ public class FailureHandler implements NodeFailureReportingInterface,
     }
   }
 
-  private void handleAffectedProcesses(Schedule schedule, CloudiatorProcess cloudiatorProcess) {
-
-    final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
-
-    checkState(job != null,
-        String.format("Schedule references job %s but this job does not exist.",
-            schedule.job()));
+  private void handleAffectedProcesses(Schedule schedule, Job job,
+      CloudiatorProcess cloudiatorProcess) {
 
     final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job);
 
@@ -152,6 +154,10 @@ public class FailureHandler implements NodeFailureReportingInterface,
     }
 
     return true;
+  }
+
+  private void canRestore(Schedule schedule) {
+
   }
 
   private void triggerRestore(Schedule schedule) {

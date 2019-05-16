@@ -29,9 +29,11 @@ import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.execution.LoggingThreadPoolExecutor;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.PeriodicBehaviour;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
+import io.github.cloudiator.deployment.domain.ServiceBehaviour;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
@@ -78,18 +80,21 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private final ProcessService processService;
   private final JobMessageRepository jobMessageRepository;
   private final ScheduleDomainRepository scheduleDomainRepository;
+  private final PeriodicScheduler periodicScheduler;
 
   @Inject
   public AutomaticInstantiationStrategy(
       MatchmakingEngine matchmakingEngine,
       ResourcePool resourcePool, ProcessService processService,
       JobMessageRepository jobMessageRepository,
-      ScheduleDomainRepository scheduleDomainRepository) {
+      ScheduleDomainRepository scheduleDomainRepository,
+      PeriodicScheduler periodicScheduler) {
     this.matchmakingEngine = matchmakingEngine;
     this.resourcePool = resourcePool;
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
     this.scheduleDomainRepository = scheduleDomainRepository;
+    this.periodicScheduler = periodicScheduler;
   }
 
   private ListenableFuture<CloudiatorProcess> submitProcess(Schedule schedule,
@@ -231,7 +236,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   @Override
   public WaitLock deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
       List<ListenableFuture<Node>> allocatedResources,
-      @Nullable DependencyGraph.Dependencies dependencies) {
+      DependencyGraph.Dependencies dependencies) {
 
     CountDownLatch countDownLatch;
 
@@ -243,21 +248,17 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             new ClusterCallback(schedule, task, taskInterface, new Runnable() {
               @Override
               public void run() {
-                if (dependencies != null) {
-                  try {
-                    dependencies.await();
-                  } catch (InterruptedException e) {
-                    throw new IllegalStateException(e);
-                  }
+                try {
+                  dependencies.await();
+                } catch (InterruptedException e) {
+                  throw new IllegalStateException(e);
                 }
               }
             }, new Runnable() {
               @Override
               public void run() {
                 countDownLatch.countDown();
-                if (dependencies != null) {
-                  dependencies.fulfill();
-                }
+                dependencies.fulfill();
               }
             }),
             EXECUTOR);
@@ -269,12 +270,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
               new SingleNodeCallback(schedule, task, taskInterface, new Runnable() {
                 @Override
                 public void run() {
-                  if (dependencies != null) {
-                    try {
-                      dependencies.await();
-                    } catch (InterruptedException e) {
-                      throw new IllegalStateException(e);
-                    }
+                  try {
+                    dependencies.await();
+                  } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
                   }
                 }
               }, new Runnable() {
@@ -282,9 +281,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
                 public void run() {
                   countDownLatch.countDown();
                   if (countDownLatch.getCount() == 0) {
-                    if (dependencies != null) {
-                      dependencies.fulfill();
-                    }
+                    dependencies.fulfill();
                   }
                 }
               }),
@@ -318,21 +315,27 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     for (Iterator<Task> iter = job.tasksInOrder(); iter.hasNext(); ) {
       final Task task = iter.next();
 
-      LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
+      if (task.behaviour() instanceof ServiceBehaviour) {
+        LOGGER.info(String.format("Allocating the resources for task %s of job %s", task, job));
 
-      try {
+        try {
 
-        final List<NodeCandidate> matchmakingResult = matchmakingEngine
-            .matchmaking(task.requirements(job), Collections.emptyList(), schedule.userId());
+          final List<NodeCandidate> matchmakingResult = matchmakingEngine
+              .matchmaking(task.requirements(job), Collections.emptyList(), schedule.userId());
 
-        final List<ListenableFuture<Node>> allocate = resourcePool
-            .allocate(schedule, matchmakingResult, task.name());
+          final List<ListenableFuture<Node>> allocate = resourcePool
+              .allocate(schedule, matchmakingResult, task.name());
 
-        waitLocks.put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
-            dependencyGraph.forTask(task)));
+          waitLocks.put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
+              dependencyGraph.forTask(task)));
 
-      } catch (MatchmakingException e) {
-        throw new InstantiationException("Error while scheduling.", e);
+        } catch (MatchmakingException e) {
+          throw new InstantiationException("Error while scheduling.", e);
+        }
+      } else if (task.behaviour() instanceof PeriodicBehaviour) {
+        periodicScheduler.schedule(job, task, schedule);
+      } else {
+        throw new AssertionError("Unknown behaviour type " + task.behaviour());
       }
     }
     LOGGER.info(String

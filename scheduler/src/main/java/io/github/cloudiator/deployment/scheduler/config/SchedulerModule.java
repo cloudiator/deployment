@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.scheduler.config;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
@@ -24,8 +25,6 @@ import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecuto
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import de.uniulm.omi.cloudiator.util.execution.ScheduledThreadPoolExecutorExecutionService;
 import io.github.cloudiator.deployment.scheduler.Init;
-import io.github.cloudiator.deployment.scheduler.instantiation.OnDemandResourcePool;
-import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.failure.FailureHandler;
 import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
 import io.github.cloudiator.deployment.scheduler.failure.ProcessFailureReportingInterface;
@@ -34,6 +33,9 @@ import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstanti
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
 import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.OnDemandResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.PeriodicBehaviourSchedulableFactory;
+import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.FaasProcessSpawnerImpl;
@@ -58,6 +60,8 @@ public class SchedulerModule extends AbstractModule {
     bind(NodeFailureReportingInterface.class).to(FailureHandler.class);
     bind(ProcessFailureReportingInterface.class).to(FailureHandler.class);
     bind(ScheduleEventReportingInterface.class).to(FailureHandler.class);
+
+    install(new FactoryModuleBuilder().build(PeriodicBehaviourSchedulableFactory.class));
 
     Multibinder<Schedulable> schedulableMultibinder = Multibinder
         .newSetBinder(binder(), Schedulable.class);

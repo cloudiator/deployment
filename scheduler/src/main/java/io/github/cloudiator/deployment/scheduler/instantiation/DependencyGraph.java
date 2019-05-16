@@ -22,10 +22,12 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.graph.JobGraph;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +84,9 @@ public class DependencyGraph {
     }
   }
 
+  public static Dependencies noDependencies(Task task) {
+    return new Dependencies(task, Collections.emptySet(), new UpStream(null));
+  }
 
   public Dependencies forTask(Task task) {
 
@@ -136,19 +141,26 @@ public class DependencyGraph {
 
   public static class UpStream implements Dependency {
 
+    @Nullable
     private final TaskLock taskLock;
 
-    public UpStream(TaskLock taskLock) {
+    public UpStream(@Nullable TaskLock taskLock) {
       this.taskLock = taskLock;
     }
 
     public void fulfill() {
-      taskLock.fulfill();
+      if (taskLock != null) {
+        taskLock.fulfill();
+      }
     }
 
     @Override
+    @Nullable
     public Task getTask() {
-      return taskLock.getTask();
+      if (taskLock != null) {
+        return taskLock.getTask();
+      }
+      return null;
     }
 
     @Override

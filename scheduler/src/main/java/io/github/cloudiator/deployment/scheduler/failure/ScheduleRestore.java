@@ -100,6 +100,10 @@ public class ScheduleRestore {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
+  private boolean canRestoreTask(Task task) {
+    return true;
+  }
+
   public Schedule heal(Schedule schedule) throws InstantiationException {
 
     final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());

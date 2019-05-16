@@ -29,6 +29,7 @@ import io.github.cloudiator.deployment.validation.ModelValidationServiceImpl;
 import io.github.cloudiator.deployment.validation.ModelValidator;
 import io.github.cloudiator.deployment.validation.NoCycleInMandatoryCommunicationValidator;
 import io.github.cloudiator.deployment.validation.PortsOfCommunicationsExistValidator;
+import io.github.cloudiator.deployment.validation.TaskDoesNotDependOnPeriodicTaskValidator;
 
 /**
  * Created by daniel on 14.07.16.
@@ -45,5 +46,6 @@ public class ModelValidationModule extends AbstractModule {
     typeModelValidatorBinder.addBinding().to(EveryPortRequiredFullfilledValidator.class);
     typeModelValidatorBinder.addBinding().to(PortsOfCommunicationsExistValidator.class);
     typeModelValidatorBinder.addBinding().to(EveryTaskHasAnInterface.class);
+    typeModelValidatorBinder.addBinding().to(TaskDoesNotDependOnPeriodicTaskValidator.class);
   }
 }
