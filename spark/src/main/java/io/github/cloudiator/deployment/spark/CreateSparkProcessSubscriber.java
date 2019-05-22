@@ -79,7 +79,7 @@ public class CreateSparkProcessSubscriber implements Runnable {
             final String schedule = content.getSpark().getSchedule();
 
             final CloudiatorProcess cloudiatorProcess = createSparkProcessStrategy
-                .execute(userId, schedule, job.getTask(task).orElseThrow(
+                .executeJobSubmission(userId, schedule, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
                         String.format("Job %s does not contain task %s", job, task))),
                     sparkInterface,

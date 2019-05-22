@@ -22,6 +22,7 @@ public class SparkAgent  {
 
   public static void main(String[] args) {
     INJECTOR.getInstance(CreateSparkProcessSubscriber.class).run();
+    INJECTOR.getInstance(CreateSparkClusterSubscriber.class).run();
   }
 
 }

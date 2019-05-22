@@ -35,11 +35,14 @@ import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.cloudiator.messages.Process.CreateSparkClusterRequest;
 import org.cloudiator.messages.Process.CreateSparkProcessRequest;
+import org.cloudiator.messages.Process.SparkClusterCreatedResponse;
 import org.cloudiator.messages.Process.SparkProcessCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.Nodes;
 import org.cloudiator.messages.entities.ProcessEntities.SparkProcess;
 import org.cloudiator.messages.entities.ProcessEntities.SparkProcess.Builder;
+import org.cloudiator.messaging.ResponseException;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
@@ -86,6 +89,14 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
 
   private CloudiatorProcess executeRequest(String userId, SparkProcess sparkProcess)
       throws ProcessSpawningException {
+
+    final CreateSparkClusterRequest clusterRequest = CreateSparkClusterRequest.newBuilder().setNodes(sparkProcess.getNodes()).setUserId(userId).build();
+    try {
+      SparkClusterCreatedResponse sparkClusterCreatedResponse = processService.createSparkCluster(clusterRequest);
+    } catch (ResponseException e) {
+      LOGGER.error("Error while deploying Spark cluster! " + e.getMessage());
+      throw new ProcessSpawningException(e.getCause().getMessage(), e);
+    }
 
     final CreateSparkProcessRequest processRequest = CreateSparkProcessRequest.newBuilder()
         .setSpark(sparkProcess).setUserId(userId).build();

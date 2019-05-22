@@ -341,20 +341,40 @@ public class CreateSparkProcessStrategy {
   }
 
 
-  public CloudiatorProcess execute(String userId, String schedule, Task task,
-      SparkInterface sparkInterface,
-      Set<Node> nodes) {
+
+  public void executeClusterDeployment(String userId, Set<Node> nodes) {
 
     LOGGER.info(String
-        .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on nodes %s",
-            userId, schedule, task, nodes));
+        .format("Deploying a new Spark cluster for user: %s  on nodes %s",
+            userId, nodes));
 
     try {
 
       LOGGER.debug("Triggering Spark Worker installations...");
       this.installSparkWorkers(userId, nodes);
 
-      LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
+
+      LOGGER.debug("Successfully deployed Spark cluster!");
+
+
+
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not deploy Spark cluster on nodes " + nodes, e);
+    }
+
+  }
+
+
+  public CloudiatorProcess executeJobSubmission(String userId, String schedule, Task task,
+      SparkInterface sparkInterface,Set<Node> nodes) {
+
+    LOGGER.info(String
+        .format("Submitting new SparkJobSubmission for user: %s, schedule %s, task %s on nodes %s",
+            userId, schedule, task, nodes));
+
+    try {
+
+      LOGGER.debug("Triggering Spark Process submission to Livy Server...");
       this.submitSparkProcessToLivy(sparkInterface);
 
       //TODO: get Livy Batch ID from Livy Server as soon as this is fixed in Livy or YARN is enabled
@@ -376,5 +396,7 @@ public class CreateSparkProcessStrategy {
     }
 
   }
+
+
 
 }
