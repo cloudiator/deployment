@@ -25,7 +25,6 @@ import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +79,7 @@ public interface InstantiationStrategy {
 
   Future<Collection<CloudiatorProcess>> deployTask(Task task, TaskInterface taskInterface,
       Schedule schedule,
-      List<ListenableFuture<Node>> allocatedResources,
+      Collection<ListenableFuture<Node>> allocatedResources,
       @Nullable Dependencies dependencies);
 
   Schedule instantiate(Schedule schedule) throws InstantiationException;

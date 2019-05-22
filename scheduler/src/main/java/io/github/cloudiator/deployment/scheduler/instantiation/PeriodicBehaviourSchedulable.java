@@ -93,6 +93,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
     LOGGER.info(String.format("%s is starting a new execution.", this));
 
     if (!canExecute()) {
+      LOGGER.warn(String.format("Skipping execution of %s.", this));
       return;
     }
 
@@ -111,7 +112,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
   private List<NodeCandidate> performMatchmaking() throws MatchmakingException {
     return matchmakingEngine
-        .matchmaking(task.requirements(job), Collections.emptyList(), schedule.userId());
+        .matchmaking(task.requirements(job), Collections.emptyList(), null, schedule.userId());
   }
 
   private List<ListenableFuture<Node>> allocateResources() throws MatchmakingException {
@@ -138,7 +139,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
         if (!cloudiatorProcess.state().equals(ProcessState.RUNNING)) {
           LOGGER.warn(
               String.format(
-                  "Can not execute task %s of schedule %s as dependency %s has failed or pending processes.",
+                  "Can not execute task %s of schedule %s as dependency %s has processes that are currently in state transition.",
                   task, schedule, dependency));
           return false;
         }

@@ -22,7 +22,7 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -37,7 +37,7 @@ class ProcessClusterModel extends ProcessModel {
 
   @Column(nullable = false)
   @ElementCollection
-  private List<String> nodes;
+  private Set<String> nodes;
 
   /**
    * Empty constructor for hibernate
@@ -48,7 +48,7 @@ class ProcessClusterModel extends ProcessModel {
   public ProcessClusterModel(String domainId, String originId, ScheduleModel schedule, String task,
       String taskInterface,
       ProcessState state, Type type,
-      List<String> nodes, @Nullable String diagnostic, @Nullable String reason,
+      Set<String> nodes, @Nullable String diagnostic, @Nullable String reason,
       @Nullable String endpoint,
       IpGroupModel ipGroupModel, Date start, @Nullable Date stop) {
     super(domainId, originId, schedule, task, taskInterface, state, type,
@@ -64,7 +64,11 @@ class ProcessClusterModel extends ProcessModel {
     return super.stringHelper().add("nodes", nodes);
   }
 
-  public List<String> getNodes() {
+  public Set<String> getNodes() {
     return nodes;
+  }
+
+  public void setNodes(Set<String> nodes) {
+    this.nodes = nodes;
   }
 }

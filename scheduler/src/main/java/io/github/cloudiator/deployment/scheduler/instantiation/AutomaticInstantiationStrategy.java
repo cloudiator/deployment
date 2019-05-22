@@ -248,7 +248,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   public Future<Collection<CloudiatorProcess>> deployTask(Task task,
       TaskInterface taskInterface,
       Schedule schedule,
-      List<ListenableFuture<Node>> allocatedResources,
+      Collection<ListenableFuture<Node>> allocatedResources,
       Dependencies dependencies) {
 
     CountDownLatch countDownLatch;
@@ -330,7 +330,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         try {
 
           final List<NodeCandidate> matchmakingResult = matchmakingEngine
-              .matchmaking(task.requirements(job), Collections.emptyList(), schedule.userId());
+              .matchmaking(task.requirements(job), Collections.emptyList(), null, schedule.userId());
 
           final List<ListenableFuture<Node>> allocate = resourcePool
               .allocate(schedule, matchmakingResult, task.name());

@@ -36,7 +36,8 @@ public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> 
     RUNNING,
     FINISHED,
     ERROR,
-    DELETED
+    DELETED,
+    SCALING
   }
 
   enum Type {

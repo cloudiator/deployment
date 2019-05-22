@@ -25,6 +25,7 @@ import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.converters.RequirementConverter;
 import org.cloudiator.matchmaking.domain.Requirement;
 import org.cloudiator.messages.NodeEntities.NodeRequirements;
@@ -50,7 +51,7 @@ public class MatchmakingEngine {
   }
 
   public List<NodeCandidate> matchmaking(Iterable<? extends Requirement> requirements,
-      Iterable<Node> existingResources,
+      Iterable<Node> existingResources, @Nullable Integer minimumNodes,
       String userId) throws MatchmakingException {
     LOGGER.debug(String
         .format(
@@ -62,6 +63,13 @@ public class MatchmakingEngine {
             .map(REQUIREMENT_CONVERTER::applyBack).collect(Collectors.toList()))
         .build();
 
+    int minimumNodeSize;
+    if (minimumNodes == null) {
+      minimumNodeSize = 0;
+    } else {
+      minimumNodeSize = minimumNodes;
+    }
+
     final MatchmakingResponse matchmakingResponse;
     try {
       matchmakingResponse = matchmakingService.requestMatch(
@@ -70,6 +78,7 @@ public class MatchmakingEngine {
               .addAllExistingNodes(StreamSupport.stream(existingResources.spliterator(), false).map(
                   NODE_CONVERTER).collect(Collectors.toList()))
               .setUserId(userId)
+              .setMinimumNodeSize(minimumNodeSize)
               .build());
 
       LOGGER.debug(String

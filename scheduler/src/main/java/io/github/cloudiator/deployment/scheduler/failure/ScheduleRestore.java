@@ -138,7 +138,7 @@ public class ScheduleRestore {
       final List<NodeCandidate> matchmaking;
       try {
         matchmaking = matchmakingEngine
-            .matchmaking(task.requirements(job), reusableNodes, schedule.userId());
+            .matchmaking(task.requirements(job), reusableNodes, null, schedule.userId());
       } catch (MatchmakingException e) {
         throw new InstantiationException("Matchmaking failed.", e);
       }

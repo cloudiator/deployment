@@ -23,7 +23,6 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -128,6 +127,10 @@ public class ProcessDomainRepository {
     processModel.setStart(processModel.getStart());
     processModel.setStop(processModel.getStop());
 
+    if (processModel instanceof ProcessClusterModel) {
+      ((ProcessClusterModel) processModel).setNodes(domain.nodes());
+    }
+
     return processModel;
 
   }
@@ -163,7 +166,7 @@ public class ProcessDomainRepository {
 
       return new ProcessClusterModel(domain.id(), domain.originId().orElse(null), scheduleModel,
           domain.taskId(), domain.taskInterface(), domain.state(),
-          domain.type(), new ArrayList<>(((CloudiatorClusterProcess) domain).nodes()),
+          domain.type(), domain.nodes(),
           domain.diagnostic().orElse(null), domain.reason().orElse(null),
           domain.endpoint().orElse(null), generateIpModel(domain), domain.start(),
           domain.stop().orElse(null));

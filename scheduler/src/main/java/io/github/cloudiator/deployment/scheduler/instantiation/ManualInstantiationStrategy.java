@@ -28,7 +28,6 @@ import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Future;
 import javax.annotation.Nullable;
 
@@ -40,8 +39,9 @@ public class ManualInstantiationStrategy implements InstantiationStrategy {
   }
 
   @Override
-  public Future<Collection<CloudiatorProcess>> deployTask(Task task, TaskInterface taskInterface, Schedule schedule,
-      List<ListenableFuture<Node>> allocatedResources, @Nullable Dependencies dependencies) {
+  public Future<Collection<CloudiatorProcess>> deployTask(Task task, TaskInterface taskInterface,
+      Schedule schedule,
+      Collection<ListenableFuture<Node>> allocatedResources, @Nullable Dependencies dependencies) {
     throw new UnsupportedOperationException(
         String.format("%s does not support scheduling a single task.", this));
   }
@@ -51,7 +51,8 @@ public class ManualInstantiationStrategy implements InstantiationStrategy {
   public Schedule instantiate(Schedule schedule) {
 
     checkState(supports().equals(schedule.instantiation()),
-        String.format("%s does not support instantiation type %s.", this, schedule.instantiation()));
+        String
+            .format("%s does not support instantiation type %s.", this, schedule.instantiation()));
 
     return schedule.setState(ScheduleState.MANUAL);
 
