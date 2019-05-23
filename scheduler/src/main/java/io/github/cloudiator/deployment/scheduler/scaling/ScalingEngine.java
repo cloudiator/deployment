@@ -176,7 +176,7 @@ public class ScalingEngine {
     final List<ListenableFuture<Node>> allocate = resourcePool
         .allocate(schedule, matchmaking, nodes, task.name());
 
-    scaleInternally(schedule, task, Collections.emptyList());
+    scaleInternally(schedule, task, allocate);
   }
 
   private void scaleWithNodes(Schedule schedule, Job job, Task task,
