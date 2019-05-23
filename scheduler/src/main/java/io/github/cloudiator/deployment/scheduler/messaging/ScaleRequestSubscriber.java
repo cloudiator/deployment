@@ -5,10 +5,10 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
-import io.github.cloudiator.deployment.messaging.ScheduleMessageRepository;
 import io.github.cloudiator.deployment.scheduler.scaling.ScalingEngine;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
+import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import org.cloudiator.messages.General.Error;
@@ -32,7 +32,7 @@ public class ScaleRequestSubscriber implements Runnable {
 
   private final ScalingEngine scalingEngine;
 
-  private final ScheduleMessageRepository scheduleMessageRepository;
+  private final ScheduleDomainRepository scheduleDomainRepository;
   private final JobMessageRepository jobMessageRepository;
 
   private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
@@ -41,12 +41,12 @@ public class ScaleRequestSubscriber implements Runnable {
   public ScaleRequestSubscriber(
       ProcessService processService,
       MessageInterface messageInterface,
-      ScheduleMessageRepository scheduleMessageRepository,
+      ScheduleDomainRepository scheduleDomainRepository,
       JobMessageRepository jobMessageRepository,
       ScalingEngine scalingEngine) {
     this.processService = processService;
     this.messageInterface = messageInterface;
-    this.scheduleMessageRepository = scheduleMessageRepository;
+    this.scheduleDomainRepository = scheduleDomainRepository;
     this.jobMessageRepository = jobMessageRepository;
     this.scalingEngine = scalingEngine;
 
@@ -56,7 +56,6 @@ public class ScaleRequestSubscriber implements Runnable {
   @Override
   public void run() {
 
-
     processService.subscribeScaleRequest(
         (id, content) -> {
 
@@ -65,12 +64,32 @@ public class ScaleRequestSubscriber implements Runnable {
             final String userId = content.getUserId();
             final String scheduleId = content.getScheduleId();
             final String taskId = content.getTaskId();
-            Schedule schedule = scheduleMessageRepository
-                .getById(content.getUserId(), scheduleId);
+            Schedule schedule = scheduleDomainRepository
+                .findByIdAndUser(scheduleId, content.getUserId());
 
+            if (schedule == null) {
+              messageInterface.reply(ScaleResponse.class, id, Error.newBuilder().setCode(404)
+                  .setMessage(String.format("Schedule with id %s does not exist.", scheduleId))
+                  .build());
+              return;
+            }
 
             Job job = jobMessageRepository
                 .getById(userId, schedule.job());
+
+            if (job == null) {
+              messageInterface.reply(ScaleResponse.class, id, Error.newBuilder().setCode(404)
+                  .setMessage(String.format("Job with id %s does not exist.", job))
+                  .build());
+              return;
+            }
+
+            if (!job.getTask(taskId).isPresent()) {
+              messageInterface.reply(ScaleResponse.class, id, Error.newBuilder().setCode(404)
+                  .setMessage(String.format("Job with id %s does not have task %s.", job, taskId))
+                  .build());
+              return;
+            }
 
             Task task = job
                 .getTask(taskId).get();
@@ -79,11 +98,11 @@ public class ScaleRequestSubscriber implements Runnable {
                 .map(NODE_MESSAGE_CONVERTER::applyBack).collect(
                     Collectors.toCollection(ArrayList::new));
 
-            scalingEngine.scale(schedule,job,task,coll);
+            scalingEngine.scale(schedule, job, task, coll);
 
             final ScaleResponse scaleResponse = ScaleResponse.newBuilder().build();
 
-            messageInterface.reply(id,scaleResponse);
+            messageInterface.reply(id, scaleResponse);
 
           } catch (Exception e) {
             final String errorMessage = String

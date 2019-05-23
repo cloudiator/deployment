@@ -43,8 +43,8 @@ import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.TaskInterfaceSelection;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
+import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
-import io.github.cloudiator.persistance.NodeDomainRepository;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public class ScalingEngine {
   private final AutomaticInstantiationStrategy automaticInstantiationStrategy;
   private final MatchmakingEngine matchmakingEngine;
   private final ScheduleDomainRepository scheduleDomainRepository;
-  private final NodeDomainRepository nodeDomainRepository;
+  private final NodeMessageRepository nodeMessageRepository;
   private final ResourcePool resourcePool;
   private final ProcessDomainRepository processDomainRepository;
   private final ProcessService processService;
@@ -80,14 +80,14 @@ public class ScalingEngine {
       AutomaticInstantiationStrategy automaticInstantiationStrategy,
       MatchmakingEngine matchmakingEngine,
       ScheduleDomainRepository scheduleDomainRepository,
-      NodeDomainRepository nodeDomainRepository,
+      NodeMessageRepository nodeMessageRepository,
       ResourcePool resourcePool,
       ProcessDomainRepository processDomainRepository,
       ProcessService processService) {
     this.automaticInstantiationStrategy = automaticInstantiationStrategy;
     this.matchmakingEngine = matchmakingEngine;
     this.scheduleDomainRepository = scheduleDomainRepository;
-    this.nodeDomainRepository = nodeDomainRepository;
+    this.nodeMessageRepository = nodeMessageRepository;
     this.resourcePool = resourcePool;
     this.processDomainRepository = processDomainRepository;
     this.processService = processService;
@@ -132,13 +132,25 @@ public class ScalingEngine {
     return nodeFutures;
   }
 
-  public void scale(Schedule schedule, Job job, Task task)
+  public void scale(Schedule schedule, Job job, Task task, Collection<? extends Node> nodes)
+      throws MatchmakingException, InstantiationException {
+    if (nodes.isEmpty()) {
+      scaleWithoutNodes(schedule, job, task);
+    } else {
+      scaleWithNodes(schedule, job, task, nodes);
+    }
+  }
+
+  private void scaleWithoutNodes(Schedule schedule, Job job, Task task)
       throws MatchmakingException, InstantiationException {
 
     final Schedule checkedSchedule = checkSchedule(schedule);
 
     checkArgument(schedule.instantiation().equals(Instantiation.AUTOMATIC),
         "Schedule needs to be automatic to scale without supplying nodes.");
+
+    LOGGER.info(String
+        .format("Executing scale for task %s of job %s in schedule %s.", task, job, schedule));
 
     //get existing processes
     final Set<CloudiatorProcess> cloudiatorProcesses = schedule.processesForTask(task);
@@ -149,7 +161,7 @@ public class ScalingEngine {
             (Function<CloudiatorProcess, Stream<String>>) cloudiatorProcess -> cloudiatorProcess
                 .nodes().stream()).map(
             s -> {
-              final Node node = nodeDomainRepository.findByTenantAndId(checkedSchedule.userId(), s);
+              final Node node = nodeMessageRepository.getById(checkedSchedule.userId(), s);
               if (node == null) {
                 throw new IllegalStateException(String.format("Node with id %s does not exist", s));
               }
@@ -167,10 +179,18 @@ public class ScalingEngine {
     scaleInternally(schedule, task, Collections.emptyList());
   }
 
-  public void scale(Schedule schedule, Job job, Task task, Collection<? extends Node> nodes)
+  private void scaleWithNodes(Schedule schedule, Job job, Task task,
+      Collection<? extends Node> nodes)
       throws InstantiationException {
+
+    checkArgument(!nodes.isEmpty(), "Supplied nodes are empty.");
+
     checkArgument(schedule.instantiation().equals(Instantiation.MANUAL),
         "Supplying nodes is not supported for AUTOMATIC instantiation.");
+
+    LOGGER.info(String
+        .format("Executing scale for task %s of job %s in schedule %s on nodes %s.", task, job,
+            schedule, nodes));
 
     scaleInternally(schedule, task, nodesToFutures(nodes));
 
@@ -205,6 +225,8 @@ public class ScalingEngine {
         cloudiatorProcesses.size()
     );
 
+    LOGGER.debug(String.format("Scaling Cluster for task %s with nodes %s.", task, nodes));
+
     CloudiatorProcess cloudiatorProcess = cloudiatorProcesses.iterator().next();
 
     try {
@@ -225,6 +247,8 @@ public class ScalingEngine {
 
       final CloudiatorClusterProcess save = save(modifiedProcess);
 
+      LOGGER.info(String.format("Scaled cluster for task %s. Updated process is %s.", task, save));
+
       return Collections.singleton(save);
 
     } catch (ResponseException | InterruptedException | ExecutionException e) {
@@ -236,17 +260,23 @@ public class ScalingEngine {
       TaskInterface taskInterface,
       Collection<ListenableFuture<Node>> nodes) throws InstantiationException {
 
+    LOGGER.debug(String.format("Scaling single task %s with nodes %s.", task, nodes));
+
     final Future<Collection<CloudiatorProcess>> processFutures = automaticInstantiationStrategy
         .deployTask(task, taskInterface, schedule, nodes,
             DependencyGraph.noDependencies(task));
 
     try {
-      return processFutures.get();
+      final Collection<CloudiatorProcess> cloudiatorProcesses = processFutures.get();
+
+      LOGGER.info(
+          String.format("Scaled task %s. Added the processes %s.", task, cloudiatorProcesses));
+
+      return cloudiatorProcesses;
+
     } catch (InterruptedException | ExecutionException e) {
       throw new InstantiationException("Error while scaling task " + task, e);
     }
-
-
   }
 
 
