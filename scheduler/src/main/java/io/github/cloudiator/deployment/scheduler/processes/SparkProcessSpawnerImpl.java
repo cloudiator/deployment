@@ -90,12 +90,15 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
   private CloudiatorProcess executeRequest(String userId, SparkProcess sparkProcess)
       throws ProcessSpawningException {
 
-    final CreateSparkClusterRequest clusterRequest = CreateSparkClusterRequest.newBuilder().setNodes(sparkProcess.getNodes()).setUserId(userId).build();
+    final CreateSparkClusterRequest clusterRequest = CreateSparkClusterRequest.newBuilder()
+        .setNodes(sparkProcess.getNodes()).setUserId(userId).build();
     try {
-      SparkClusterCreatedResponse sparkClusterCreatedResponse = processService.createSparkCluster(clusterRequest);
+      SparkClusterCreatedResponse sparkClusterCreatedResponse = processService
+          .createSparkCluster(clusterRequest);
     } catch (ResponseException e) {
       LOGGER.error("Error while deploying Spark cluster! " + e.getMessage());
-      throw new ProcessSpawningException(e.getCause().getMessage(), e);
+      throw new ProcessSpawningException("Error while deploying Spark cluster! " + e.getMessage(),
+          e);
     }
 
     final CreateSparkProcessRequest processRequest = CreateSparkProcessRequest.newBuilder()
