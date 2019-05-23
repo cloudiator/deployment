@@ -26,6 +26,7 @@ import de.uniulm.omi.cloudiator.util.CloudiatorFutures;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.PeriodicBehaviour;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.Task;
@@ -101,17 +102,37 @@ public class ScheduleRestore {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
-  private boolean canRestoreTask(Task task) {
-    return true;
-  }
-
-  public Schedule heal(Schedule schedule) throws InstantiationException {
-
+  private Job findJobForSchedule(Schedule schedule) {
     final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
 
     checkState(job != null, String
         .format("Job %s referenced by schedule %s does not longer exist", schedule.job(),
             schedule));
+    return job;
+  }
+
+  private boolean requiresRestore(Job job, Schedule schedule, CloudiatorProcess cloudiatorProcess) {
+
+    if (!cloudiatorProcess.state().equals(ProcessState.ERROR)) {
+      return false;
+    }
+
+    final Task task = job.getTask(cloudiatorProcess.taskId())
+        .orElseThrow(() -> new IllegalStateException(String
+            .format("Task referenced by process %s does not longer exist in job %s.",
+                cloudiatorProcess,
+                job)));
+
+    if (task.behaviour() instanceof PeriodicBehaviour) {
+      return false;
+    }
+
+    return true;
+  }
+
+  public Schedule heal(Schedule schedule) throws InstantiationException {
+
+    final Job job = findJobForSchedule(schedule);
 
     Set<CloudiatorProcess> processToBeCleaned = new HashSet<>();
     Set<Node> nodesToBeCleaned = new HashSet<>();
@@ -127,7 +148,7 @@ public class ScheduleRestore {
 
       for (CloudiatorProcess process : processesPerTask(schedule, task)) {
 
-        if (process.state().equals(ProcessState.ERROR)) {
+        if (requiresRestore(job, schedule, process)) {
           processToBeCleaned.add(process);
           nodesToBeCleaned.addAll(getNodes(process));
         } else {
@@ -161,7 +182,7 @@ public class ScheduleRestore {
     } finally {
       cleanup(processToBeCleaned, nodesToBeCleaned);
     }
-    
+
     return Objects
         .requireNonNull(findByIdAndUser(schedule.id(), schedule.userId()))
         .setState(
