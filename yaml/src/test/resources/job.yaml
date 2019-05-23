@@ -1,90 +1,134 @@
 ---
 job:
   name: mediawiki
+  requirements:
+    - constraint: nodes->forAll(hardware.cores <= 2)
+      type: OclRequirement
+    - constraint: nodes->forAll(hardware.ram <= 2048)
+      type: OclRequirement
+    - constraint: nodes->forAll(image.providerId = 'ami-2a7d75c0')
+      type: OclRequirement
   tasks:
-  - name: loadbalancer
-    behaviour:
-      type: ServiceBehaviour
-      restart: true
-    ports:
-    - type: PortProvided
-      name: LBPROV
-      port: 80
-    - type: PortRequired
-      name: LOADBALANCERREQWIKI
-      isMandatory: 'false'
-    interfaces:
-    - containerType: DOCKER
-      type: LanceInterface
-      preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
-        https://github.com/dbaur/mediawiki-tutorial.git
-      install: "./mediawiki-tutorial/scripts/lance/nginx.sh install"
-      start: "./mediawiki-tutorial/scripts/lance/nginx.sh startBlocking"
-      updateAction: "./mediawiki-tutorial/scripts/lance/nginx.sh configure"
-    requirements:
-    - constraint: nodes->forAll(hardware.cores >= 2)
-      type: OclRequirement
-    - constraint: nodes->forAll(hardware.ram >= 2048)
-      type: OclRequirement
-    - constraint: nodes->forAll(location.providerId = 'nova')
-      type: OclRequirement
-    - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
-      type: OclRequirement
-  - name: wiki
-    behaviour:
-      type: ServiceBehaviour
-      restart: true
-    ports:
-    - type: PortRequired
-      name: WIKIREQMARIADB
-      isMandatory: 'true'
-    - type: PortProvided
-      name: WIKIPROV
-      port: 80
-    interfaces:
-    - type: LanceInterface
-      containerType: DOCKER
-      preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
-        https://github.com/dbaur/mediawiki-tutorial.git
-      install: "./mediawiki-tutorial/scripts/lance/mediawiki.sh install"
-      postInstall: "./mediawiki-tutorial/scripts/lance/mediawiki.sh configure"
-      start: "./mediawiki-tutorial/scripts/lance/mediawiki.sh startBlocking"
-    requirements:
-    - constraint: nodes->forAll(hardware.cores >= 2)
-      type: OclRequirement
-    - constraint: nodes->forAll(hardware.ram >= 2048)
-      type: OclRequirement
-    - constraint: nodes->forAll(location.providerId = 'nova')
-      type: OclRequirement
-    - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
-      type: OclRequirement
-  - name: database
-    behaviour:
-      type: ServiceBehaviour
-      restart: true
-    ports:
-    - type: PortProvided
-      name: MARIADBPROV
-      port: 3306
-    interfaces:
-    - type: LanceInterface
-      containerType: DOCKER
-      preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
-        https://github.com/dbaur/mediawiki-tutorial.git
-      install: "./mediawiki-tutorial/scripts/lance/mariaDB.sh install"
-      postInstall: "./mediawiki-tutorial/scripts/lance/mariaDB.sh configure"
-      start: "./mediawiki-tutorial/scripts/lance/mariaDB.sh startBlocking"
-    requirements:
-    - constraint: nodes->forAll(hardware.cores >= 2)
-      type: OclRequirement
-    - constraint: nodes->forAll(hardware.ram >= 2048)
-      type: OclRequirement
-    - constraint: nodes->forAll(location.providerId = 'nova')
-      type: OclRequirement
-    - constraint: nodes->forAll(image.providerId = 'f688f98d-7e62-4404-a672-1fc054fcfa6c')
-      type: OclRequirement
+    - name: loadbalancer
+      behaviour:
+        type: ServiceBehaviour
+        restart: true
+      ports:
+        - type: PortProvided
+          name: LBPROV
+          port: 80
+        - type: PortRequired
+          name: LOADBALANCERREQWIKI
+          isMandatory: 'false'
+      interfaces:
+        - containerType: DOCKER
+          type: LanceInterface
+          preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
+            https://github.com/dbaur/mediawiki-tutorial.git
+          install: "./mediawiki-tutorial/scripts/lance/nginx.sh install"
+          start: "./mediawiki-tutorial/scripts/lance/nginx.sh startBlocking"
+          updateAction: "./mediawiki-tutorial/scripts/lance/nginx.sh configure"
+    - name: wiki
+      behaviour:
+        type: ServiceBehaviour
+        restart: true
+      ports:
+        - type: PortRequired
+          name: WIKIREQMARIADB
+          isMandatory: 'true'
+        - type: PortProvided
+          name: WIKIPROV
+          port: 80
+      interfaces:
+        - type: LanceInterface
+          containerType: DOCKER
+          preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
+            https://github.com/dbaur/mediawiki-tutorial.git
+          install: "./mediawiki-tutorial/scripts/lance/mediawiki.sh install"
+          postInstall: "./mediawiki-tutorial/scripts/lance/mediawiki.sh configure"
+          start: "./mediawiki-tutorial/scripts/lance/mediawiki.sh startBlocking"
+    - name: database
+      behaviour:
+        type: ServiceBehaviour
+        restart: true
+      ports:
+        - type: PortProvided
+          name: MARIADBPROV
+          port: 3306
+      interfaces:
+        - type: LanceInterface
+          containerType: DOCKER
+          preInstall: sudo apt-get -y update && sudo apt-get -y install git && git clone
+            https://github.com/dbaur/mediawiki-tutorial.git
+          install: "./mediawiki-tutorial/scripts/lance/mariaDB.sh install"
+          postInstall: "./mediawiki-tutorial/scripts/lance/mariaDB.sh configure"
+          start: "./mediawiki-tutorial/scripts/lance/mariaDB.sh startBlocking"
+    - name: wordCount
+      behaviour:
+        type: ServiceBehaviour
+        restart: true
+      interfaces:
+        - type: FaasInterface
+          functionName: count
+          sourceCodeUrl: https://github.com/dbaur/mediawiki-tutorial/raw/master/lambda/code.zip
+          handler: code.function
+          triggers:
+            - type: HttpTrigger
+              httpMethod: ANY
+              httpPath: count
+          timeout: 3
+          functionEnvironment:
+            key: value
+      ports:
+        - type: PortProvided
+          name: WORDCOUNT
+          port: 80
+      requirements:
+        - type: OclRequirement
+          constraint: nodes->forAll(type = NodeType::FAAS)
+        - type: OclRequirement
+          constraint: nodes->forAll(hardware.ram = 128)
+        - type: OclRequirement
+          constraint: nodes->forAll(environment.runtime = Runtime::NODEJS)
+        - type: OclRequirement
+          constraint: nodes->forAll(location.name = 'eu-west-1')
+    - name: WordCount
+      behaviour:
+        type: PeriodicBehaviour
+        interval:
+          unit: MINUTES
+          period: '5'
+        collisionHandling: PARALLEL
+      ports:
+        - type: PortRequired
+          name: SPARKREQDATABASE
+          isMandatory: 'true'
+        - type: PortRequired
+          name: SPARKREQWORDCOUNT
+          isMandatory: 'true'
+        - type: PortRequired
+          name: SPARKREQWIKI
+          isMandatory: 'true'
+      interfaces:
+        - type: SparkInterface
+          file: https://github.com/dbaur/mediawiki-tutorial/raw/master/wordcount/wiki-wordcount.jar
+          className: eu.dbaur.spark.App
+          processMapping: CLUSTER
+      requirements:
+        - constraint: nodes->forAll(hardware.cores >= 2)
+          type: OclRequirement
+        - constraint: nodes->forAll(hardware.ram >= 2048)
+          type: OclRequirement
+        - constraint: nodes->forAll(image.providerId = 'ami-2a7d75c0')
+          type: OclRequirement
   communications:
-  - portRequired: WIKIREQMARIADB
-    portProvided: MARIADBPROV
-  - portRequired: LOADBALANCERREQWIKI
-    portProvided: WIKIPROV
+    - portRequired: WIKIREQMARIADB
+      portProvided: MARIADBPROV
+    - portRequired: LOADBALANCERREQWIKI
+      portProvided: WIKIPROV
+    - portRequired: SPARKREQDATABASE
+      portProvided: MARIADBPROV
+    - portRequired: SPARKREQWORDCOUNT
+      portProvided: WORDCOUNT
+    - portRequired: SPARKREQWIKI
+      portProvided: WIKIPROV
