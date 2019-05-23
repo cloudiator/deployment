@@ -27,6 +27,7 @@ import io.github.cloudiator.deployment.scheduler.messaging.NodeEventSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessEventSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ScaleRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleEventSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleGraphSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleQuerySubscriber;
@@ -81,6 +82,9 @@ public class ScheduleAgent {
 
     LOGGER.info(String.format("Starting %s.", ScheduleEventSubscriber.class));
     INJECTOR.getInstance(ScheduleEventSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", ScaleRequestSubscriber.class));
+    INJECTOR.getInstance(ScaleRequestSubscriber.class).run();
 
 
   }
