@@ -43,6 +43,7 @@ import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.TaskInterfaceSelection;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
+import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import io.github.cloudiator.persistance.NodeDomainRepository;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
@@ -56,6 +57,10 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.cloudiator.messages.Process.CreateSparkClusterRequest;
+import org.cloudiator.messages.entities.ProcessEntities.Nodes;
+import org.cloudiator.messaging.ResponseException;
+import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +73,7 @@ public class ScalingEngine {
   private final NodeDomainRepository nodeDomainRepository;
   private final ResourcePool resourcePool;
   private final ProcessDomainRepository processDomainRepository;
+  private final ProcessService processService;
 
   @Inject
   public ScalingEngine(
@@ -76,13 +82,15 @@ public class ScalingEngine {
       ScheduleDomainRepository scheduleDomainRepository,
       NodeDomainRepository nodeDomainRepository,
       ResourcePool resourcePool,
-      ProcessDomainRepository processDomainRepository) {
+      ProcessDomainRepository processDomainRepository,
+      ProcessService processService) {
     this.automaticInstantiationStrategy = automaticInstantiationStrategy;
     this.matchmakingEngine = matchmakingEngine;
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.nodeDomainRepository = nodeDomainRepository;
     this.resourcePool = resourcePool;
     this.processDomainRepository = processDomainRepository;
+    this.processService = processService;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -204,6 +212,11 @@ public class ScalingEngine {
 
       //scale the cluster
       //todo
+      processService.createSparkCluster(
+          CreateSparkClusterRequest.newBuilder().setUserId(schedule.userId()).setNodes(
+              Nodes.newBuilder().addAllNodes(startedNodes.stream().map(
+                  NodeToNodeMessageConverter.INSTANCE).collect(Collectors.toSet())).build())
+              .build());
 
       final CloudiatorClusterProcess modifiedProcess = CloudiatorClusterProcessBuilder
           .of((CloudiatorClusterProcess) cloudiatorProcess)
@@ -214,7 +227,7 @@ public class ScalingEngine {
 
       return Collections.singleton(save);
 
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (ResponseException | InterruptedException | ExecutionException e) {
       throw new InstantiationException("Error while scaling cluster.", e);
     }
   }
