@@ -7,18 +7,14 @@ import java.util.Optional;
 public interface ExistingNodeCache {
 
   //cache unallocated Node
-  //isDirty==true -> needs sync
-  void add(Node node, boolean isDirty);
+  Optional<Node> add(Node node);
 
   //remove now allocated or removed Node
-  //isDirty==true -> needs sync
-  Optional<Node> evict(String id, boolean isDirty);
+  Optional<Node> evict(String id);
 
   Optional<Node> hit(String id);
 
   Optional<Node> read(String id);
 
   List<Node> readAll();
-
-  void synchronize();
 }
