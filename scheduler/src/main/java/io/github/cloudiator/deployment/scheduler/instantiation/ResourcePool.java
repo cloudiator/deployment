@@ -18,12 +18,10 @@ package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import io.github.cloudiator.deployment.domain.Schedule;
-import io.github.cloudiator.deployment.scheduler.exceptions.SchedulingException;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
 import java.util.List;
 import javax.annotation.Nullable;
-import org.cloudiator.matchmaking.domain.Requirement;
 
 
 public interface ResourcePool {
