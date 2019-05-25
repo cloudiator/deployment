@@ -34,6 +34,7 @@ import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph;
+import io.github.cloudiator.deployment.scheduler.instantiation.ExistingNodePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
 import io.github.cloudiator.deployment.scheduler.instantiation.MatchmakingEngine;
@@ -70,6 +71,7 @@ public class ScheduleRestore {
       .getLogger(ScheduleRestore.class);
 
   private final ResourcePool resourcePool;
+  private final ExistingNodePool existingNodePool;
   private final JobMessageRepository jobMessageRepository;
   private final NodeMessageRepository nodeMessageRepository;
   private final InstantiationStrategySelector instantiationStrategySelector;
@@ -80,6 +82,7 @@ public class ScheduleRestore {
 
   @Inject
   public ScheduleRestore(ResourcePool resourcePool,
+      ExistingNodePool existingNodePool,
       JobMessageRepository jobMessageRepository,
       NodeMessageRepository nodeMessageRepository,
       InstantiationStrategySelector instantiationStrategySelector,
@@ -87,6 +90,7 @@ public class ScheduleRestore {
       ScheduleDomainRepository scheduleDomainRepository,
       MatchmakingEngine matchmakingEngine) {
     this.resourcePool = resourcePool;
+    this.existingNodePool = existingNodePool;
     this.jobMessageRepository = jobMessageRepository;
     this.nodeMessageRepository = nodeMessageRepository;
     this.instantiationStrategySelector = instantiationStrategySelector;
@@ -156,16 +160,20 @@ public class ScheduleRestore {
         }
       }
 
+      Set<Node> allReusableNodes = new HashSet<>();
+      allReusableNodes.addAll(reusableNodes);
+      allReusableNodes.addAll(existingNodePool.getAll());
+
       final List<NodeCandidate> matchmaking;
       try {
         matchmaking = matchmakingEngine
-            .matchmaking(task.requirements(job), reusableNodes, null, schedule.userId());
+            .matchmaking(task.requirements(job), allReusableNodes, null, schedule.userId());
       } catch (MatchmakingException e) {
         throw new InstantiationException("Matchmaking failed.", e);
       }
 
       final List<ListenableFuture<Node>> allocate = resourcePool
-          .allocate(schedule, matchmaking, reusableNodes, task.name());
+          .allocate(schedule, matchmaking, allReusableNodes, task.name());
 
       final Future<Collection<CloudiatorProcess>> collectionFuture = instantiationStrategySelector
           .get(schedule.instantiation())

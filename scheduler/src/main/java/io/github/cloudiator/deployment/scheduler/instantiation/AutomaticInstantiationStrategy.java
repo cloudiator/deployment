@@ -82,6 +82,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   }
 
   private final ResourcePool resourcePool;
+  private final ExistingNodePool existingNodePool;
   private final ProcessService processService;
   private final JobMessageRepository jobMessageRepository;
   private final ScheduleDomainRepository scheduleDomainRepository;
@@ -91,11 +92,13 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   public AutomaticInstantiationStrategy(
       MatchmakingEngine matchmakingEngine,
       ResourcePool resourcePool, ProcessService processService,
+      ExistingNodePool existingNodePool,
       JobMessageRepository jobMessageRepository,
       ScheduleDomainRepository scheduleDomainRepository,
       PeriodicScheduler periodicScheduler) {
     this.matchmakingEngine = matchmakingEngine;
     this.resourcePool = resourcePool;
+    this.existingNodePool = existingNodePool;
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
     this.scheduleDomainRepository = scheduleDomainRepository;
@@ -330,10 +333,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         try {
 
           final List<NodeCandidate> matchmakingResult = matchmakingEngine
-              .matchmaking(task.requirements(job), Collections.emptyList(), null, schedule.userId());
+              .matchmaking(task.requirements(job), existingNodePool.getAll(), null, schedule.userId());
 
           final List<ListenableFuture<Node>> allocate = resourcePool
-              .allocate(schedule, matchmakingResult, task.name());
+              .allocate(schedule, matchmakingResult, existingNodePool.getAll(), task.name());
 
           taskFutureMap
               .put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,

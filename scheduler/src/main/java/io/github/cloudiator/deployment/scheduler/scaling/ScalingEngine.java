@@ -37,6 +37,7 @@ import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph;
+import io.github.cloudiator.deployment.scheduler.instantiation.ExistingNodePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.MatchmakingEngine;
 import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
@@ -50,6 +51,7 @@ import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -72,6 +74,7 @@ public class ScalingEngine {
   private final ScheduleDomainRepository scheduleDomainRepository;
   private final NodeMessageRepository nodeMessageRepository;
   private final ResourcePool resourcePool;
+  private final ExistingNodePool existingNodePool;
   private final ProcessDomainRepository processDomainRepository;
   private final ProcessService processService;
 
@@ -82,6 +85,7 @@ public class ScalingEngine {
       ScheduleDomainRepository scheduleDomainRepository,
       NodeMessageRepository nodeMessageRepository,
       ResourcePool resourcePool,
+      ExistingNodePool existingNodePool,
       ProcessDomainRepository processDomainRepository,
       ProcessService processService) {
     this.automaticInstantiationStrategy = automaticInstantiationStrategy;
@@ -89,6 +93,7 @@ public class ScalingEngine {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.nodeMessageRepository = nodeMessageRepository;
     this.resourcePool = resourcePool;
+    this.existingNodePool = existingNodePool;
     this.processDomainRepository = processDomainRepository;
     this.processService = processService;
   }
@@ -168,13 +173,17 @@ public class ScalingEngine {
               return node;
             }).collect(Collectors.toSet());
 
+    Set<Node> allNodes = new HashSet<>();
+    allNodes.addAll(nodes);
+    allNodes.addAll(existingNodePool.getAll());
+
     //perform matchmaking
     final List<NodeCandidate> matchmaking = matchmakingEngine
-        .matchmaking(task.requirements(job), nodes, nodes.size() + 1, checkedSchedule.userId());
+        .matchmaking(task.requirements(job), allNodes, allNodes.size() + 1, checkedSchedule.userId());
 
     //allocate the resources
     final List<ListenableFuture<Node>> allocate = resourcePool
-        .allocate(schedule, matchmaking, nodes, task.name());
+        .allocate(schedule, matchmaking, allNodes, task.name());
 
     scaleInternally(schedule, task, allocate);
   }

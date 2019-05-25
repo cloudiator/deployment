@@ -20,6 +20,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
+import com.microsoft.azure.management.resources.fluentcore.arm.models.GroupableResource.DefinitionStages.WithExistingResourceGroup;
 import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
 import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
@@ -30,6 +31,8 @@ import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInt
 import io.github.cloudiator.deployment.scheduler.failure.ProcessFailureReportingInterface;
 import io.github.cloudiator.deployment.scheduler.failure.ScheduleEventReportingInterface;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.ByonNodePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.ExistingNodePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
 import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
@@ -55,6 +58,7 @@ public class SchedulerModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
+    bind(ExistingNodePool.class).to(ByonNodePool.class);
     bind(Init.class).asEagerSingleton();
 
     bind(NodeFailureReportingInterface.class).to(FailureHandler.class);

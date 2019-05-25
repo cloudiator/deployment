@@ -48,6 +48,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
   private final AutomaticInstantiationStrategy automaticInstantiationStrategy;
   private final ResourcePool resourcePool;
+  private final ExistingNodePool existingNodePool;
   private final MatchmakingEngine matchmakingEngine;
   private final Job job;
   private final Task task;
@@ -56,12 +57,14 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
   @Inject
   public PeriodicBehaviourSchedulable(AutomaticInstantiationStrategy automaticInstantiationStrategy,
       ResourcePool resourcePool,
+      ExistingNodePool existingNodePool,
       MatchmakingEngine matchmakingEngine,
       @Assisted Job job,
       @Assisted Task task,
       @Assisted Schedule schedule) {
     this.automaticInstantiationStrategy = automaticInstantiationStrategy;
     this.resourcePool = resourcePool;
+    this.existingNodePool = existingNodePool;
     this.matchmakingEngine = matchmakingEngine;
     this.job = job;
     this.task = task;
@@ -112,11 +115,11 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
   private List<NodeCandidate> performMatchmaking() throws MatchmakingException {
     return matchmakingEngine
-        .matchmaking(task.requirements(job), Collections.emptyList(), null, schedule.userId());
+        .matchmaking(task.requirements(job), existingNodePool.getAll(), null, schedule.userId());
   }
 
   private List<ListenableFuture<Node>> allocateResources() throws MatchmakingException {
-    return resourcePool.allocate(getSchedule(), performMatchmaking(), task.name());
+    return resourcePool.allocate(getSchedule(), performMatchmaking(), existingNodePool.getAll(), task.name());
   }
 
   private boolean canExecute() {
