@@ -31,6 +31,9 @@
     <class>io.github.cloudiator.persistance.ServiceBehaviourModel</class>
     <class>io.github.cloudiator.persistance.PeriodicBehaviourModel</class>
     <class>io.github.cloudiator.persistance.IntervalModel</class>
+    <class>io.github.cloudiator.persistance.SimulationTaskInterfaceModel</class>
+    <class>io.github.cloudiator.persistance.DistributionModel</class>
+    <class>io.github.cloudiator.persistance.NormalDistributionModel</class>
 
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
