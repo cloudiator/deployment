@@ -7,10 +7,11 @@ import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.scheduler.scaling.ScalingEngine;
 import io.github.cloudiator.domain.Node;
+import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.List;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.ScaleResponse;
 import org.cloudiator.messaging.MessageInterface;
@@ -35,6 +36,8 @@ public class ScaleRequestSubscriber implements Runnable {
   private final ScheduleDomainRepository scheduleDomainRepository;
   private final JobMessageRepository jobMessageRepository;
 
+  private final NodeMessageRepository nodeMessageRepository;
+
   private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
 
   @Inject
@@ -43,14 +46,15 @@ public class ScaleRequestSubscriber implements Runnable {
       MessageInterface messageInterface,
       ScheduleDomainRepository scheduleDomainRepository,
       JobMessageRepository jobMessageRepository,
-      ScalingEngine scalingEngine) {
+      ScalingEngine scalingEngine,
+      NodeMessageRepository nodeMessageRepository) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.jobMessageRepository = jobMessageRepository;
     this.scalingEngine = scalingEngine;
 
-
+    this.nodeMessageRepository = nodeMessageRepository;
   }
 
   @Override
@@ -94,11 +98,19 @@ public class ScaleRequestSubscriber implements Runnable {
             Task task = job
                 .getTask(taskId).get();
 
-            ArrayList<Node> coll = content.getNodes().getNodesList().stream()
-                .map(NODE_MESSAGE_CONVERTER::applyBack).collect(
-                    Collectors.toCollection(ArrayList::new));
+            List<Node> nodes = new ArrayList<>(content.getNodeCluster().getNodesCount());
+            for (String nodeId : content.getNodeCluster().getNodesList()) {
+              final Node byId = nodeMessageRepository.getById(userId, nodeId);
+              if (byId == null) {
+                messageInterface.reply(ScaleResponse.class, id, Error.newBuilder().setCode(404)
+                    .setMessage(String.format("Node with id %s does not exist.", nodeId))
+                    .build());
+                return;
+              }
+              nodes.add(byId);
+            }
 
-            scalingEngine.scale(schedule, job, task, coll);
+            scalingEngine.scale(schedule, job, task, nodes);
 
             final ScaleResponse scaleResponse = ScaleResponse.newBuilder().build();
 

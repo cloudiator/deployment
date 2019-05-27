@@ -109,7 +109,8 @@ public class ScalingEngine {
   private Schedule checkSchedule(Schedule schedule) {
     final Schedule refresh = refresh(schedule);
 
-    if (!refresh.state().equals(ScheduleState.RUNNING)) {
+    if (!refresh.state().equals(ScheduleState.RUNNING) || !refresh.state()
+        .equals(ScheduleState.MANUAL)) {
       throw new IllegalStateException(
           String.format(
               "Schedule %s is currently in a state transition (%s). Scaling is not allowed.",
