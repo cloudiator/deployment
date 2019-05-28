@@ -17,7 +17,9 @@
 package io.github.cloudiator.persistance;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 
+@Entity
 class NormalDistributionModel extends DistributionModel {
 
   @Column(nullable = false)
