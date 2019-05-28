@@ -18,7 +18,6 @@ package io.github.cloudiator.persistance;
 
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
 import io.github.cloudiator.deployment.domain.Distribution;
-import io.github.cloudiator.deployment.domain.NormalDistribution;
 import io.github.cloudiator.deployment.domain.NormalDistributionImpl;
 import javax.annotation.Nullable;
 
@@ -28,9 +27,9 @@ public class DistributionModelConverter implements
   @Nullable
   @Override
   public Distribution apply(@Nullable DistributionModel distributionModel) {
-    if (distributionModel instanceof NormalDistribution) {
-      return new NormalDistributionImpl(((NormalDistribution) distributionModel).mean(),
-          ((NormalDistribution) distributionModel).stdDev());
+    if (distributionModel instanceof NormalDistributionModel) {
+      return new NormalDistributionImpl(((NormalDistributionModel) distributionModel).getMean(),
+          ((NormalDistributionModel) distributionModel).getStdDev());
     } else {
       throw new AssertionError(
           "Illegal distributionModel type " + distributionModel.getClass().getName());
