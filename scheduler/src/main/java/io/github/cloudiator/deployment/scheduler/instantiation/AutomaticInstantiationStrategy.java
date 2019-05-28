@@ -309,7 +309,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
     Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
 
-    checkNotNull(job, "Schedule is for job %s, but this job does not exist.", schedule.job());
+    checkNotNull(job,
+        String.format("Schedule is for job %s, but this job does not exist.", schedule.job()));
 
     checkState(supports().equals(schedule.instantiation()),
         String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
@@ -330,7 +331,8 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         try {
 
           final List<NodeCandidate> matchmakingResult = matchmakingEngine
-              .matchmaking(task.requirements(job), Collections.emptyList(), null, schedule.userId());
+              .matchmaking(task.requirements(job), Collections.emptyList(), null,
+                  schedule.userId());
 
           final List<ListenableFuture<Node>> allocate = resourcePool
               .allocate(schedule, matchmakingResult, task.name());
