@@ -261,6 +261,8 @@ public class ProcessMessageConverter implements
           return ProcessType.SPARK;
         case FAAS:
           return ProcessType.FAAS;
+        case SIMULATION:
+          return ProcessType.SIMULATION;
         case UNKNOWN:
           return ProcessType.UNKNOWN;
         default:
@@ -277,6 +279,8 @@ public class ProcessMessageConverter implements
           return Type.LANCE;
         case FAAS:
           return Type.FAAS;
+        case SIMULATION:
+          return Type.SIMULATION;
         case UNKNOWN:
           return Type.UNKNOWN;
         case UNRECOGNIZED:

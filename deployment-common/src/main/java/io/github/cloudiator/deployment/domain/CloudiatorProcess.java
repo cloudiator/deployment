@@ -43,6 +43,7 @@ public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> 
     LANCE,
     SPARK,
     FAAS,
+    SIMULATION,
     UNKNOWN
   }
 
