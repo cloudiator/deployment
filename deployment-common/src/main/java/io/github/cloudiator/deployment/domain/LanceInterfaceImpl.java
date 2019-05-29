@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import io.github.cloudiator.deployment.security.VariableContext;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -234,5 +235,10 @@ class LanceInterfaceImpl implements LanceInterface {
   @Override
   public TaskInterface decorateEnvironment(Environment environment) {
     return this;
+  }
+
+  @Override
+  public TaskInterface decorateVariables(VariableContext variableContext) {
+    return LanceInterfaceBuilder.of(this).decorate(variableContext).build();
   }
 }

@@ -18,6 +18,8 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.github.cloudiator.deployment.security.VariableContext;
+
 public class SimulationInterfaceImpl implements SimulationInterface {
 
   private final Distribution startTime;
@@ -49,6 +51,11 @@ public class SimulationInterfaceImpl implements SimulationInterface {
 
   @Override
   public TaskInterface decorateEnvironment(Environment environment) {
+    return this;
+  }
+
+  @Override
+  public TaskInterface decorateVariables(VariableContext variableContext) {
     return this;
   }
 }

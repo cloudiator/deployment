@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import io.github.cloudiator.deployment.security.VariableContext;
+
 public class LanceInterfaceBuilder {
 
   private String init;
@@ -37,8 +39,30 @@ public class LanceInterfaceBuilder {
   private LanceInterfaceBuilder() {
   }
 
+  private LanceInterfaceBuilder(LanceInterface lanceInterface) {
+    init = lanceInterface.init().orElse(null);
+    preInstall = lanceInterface.preInstall().orElse(null);
+    install = lanceInterface.install().orElse(null);
+    postInstall = lanceInterface.postInstall().orElse(null);
+    preStart = lanceInterface.preStart().orElse(null);
+    start = lanceInterface.start();
+    startDetection = lanceInterface.startDetection().orElse(null);
+    stopDetection = lanceInterface.stopDetection().orElse(null);
+    postStart = lanceInterface.postStart().orElse(null);
+    preStop = lanceInterface.preStop().orElse(null);
+    stop = lanceInterface.stop().orElse(null);
+    postStop = lanceInterface.postStop().orElse(null);
+    shutdown = lanceInterface.shutdown().orElse(null);
+    portUpdateAction = lanceInterface.portUpdateAction().orElse(null);
+    containerType = lanceInterface.containerType();
+  }
+
   public static LanceInterfaceBuilder newBuilder() {
     return new LanceInterfaceBuilder();
+  }
+
+  public static LanceInterfaceBuilder of(LanceInterface lanceInterface) {
+    return new LanceInterfaceBuilder(lanceInterface);
   }
 
   public LanceInterfaceBuilder containerType(LanceContainerType lanceContainerType) {
@@ -113,6 +137,24 @@ public class LanceInterfaceBuilder {
 
   public LanceInterfaceBuilder portUpdateAction(String portUpdateAction) {
     this.portUpdateAction = portUpdateAction;
+    return this;
+  }
+
+  public LanceInterfaceBuilder decorate(VariableContext variableContext) {
+    init = variableContext.parse(init);
+    preInstall = variableContext.parse(preInstall);
+    install = variableContext.parse(install);
+    postInstall = variableContext.parse(postInstall);
+    preStart = variableContext.parse(preStart);
+    start = variableContext.parse(start);
+    startDetection = variableContext.parse(startDetection);
+    stopDetection = variableContext.parse(stopDetection);
+    postStart = variableContext.parse(postStart);
+    preStop = variableContext.parse(preStop);
+    stop = variableContext.parse(stop);
+    postStop = variableContext.parse(postStop);
+    shutdown = variableContext.parse(shutdown);
+    portUpdateAction = variableContext.parse(portUpdateAction);
     return this;
   }
 

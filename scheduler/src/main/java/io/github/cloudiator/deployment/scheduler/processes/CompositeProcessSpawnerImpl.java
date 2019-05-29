@@ -25,6 +25,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.security.VariableContextFactory;
 import io.github.cloudiator.domain.Node;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -36,14 +37,21 @@ import org.slf4j.LoggerFactory;
 public class CompositeProcessSpawnerImpl implements ProcessSpawner {
 
   private final Set<ProcessSpawner> processSpawners;
+  private final VariableContextFactory variableContextFactory;
 
   private static final Logger LOGGER = LoggerFactory
       .getLogger(CompositeProcessSpawnerImpl.class);
 
   @Inject
   public CompositeProcessSpawnerImpl(
-      Set<ProcessSpawner> strategies) {
+      Set<ProcessSpawner> strategies,
+      VariableContextFactory variableContextFactory) {
     this.processSpawners = strategies;
+    this.variableContextFactory = variableContextFactory;
+  }
+
+  private TaskInterface decorate(String userId, TaskInterface taskInterface) {
+    return taskInterface.decorateVariables(variableContextFactory.create(userId));
   }
 
   private ProcessSpawner determineSpawner(TaskInterface taskInterface) {
@@ -81,14 +89,16 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
   public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
       TaskInterface taskInterface, Node node) throws ProcessSpawningException {
 
-    return determineSpawner(taskInterface).spawn(userId, schedule, job, task, taskInterface, node);
+    return determineSpawner(taskInterface)
+        .spawn(userId, schedule, job, task, decorate(userId, taskInterface), node);
   }
 
   @Override
   public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
       TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
 
-    return determineSpawner(taskInterface).spawn(userId, schedule, job, task, taskInterface, nodes);
+    return determineSpawner(taskInterface)
+        .spawn(userId, schedule, job, task, decorate(userId, taskInterface), nodes);
 
   }
 

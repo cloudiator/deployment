@@ -17,7 +17,11 @@
 package io.github.cloudiator.deployment.config;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
+import io.github.cloudiator.deployment.security.VariableContext;
+import io.github.cloudiator.deployment.security.VariableContextFactory;
+import io.github.cloudiator.deployment.security.VariableContextImpl;
 
 public class DeploymentModule extends AbstractModule {
 
@@ -32,6 +36,9 @@ public class DeploymentModule extends AbstractModule {
 
     bindConstant().annotatedWith(Names.named(Constants.INSTALL_MELODIC_TOOLS))
         .to(deploymentContext.installMelodicTools());
+
+    install(new FactoryModuleBuilder().implement(VariableContext.class, VariableContextImpl.class)
+        .build(VariableContextFactory.class));
 
   }
 }

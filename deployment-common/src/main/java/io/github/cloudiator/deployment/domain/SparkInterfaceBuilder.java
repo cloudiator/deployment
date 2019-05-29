@@ -3,6 +3,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Lists;
+import io.github.cloudiator.deployment.security.VariableContext;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -87,6 +88,15 @@ public class SparkInterfaceBuilder {
 
   public SparkInterfaceBuilder processMapping(ProcessMapping processMapping) {
     this.processMapping = processMapping;
+    return this;
+  }
+
+  public SparkInterfaceBuilder decorate(VariableContext variableContext) {
+
+    arguments.replaceAll(variableContext::parse);
+    sparkArguments.replaceAll((k, v) -> variableContext.parse(v));
+    sparkConfiguration.replaceAll((k, v) -> variableContext.parse(v));
+
     return this;
   }
 

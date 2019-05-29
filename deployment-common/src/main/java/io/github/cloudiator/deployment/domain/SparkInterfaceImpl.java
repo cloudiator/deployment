@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import io.github.cloudiator.deployment.security.VariableContext;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -95,6 +96,11 @@ public class SparkInterfaceImpl implements SparkInterface {
     });
 
     return sparkInterfaceBuilder.build();
+  }
+
+  @Override
+  public TaskInterface decorateVariables(VariableContext variableContext) {
+    return SparkInterfaceBuilder.of(this).decorate(variableContext).build();
   }
 
   @Override
