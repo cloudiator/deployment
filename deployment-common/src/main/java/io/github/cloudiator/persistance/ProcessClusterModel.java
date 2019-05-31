@@ -22,6 +22,7 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -69,6 +70,6 @@ class ProcessClusterModel extends ProcessModel {
   }
 
   public void setNodes(Set<String> nodes) {
-    this.nodes = nodes;
+    this.nodes = new HashSet<>(nodes);
   }
 }
