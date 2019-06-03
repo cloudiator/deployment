@@ -58,8 +58,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.cloudiator.messages.Process.CreateSparkClusterRequest;
+import org.cloudiator.messages.Process.SparkClusterCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.Nodes;
-import org.cloudiator.messaging.ResponseException;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -234,12 +235,19 @@ public class ScalingEngine {
       final List<Node> startedNodes = Futures.successfulAsList(nodes).get();
 
       //scale the cluster
-      //todo
-      processService.createSparkCluster(
-          CreateSparkClusterRequest.newBuilder().setUserId(schedule.userId()).setNodes(
+
+      final CreateSparkClusterRequest sparkClusterRequest = CreateSparkClusterRequest.newBuilder()
+          .setUserId(schedule.userId()).setNodes(
               Nodes.newBuilder().addAllNodes(startedNodes.stream().map(
                   NodeToNodeMessageConverter.INSTANCE).collect(Collectors.toSet())).build())
-              .build());
+          .build();
+
+      final SettableFutureResponseCallback<SparkClusterCreatedResponse, SparkClusterCreatedResponse> settableFutureResponseCallback = SettableFutureResponseCallback
+          .create();
+
+      processService.createSparkClusterAsync(sparkClusterRequest, settableFutureResponseCallback);
+
+      settableFutureResponseCallback.get();
 
       final CloudiatorClusterProcess modifiedProcess = CloudiatorClusterProcessBuilder
           .of((CloudiatorClusterProcess) cloudiatorProcess)
@@ -252,7 +260,7 @@ public class ScalingEngine {
 
       return Collections.singleton(save);
 
-    } catch (ResponseException | InterruptedException | ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) {
       throw new InstantiationException("Error while scaling cluster.", e);
     }
   }
