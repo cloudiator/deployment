@@ -56,7 +56,7 @@ public class CloudiatorClusterProcessBuilder {
     this.taskName = cloudiatorClusterProcess.taskId();
     this.taskInterface = cloudiatorClusterProcess.taskInterface();
     this.state = cloudiatorClusterProcess.state();
-    this.nodes = cloudiatorClusterProcess.nodes();
+    this.nodes = new HashSet<>(cloudiatorClusterProcess.nodes());
     this.type = cloudiatorClusterProcess.type();
     this.reason = cloudiatorClusterProcess.reason().orElse(null);
     this.diagnostic = cloudiatorClusterProcess.diagnostic().orElse(null);
