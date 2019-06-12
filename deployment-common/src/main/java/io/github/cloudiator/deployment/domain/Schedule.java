@@ -62,4 +62,6 @@ public interface Schedule extends Identifiable, Stateful<ScheduleState> {
   Task getTask(CloudiatorProcess cloudiatorProcess, Job job);
 
   Set<CloudiatorProcess> processesForTask(Task task);
+
+  Set<CloudiatorProcess> processesForNode(Node node);
 }

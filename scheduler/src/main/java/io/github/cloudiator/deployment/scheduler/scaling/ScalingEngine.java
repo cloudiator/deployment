@@ -28,6 +28,7 @@ import de.uniulm.omi.cloudiator.domain.Identifiable;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
@@ -35,12 +36,14 @@ import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
+import io.github.cloudiator.deployment.scheduler.exceptions.ProcessDeletionException;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.MatchmakingEngine;
 import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.TaskInterfaceSelection;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
 import io.github.cloudiator.messaging.NodeMessageRepository;
@@ -50,6 +53,7 @@ import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -75,6 +79,7 @@ public class ScalingEngine {
   private final ResourcePool resourcePool;
   private final ProcessDomainRepository processDomainRepository;
   private final ProcessService processService;
+  private final ProcessKiller processKiller;
 
   @Inject
   public ScalingEngine(
@@ -84,7 +89,8 @@ public class ScalingEngine {
       NodeMessageRepository nodeMessageRepository,
       ResourcePool resourcePool,
       ProcessDomainRepository processDomainRepository,
-      ProcessService processService) {
+      ProcessService processService,
+      ProcessKiller processKiller) {
     this.automaticInstantiationStrategy = automaticInstantiationStrategy;
     this.matchmakingEngine = matchmakingEngine;
     this.scheduleDomainRepository = scheduleDomainRepository;
@@ -92,6 +98,7 @@ public class ScalingEngine {
     this.resourcePool = resourcePool;
     this.processDomainRepository = processDomainRepository;
     this.processService = processService;
+    this.processKiller = processKiller;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -134,16 +141,121 @@ public class ScalingEngine {
     return nodeFutures;
   }
 
-  public void scale(Schedule schedule, Job job, Task task, Collection<? extends Node> nodes)
+  public void scaleOut(Schedule schedule, Job job, Task task, Collection<? extends Node> nodes)
       throws MatchmakingException, InstantiationException {
     if (nodes.isEmpty()) {
-      scaleWithoutNodes(schedule, job, task);
+      scaleOutWithoutNodes(schedule, job, task);
     } else {
-      scaleWithNodes(schedule, job, task, nodes);
+      scaleOutWithNodes(schedule, job, task, nodes);
     }
   }
 
-  private void scaleWithoutNodes(Schedule schedule, Job job, Task task)
+  public void scaleIn(Schedule schedule, Job job, Task task, Collection<? extends Node> nodes) {
+    schedule = checkSchedule(schedule);
+
+    if (nodes.isEmpty()) {
+      scaleInWithNodes(schedule, task, nodes);
+    } else {
+      scaleInWithoutNodes(schedule, job, task, nodes);
+    }
+  }
+
+  private void scaleInWithNodes(Schedule schedule, Task task,
+      Collection<? extends Node> nodes) {
+
+    checkState(schedule.instantiation().equals(Instantiation.MANUAL),
+        "Scaling with nodes attached is only allowed for MANUAL instantiation.");
+
+    scaleInInternally(schedule, task, nodes);
+
+  }
+
+  private void scaleInWithoutNodes(Schedule schedule, Job job, Task task,
+      Collection<? extends Node> nodes) {
+    throw new UnsupportedOperationException();
+  }
+
+  private void scaleInInternally(Schedule schedule, Task task, Collection<? extends Node> nodes) {
+
+    Set<CloudiatorProcess> affectedProcesses = new HashSet<>();
+
+    for (Node node : nodes) {
+      affectedProcesses.addAll(schedule.processesForNode(node));
+    }
+
+    if (affectedProcesses.size() == 1) {
+      CloudiatorProcess process = affectedProcesses.iterator().next();
+      if (process instanceof CloudiatorClusterProcess) {
+        scaleInCluster((CloudiatorClusterProcess) process, nodes);
+      } else {
+        throw new IllegalStateException();
+      }
+    } else {
+      for (CloudiatorProcess affectedProcess : affectedProcesses) {
+        checkState(affectedProcess instanceof CloudiatorSingleProcess);
+      }
+      scaleInSingle(schedule, nodes);
+    }
+  }
+
+  private void scaleInSingle(Schedule schedule,
+      Collection<? extends Node> nodes) {
+
+    Set<CloudiatorProcess> affectedProcesses = new HashSet<>();
+
+    for (Node node : nodes) {
+      checkArgument(schedule.runsOnNode(node),
+          String.format("Schedule does not have node %s", schedule));
+      affectedProcesses.addAll(schedule.processesForNode(node));
+    }
+
+    for (CloudiatorProcess affectedProcess : affectedProcesses) {
+      deleteProcess(affectedProcess);
+    }
+
+    for (Node node : nodes) {
+      deleteNode(node.userId(), node.id());
+    }
+
+
+  }
+
+  private void scaleInCluster(CloudiatorClusterProcess cloudiatorClusterProcess,
+      Collection<? extends Node> nodes) {
+
+    for (Node node : nodes) {
+      deleteNode(node.userId(), node.id());
+    }
+
+    CloudiatorClusterProcess changedProcess = CloudiatorClusterProcessBuilder
+        .of(cloudiatorClusterProcess)
+        .removeAllNodes(nodes.stream().map(Identifiable::id).collect(
+            Collectors.toSet())).build();
+
+    save(changedProcess);
+
+  }
+
+  private void deleteNode(String userId, String nodeId) {
+    try {
+      nodeMessageRepository.delete(userId, nodeId).get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e.getCause());
+    }
+  }
+
+  private void deleteProcess(CloudiatorProcess cloudiatorProcess) {
+    try {
+      processKiller.kill(cloudiatorProcess);
+    } catch (ProcessDeletionException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+
+  private void scaleOutWithoutNodes(Schedule schedule, Job job, Task task)
       throws MatchmakingException, InstantiationException {
 
     final Schedule checkedSchedule = checkSchedule(schedule);
@@ -178,10 +290,10 @@ public class ScalingEngine {
     final List<ListenableFuture<Node>> allocate = resourcePool
         .allocate(schedule, matchmaking, nodes, task.name());
 
-    scaleInternally(schedule, task, allocate);
+    scaleOutInternally(schedule, task, allocate);
   }
 
-  private void scaleWithNodes(Schedule schedule, Job job, Task task,
+  private void scaleOutWithNodes(Schedule schedule, Job job, Task task,
       Collection<? extends Node> nodes)
       throws InstantiationException {
 
@@ -194,11 +306,11 @@ public class ScalingEngine {
         .format("Executing scale for task %s of job %s in schedule %s on nodes %s.", task, job,
             schedule, nodes));
 
-    scaleInternally(schedule, task, nodesToFutures(nodes));
+    scaleOutInternally(schedule, task, nodesToFutures(nodes));
 
   }
 
-  private void scaleInternally(Schedule schedule, Task task,
+  private void scaleOutInternally(Schedule schedule, Task task,
       Collection<ListenableFuture<Node>> nodes) throws InstantiationException {
 
     TaskInterfaceSelection taskInterfaceSelection = new TaskInterfaceSelection();
@@ -206,10 +318,10 @@ public class ScalingEngine {
 
     switch (taskInterface.processMapping()) {
       case CLUSTER:
-        scaleCluster(schedule, task, nodes);
+        scaleOutCluster(schedule, task, nodes);
         break;
       case SINGLE:
-        scaleSingle(schedule, task, taskInterface, nodes);
+        scaleOutSingle(schedule, task, taskInterface, nodes);
         break;
       default:
         throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
@@ -217,7 +329,7 @@ public class ScalingEngine {
 
   }
 
-  private Collection<CloudiatorProcess> scaleCluster(Schedule schedule, Task task,
+  private Collection<CloudiatorProcess> scaleOutCluster(Schedule schedule, Task task,
       Collection<ListenableFuture<Node>> nodes) throws InstantiationException {
 
     final Set<CloudiatorProcess> cloudiatorProcesses = schedule.processesForTask(task);
@@ -227,7 +339,7 @@ public class ScalingEngine {
         cloudiatorProcesses.size()
     );
 
-    LOGGER.debug(String.format("Scaling Cluster for task %s with nodes %s.", task, nodes));
+    LOGGER.debug(String.format("Scaling OUT Cluster for task %s with nodes %s.", task, nodes));
 
     CloudiatorProcess cloudiatorProcess = cloudiatorProcesses.iterator().next();
 
@@ -265,7 +377,7 @@ public class ScalingEngine {
     }
   }
 
-  private Collection<CloudiatorProcess> scaleSingle(Schedule schedule, Task task,
+  private Collection<CloudiatorProcess> scaleOutSingle(Schedule schedule, Task task,
       TaskInterface taskInterface,
       Collection<ListenableFuture<Node>> nodes) throws InstantiationException {
 

@@ -135,6 +135,18 @@ public class ScheduleImpl implements Schedule {
   }
 
   @Override
+  public Set<CloudiatorProcess> processesForNode(Node node) {
+
+    Set<CloudiatorProcess> processesForNode = new HashSet<>();
+    for (CloudiatorProcess cloudiatorProcess : processes) {
+      if (cloudiatorProcess.nodes().contains(node.id())) {
+        processesForNode.add(cloudiatorProcess);
+      }
+    }
+    return ImmutableSet.copyOf(processesForNode);
+  }
+
+  @Override
   public String id() {
     return id;
   }

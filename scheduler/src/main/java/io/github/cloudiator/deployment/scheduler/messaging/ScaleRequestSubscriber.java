@@ -110,7 +110,18 @@ public class ScaleRequestSubscriber implements Runnable {
               nodes.add(byId);
             }
 
-            scalingEngine.scale(schedule, job, task, nodes);
+            switch (content.getScaleDirection()) {
+              case SCALE_IN:
+                scalingEngine.scaleIn(schedule, job, task, nodes);
+                break;
+              case SCALE_OUT:
+                scalingEngine.scaleOut(schedule, job, task, nodes);
+                break;
+              default:
+                messageInterface.reply(ScaleResponse.class, id, Error.newBuilder().setCode(404)
+                    .setMessage("Unknown scale direction " + content.getScaleDirection()).build());
+                return;
+            }
 
             final ScaleResponse scaleResponse = ScaleResponse.newBuilder().build();
 
