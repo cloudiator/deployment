@@ -34,10 +34,14 @@ import java.util.regex.Pattern;
 import org.cloudiator.messages.entities.SecureStore.SecureStoreRetrieveRequest;
 import org.cloudiator.messaging.ResponseException;
 import org.cloudiator.messaging.services.SecureStoreService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VariableContextImpl implements VariableContext {
 
   private static final Pattern PATTERN = Pattern.compile("\\{\\{(.*?)\\}\\}");
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(VariableContextImpl.class);
 
   private final String userId;
   private final SecureStoreService secureStoreService;
@@ -59,11 +63,17 @@ public class VariableContextImpl implements VariableContext {
     final Matcher m = PATTERN.matcher(string);
     final StringBuffer b = new StringBuffer(string.length());
     while (m.find()) {
-      m.appendReplacement(b, retrieve(m.group(1).trim()));
+      String found = m.group(1).trim();
+      LOGGER.debug(String.format("Found variable %s for replacement in: %s", found, string));
+      String retrieve = retrieve(found);
+      LOGGER.debug(String.format("Replacing variable %s with replacement %s.", found, retrieve));
+      m.appendReplacement(b, retrieve);
     }
     m.appendTail(b);
 
-    return b.toString();
+    String replaced = b.toString();
+    LOGGER.debug(String.format("Replaced string %s with string %s", string, replaced));
+    return replaced;
   }
 
   @Override
