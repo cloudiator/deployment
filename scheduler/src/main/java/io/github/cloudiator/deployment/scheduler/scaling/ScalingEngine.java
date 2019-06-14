@@ -380,7 +380,8 @@ public class ScalingEngine {
 
       final CloudiatorClusterProcess save = save(modifiedProcess);
 
-      LOGGER.info(String.format("Scaled out cluster for task %s. Updated process is %s.", task, save));
+      LOGGER.info(
+          String.format("Scaled out cluster for task %s. Updated process is %s.", task, save));
 
       return Collections.singleton(save);
 
