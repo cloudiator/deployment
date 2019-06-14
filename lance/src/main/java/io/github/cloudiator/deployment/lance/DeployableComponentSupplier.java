@@ -39,7 +39,8 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
     checkNotNull(job, "job is null");
     checkNotNull(task, "task is null");
 
-    checkArgument(job.tasks().contains(task), "Task %s is not member of job %s.", task, job);
+    checkArgument(job.tasks().contains(task),
+        String.format("Task %s is not member of job %s.", task, job));
 
     this.job = job;
     this.task = task;
