@@ -19,9 +19,16 @@ package io.github.cloudiator.deployment.security;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.cloudiator.messages.entities.SecureStore.SecureStoreRetrieveRequest;
@@ -64,14 +71,25 @@ public class VariableContextImpl implements VariableContext {
 
     checkNotNull(key);
 
-    try {
-      final String value = secureStoreService.retrieveSecret(
-          SecureStoreRetrieveRequest.newBuilder().setUserId(userId).setKey(key).build()).getValue();
-      checkState(!Strings.isNullOrEmpty(value),
-          String.format("Retrieved value for variable %s is null or empty.", key));
-      return value;
+    Retryer<String> retryer = RetryerBuilder.<String>newBuilder()
+        .retryIfExceptionOfType(ResponseException.class)
+        .withWaitStrategy(WaitStrategies.fixedWait(30, TimeUnit.SECONDS))
+        .withStopStrategy(StopStrategies.stopAfterAttempt(5))
+        .build();
 
-    } catch (ResponseException e) {
+    try {
+      return retryer.call(() -> {
+        final String value = secureStoreService.retrieveSecret(
+            SecureStoreRetrieveRequest.newBuilder().setUserId(userId).setKey(key).build())
+            .getValue();
+        checkState(!Strings.isNullOrEmpty(value),
+            String.format("Retrieved value for variable %s is null or empty.", key));
+        return value;
+      });
+    } catch (ExecutionException e) {
+      throw new VariableReplacementException("Could not retrieve value for variable " + key,
+          e.getCause());
+    } catch (RetryException e) {
       throw new VariableReplacementException("Could not retrieve value for variable " + key, e);
     }
   }
