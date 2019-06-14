@@ -143,6 +143,11 @@ public class ScalingEngine {
 
   public void scaleOut(Schedule schedule, Job job, Task task, Collection<? extends Node> nodes)
       throws MatchmakingException, InstantiationException {
+
+    LOGGER.info(String
+        .format("Scale Out. Schedule: %s, Job: %s, Task: %s, Nodes: %s", schedule, job, task,
+            nodes));
+
     if (nodes.isEmpty()) {
       scaleOutWithoutNodes(schedule, job, task);
     } else {
@@ -152,6 +157,10 @@ public class ScalingEngine {
 
   public void scaleIn(Schedule schedule, Job job, Task task, Collection<? extends Node> nodes) {
     schedule = checkSchedule(schedule);
+
+    LOGGER.info(String
+        .format("Scale In. Schedule: %s, Job: %s, Task: %s, Nodes: %s", schedule, job, task,
+            nodes));
 
     if (nodes.isEmpty()) {
       scaleInWithNodes(schedule, task, nodes);
@@ -223,6 +232,9 @@ public class ScalingEngine {
   private void scaleInCluster(CloudiatorClusterProcess cloudiatorClusterProcess,
       Collection<? extends Node> nodes) {
 
+    LOGGER.debug(
+        String.format("Scaling in Cluster %s with nodes %s", cloudiatorClusterProcess, nodes));
+
     for (Node node : nodes) {
       deleteNode(node.userId(), node.id());
     }
@@ -264,7 +276,7 @@ public class ScalingEngine {
         "Schedule needs to be automatic to scale without supplying nodes.");
 
     LOGGER.info(String
-        .format("Executing scale for task %s of job %s in schedule %s.", task, job, schedule));
+        .format("Executing scale out for task %s of job %s in schedule %s.", task, job, schedule));
 
     //get existing processes
     final Set<CloudiatorProcess> cloudiatorProcesses = schedule.processesForTask(task);
@@ -368,7 +380,7 @@ public class ScalingEngine {
 
       final CloudiatorClusterProcess save = save(modifiedProcess);
 
-      LOGGER.info(String.format("Scaled cluster for task %s. Updated process is %s.", task, save));
+      LOGGER.info(String.format("Scaled out cluster for task %s. Updated process is %s.", task, save));
 
       return Collections.singleton(save);
 

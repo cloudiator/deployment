@@ -25,7 +25,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ScheduleImpl implements Schedule {
 
@@ -144,6 +146,12 @@ public class ScheduleImpl implements Schedule {
       }
     }
     return ImmutableSet.copyOf(processesForNode);
+  }
+
+  @Override
+  public Set<String> nodes() {
+    return processes().stream().flatMap(
+        (Function<CloudiatorProcess, Stream<String>>) cloudiatorProcess -> cloudiatorProcess.nodes().stream()).collect(Collectors.toSet());
   }
 
   @Override
