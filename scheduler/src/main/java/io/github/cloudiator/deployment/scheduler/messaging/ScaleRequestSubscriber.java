@@ -65,6 +65,8 @@ public class ScaleRequestSubscriber implements Runnable {
 
           try {
 
+            LOGGER.info("Receiving new scale request " + content);
+
             final String userId = content.getUserId();
             final String scheduleId = content.getScheduleId();
             final String taskId = content.getTaskId();
