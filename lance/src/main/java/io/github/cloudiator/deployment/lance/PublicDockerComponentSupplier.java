@@ -3,6 +3,7 @@ package io.github.cloudiator.deployment.lance;
 import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 import de.uniulm.omi.cloudiator.lance.application.component.DockerComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties;
+import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.PortRequired;
@@ -13,8 +14,8 @@ import java.util.function.Supplier;
 public class PublicDockerComponentSupplier extends DockerComponentSupplier implements
     Supplier<DockerComponent> {
 
-  PublicDockerComponentSupplier(Job job, Task task) {
-    super(job, task);
+  PublicDockerComponentSupplier(Job job, Task task, DockerInterface dockerInterface) {
+    super(job, task, dockerInterface);
   }
 
   @Override

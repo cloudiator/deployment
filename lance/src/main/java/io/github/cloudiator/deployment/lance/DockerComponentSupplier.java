@@ -3,15 +3,14 @@ package io.github.cloudiator.deployment.lance;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand;
 import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand.Option;
 import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand.OsCommand;
 import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommand.Type;
 import de.uniulm.omi.cloudiator.lance.lifecycle.language.DockerCommandException;
+import de.uniulm.omi.cloudiator.lance.lifecycle.language.EntireDockerCommands;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Task;
-import de.uniulm.omi.cloudiator.lance.lifecycle.language.EntireDockerCommands;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,6 +24,7 @@ abstract class DockerComponentSupplier {
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
   protected final Job job;
   protected final Task task;
+  protected final DockerInterface dockerInterface;
 
   static final List<String> supportedDomains = new ArrayList<String>() {{
     add("de");
@@ -38,54 +38,50 @@ abstract class DockerComponentSupplier {
     add("co.uk");
   }};
 
-  public DockerComponentSupplier(Job job, Task task) {
+  public DockerComponentSupplier(Job job, Task task, DockerInterface dockerInterface) {
     checkNotNull(task, "task is null");
     checkArgument(job.tasks().contains(task), "Task %s is not member of job %s.", task, job);
     this.job = job;
     this.task = task;
-  }
-
-  protected DockerInterface dockerInterface() {
-    return task.interfaceOfType(DockerInterface.class);
+    this.dockerInterface = dockerInterface;
   }
 
   protected EntireDockerCommands deriveEntireCommands() {
-    DockerInterface dIface = dockerInterface();
-    Map<String,String> envMap = dIface.environment();
+    Map<String, String> envMap = dockerInterface.environment();
     EntireDockerCommands.Builder cmdsBuilder = new EntireDockerCommands.Builder();
     try {
-      Map<Option,List<String>> createOptions = createOptionMap(envMap);
+      Map<Option, List<String>> createOptions = createOptionMap(envMap);
       List<OsCommand> createOsCommands = createOsCommandList();
       List<String> createArgs = createArgsList();
       cmdsBuilder.setOptions(Type.CREATE, createOptions);
       cmdsBuilder.setCommand(Type.CREATE, createOsCommands);
       cmdsBuilder.setArgs(Type.CREATE, createArgs);
 
-      Map<Option,List<String>> startOptions = startOptionMap();
+      Map<Option, List<String>> startOptions = startOptionMap();
       cmdsBuilder.setOptions(Type.START, startOptions);
     } catch (DockerCommandException ce) {
-      LOGGER.error("Error creating the docker cli commands for the Docker Component of task: " + task.name());
+      LOGGER.error(
+          "Error creating the docker cli commands for the Docker Component of task: " + task
+              .name());
     }
 
     return cmdsBuilder.build();
   }
 
   protected String getHostName() {
-    DockerInterface dIface = dockerInterface();
-    return getStaticHostName(dIface);
+    return getStaticHostName(dockerInterface);
   }
 
   protected int getPort() {
-    DockerInterface dIface = dockerInterface();
-    String imageName = dIface.dockerImage();
+    String imageName = dockerInterface.dockerImage();
     String[] paths = imageName.split("/");
 
-    if(paths.length == 0) {
+    if (paths.length == 0) {
       LOGGER.error("No image name set! Docker Component will not be deployed!");
       return -1;
     }
 
-    if(paths.length == 1) {
+    if (paths.length == 1) {
       return -1;
     }
 
@@ -95,37 +91,35 @@ abstract class DockerComponentSupplier {
   }
 
   protected String getImageNameSpace() {
-    DockerInterface dIface = dockerInterface();
-    String imageName = dIface.dockerImage();
+    String imageName = dockerInterface.dockerImage();
     String[] paths = imageName.split("/");
 
-    if(paths.length == 0) {
+    if (paths.length == 0) {
       LOGGER.error("No image name set! Docker Component will not be deployed!");
       return "";
     }
 
-    if(paths.length == 1) {
+    if (paths.length == 1) {
       return "";
     }
 
     List<String> pathList = new ArrayList<>(Arrays.asList(paths));
 
-    if(getHostNameFromString(pathList.get(0)).equals("")) {
-      pathList.remove(pathList.size()-1);
+    if (getHostNameFromString(pathList.get(0)).equals("")) {
+      pathList.remove(pathList.size() - 1);
       return buildPath(pathList);
     } else {
       pathList.remove(0);
-      pathList.remove(pathList.size()-1);
+      pathList.remove(pathList.size() - 1);
       return buildPath(pathList);
     }
   }
 
   protected String getActualImageName() {
-    DockerInterface dIface = dockerInterface();
-    String imageName = dIface.dockerImage();
+    String imageName = dockerInterface.dockerImage();
     String[] paths = imageName.split("/");
 
-    if(paths.length == 0) {
+    if (paths.length == 0) {
       LOGGER.error("No image name set! Docker Component will not be deployed!");
       return "";
     }
@@ -136,11 +130,10 @@ abstract class DockerComponentSupplier {
   }
 
   protected String getTagName() {
-    DockerInterface dIface = dockerInterface();
-    String imageName = dIface.dockerImage();
+    String imageName = dockerInterface.dockerImage();
     String[] paths = imageName.split("/");
 
-    if(paths.length == 0) {
+    if (paths.length == 0) {
       LOGGER.error("No image name set! Docker Component will not be deployed!");
       return "";
     }
@@ -151,16 +144,15 @@ abstract class DockerComponentSupplier {
   }
 
   protected DockerCredentials getCredentials() {
-    DockerInterface dIface = dockerInterface();
-    Map<String,String> envMap = dIface.environment();
+    Map<String, String> envMap = dockerInterface.environment();
     String username = "";
     String password = "";
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey().equals("username")) {
+      if (entry.getKey().equals("username")) {
         checkDoubleSet("username", username);
         username = entry.getValue();
       }
-      if(entry.getKey().equals("password")) {
+      if (entry.getKey().equals("password")) {
         checkDoubleSet("password", password);
         password = entry.getValue();
       }
@@ -171,11 +163,10 @@ abstract class DockerComponentSupplier {
   }
 
   protected List<String> getMappedPorts() {
-    DockerInterface dIface = dockerInterface();
-    Map<String,String> envMap = dIface.environment();
+    Map<String, String> envMap = dockerInterface.environment();
     List<String> portsList = new ArrayList<>();
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey().equals("port")) {
+      if (entry.getKey().equals("port")) {
         if (checkPortFormat(entry.getValue())) {
           String[] ports = entry.getValue().trim().split(",");
           portsList.addAll(new ArrayList<>(Arrays.asList(ports)));
@@ -188,14 +179,13 @@ abstract class DockerComponentSupplier {
 
   protected String getVolume() {
     String volume = "";
-    DockerInterface dIface = dockerInterface();
-    Map<String,String> envMap = dIface.environment();
+    Map<String, String> envMap = dockerInterface.environment();
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey().equals("volume")) {
+      if (entry.getKey().equals("volume")) {
         //todo: might check correct format
         volume = entry.getValue().trim();
-        }
       }
+    }
     return volume;
   }
 
@@ -203,16 +193,16 @@ abstract class DockerComponentSupplier {
     String[] ports = portsString.trim().split(",");
     List<String> portsList = new ArrayList<>(Arrays.asList(ports));
 
-    if(portsList.size() == 0) {
+    if (portsList.size() == 0) {
       LOGGER.error("Wrong port option format! No port number given.");
       return false;
     }
 
-    for(String port: portsList) {
+    for (String port : portsList) {
       String[] hostContPort = port.split(":");
       List<String> hostContPortList = new ArrayList<>(Arrays.asList(hostContPort));
 
-      if(hostContPortList.size() > 2) {
+      if (hostContPortList.size() > 2) {
         LOGGER.error("Wrong port option format! Cannot map more than two ports via \':\'");
         return false;
       }
@@ -237,9 +227,9 @@ abstract class DockerComponentSupplier {
     return true;
   }
 
-  public static boolean usePrivateRegistry(DockerInterface dockerIface ) {
+  public static boolean usePrivateRegistry(DockerInterface dockerIface) {
     final String hostName = getStaticHostName(dockerIface);
-    if(hostName.equals("")) {
+    if (hostName.equals("")) {
       return false;
     }
     return true;
@@ -249,12 +239,12 @@ abstract class DockerComponentSupplier {
     String imageName = dockerIface.dockerImage();
     String[] paths = imageName.split("/");
 
-    if(paths.length == 0) {
+    if (paths.length == 0) {
       LOGGER.error("No image name set! Docker Component will not be deployed!");
       return "";
     }
 
-    if(paths.length == 1) {
+    if (paths.length == 1) {
       return "";
     }
 
@@ -266,17 +256,17 @@ abstract class DockerComponentSupplier {
   private static String getHostNameFromString(String name) {
     List<String> splitName = splitStringByColon(name);
 
-    if(splitName.size() == 0) {
+    if (splitName.size() == 0) {
       LOGGER.error("Host Name of Docker Registry cannot be derived properly");
     }
 
     return splitName.get(0);
   }
 
-  private Map<Option,List<String>> createOptionMap(Map<String, String> envMap) {
-    Map<Option,List<String>> createOptionMap = new HashMap<>();
+  private Map<Option, List<String>> createOptionMap(Map<String, String> envMap) {
+    Map<Option, List<String>> createOptionMap = new HashMap<>();
     List<String> setEnvVars = new ArrayList<>();
-    Map<String,String> actualEnv = getActualEnv(envMap);
+    Map<String, String> actualEnv = getActualEnv(envMap);
 
     for (Map.Entry<String, String> entry : actualEnv.entrySet()) {
       setEnvVars.add(entry.getKey() + "=" + entry.getValue());
@@ -312,21 +302,21 @@ abstract class DockerComponentSupplier {
     return createArgsList;
   }
 
-  private static Map<Option,List<String>> startOptionMap() {
-    Map<Option,List<String>> startOptionMap = new HashMap<>();
+  private static Map<Option, List<String>> startOptionMap() {
+    Map<Option, List<String>> startOptionMap = new HashMap<>();
     startOptionMap.put(Option.INTERACTIVE, new ArrayList<>(Arrays.asList("")));
 
     return startOptionMap;
   }
 
-  private static Map<String,String> getActualEnv(Map<String,String> envMap) {
-    Map<String,String> env = new HashMap<>();
+  private static Map<String, String> getActualEnv(Map<String, String> envMap) {
+    Map<String, String> env = new HashMap<>();
     for (Map.Entry<String, String> entry : envMap.entrySet()) {
-      if(entry.getKey().equals("username") || entry.getKey().equals("password")
+      if (entry.getKey().equals("username") || entry.getKey().equals("password")
           || entry.getKey().equals("port") || entry.getKey().equals("volume")) {
         continue;
       }
-      env.put(entry.getKey(),entry.getValue());
+      env.put(entry.getKey(), entry.getValue());
     }
 
     return env;
@@ -341,15 +331,16 @@ abstract class DockerComponentSupplier {
   private int getPortNameFromString(String name) {
     List<String> splitName = splitStringByColon(name);
 
-    if(splitName.size() == 0) {
-      LOGGER.error("Host Name of Docker Registry for Task: " + task.name() + "cannot be derived properly");
+    if (splitName.size() == 0) {
+      LOGGER.error(
+          "Host Name of Docker Registry for Task: " + task.name() + "cannot be derived properly");
     }
 
-    if(splitName.size() > 2) {
+    if (splitName.size() > 2) {
       LOGGER.warn("Bad Host port syntax for Docker Registry for Task: " + task.name());
     }
 
-    if(splitName.size() > 1) {
+    if (splitName.size() > 1) {
       return Integer.parseInt(splitName.get(1));
     }
 
@@ -359,7 +350,7 @@ abstract class DockerComponentSupplier {
   private String getImageNameNameFromString(String name) {
     List<String> splitName = new ArrayList<>(Arrays.asList(name.split(":")));
 
-    if(splitName.size() == 0) {
+    if (splitName.size() == 0) {
       LOGGER.error("Docker Image Name for Task: " + task.name() + "cannot be derived properly");
     }
 
@@ -369,15 +360,15 @@ abstract class DockerComponentSupplier {
   private String getTagNameFromString(String name) {
     List<String> splitName = new ArrayList<>(Arrays.asList(name.split(":")));
 
-    if(splitName.size() == 0) {
+    if (splitName.size() == 0) {
       LOGGER.error("Docker Image Name for Task: " + task.name() + "cannot be derived properly");
     }
 
-    if(splitName.size() > 2) {
+    if (splitName.size() > 2) {
       LOGGER.warn("Bad Docker Image tag syntax for Task: " + task.name());
     }
 
-    if(splitName.size() > 1) {
+    if (splitName.size() > 1) {
       return splitName.get(1);
     }
 
@@ -385,8 +376,8 @@ abstract class DockerComponentSupplier {
   }
 
   private static List<String> splitStringByColon(String name) {
-    for(String domain: supportedDomains) {
-      if(name.trim().matches(".*\\." + domain + ":?[0-9]*") ) {
+    for (String domain : supportedDomains) {
+      if (name.trim().matches(".*\\." + domain + ":?[0-9]*")) {
         String[] parts = name.split(":");
         List<String> partList = new ArrayList<>(Arrays.asList(parts));
         return partList;
@@ -399,18 +390,20 @@ abstract class DockerComponentSupplier {
   private static String buildPath(List<String> path) {
     StringBuilder builder = new StringBuilder();
 
-    for(String str: path) {
+    for (String str : path) {
       builder.append(str + "/");
     }
 
     //remove last slash
-    if(builder.length() > 0)
+    if (builder.length() > 0) {
       builder.setLength(builder.length() - 1);
+    }
 
     return builder.toString();
   }
 
   public static class DockerCredentials {
+
     public final String username;
     public final String password;
 

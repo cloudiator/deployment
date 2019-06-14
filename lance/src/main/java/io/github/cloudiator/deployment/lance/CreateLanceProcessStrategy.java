@@ -175,7 +175,7 @@ public class CreateLanceProcessStrategy {
         .format("Creating Lifecycle component for task %s.",
             deployInfo.task));
     final DeployableComponent deployableComponent = new DeployableComponentSupplier(deployInfo.job,
-        deployInfo.task).get();
+        deployInfo.task, (LanceInterface) deployInfo.taskInterface).get();
     LOGGER.debug(
         String.format("Successfully build Lifecycle component %s", deployableComponent));
 
@@ -213,7 +213,7 @@ public class CreateLanceProcessStrategy {
             deployInfo.task));
 
     final RemoteDockerComponent remoteDockerComponent = new PrivateDockerComponentSupplier(
-        deployInfo.job, deployInfo.task).get();
+        deployInfo.job, deployInfo.task, (DockerInterface) deployInfo.taskInterface).get();
     LOGGER.debug(
         String.format("Successfully build Private Docker component %s", remoteDockerComponent));
 
@@ -260,7 +260,7 @@ public class CreateLanceProcessStrategy {
             deployInfo.task));
 
     final DockerComponent dockerComponent = new PublicDockerComponentSupplier(deployInfo.job,
-        deployInfo.task).get();
+        deployInfo.task, (DockerInterface) deployInfo.taskInterface).get();
     LOGGER.debug(
         String.format("Successfully build Public Docker component %s", dockerComponent));
 
@@ -298,7 +298,8 @@ public class CreateLanceProcessStrategy {
         .userId(deploymentInfo.getUserId())
         .node(deploymentInfo.getNode().id())
         .type(Type.LANCE)
-        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).startNow().build();
+        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule())
+        .startNow().build();
   }
 
   private CloudiatorProcess failProcess(@Nullable ComponentInstanceId cId,
@@ -324,7 +325,8 @@ public class CreateLanceProcessStrategy {
         .type(Type.LANCE)
         .taskInterface(deploymentInfo.getTaskInterface().getClass().getCanonicalName())
         .diagnostic(e.getMessage())
-        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).startNow().build();
+        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule())
+        .startNow().build();
   }
 
   private void registerApplicationComponentsForApplicationInstance(

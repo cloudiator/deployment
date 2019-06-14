@@ -33,9 +33,10 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
 
   private final Job job;
   private final Task task;
+  private final LanceInterface lanceInterface;
   private static final LanceTaskInterfaceToLifecycleStore LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE = new LanceTaskInterfaceToLifecycleStore();
 
-  public DeployableComponentSupplier(Job job, Task task) {
+  public DeployableComponentSupplier(Job job, Task task, LanceInterface lanceInterface) {
     checkNotNull(job, "job is null");
     checkNotNull(task, "task is null");
 
@@ -44,10 +45,7 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
 
     this.job = job;
     this.task = task;
-  }
-
-  private LanceInterface lanceInterface() {
-    return task.interfaceOfType(LanceInterface.class);
+    this.lanceInterface = lanceInterface;
   }
 
   @Override
@@ -65,11 +63,11 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
     // add all outports / required ports
     for (PortRequired required : task.requiredPorts()) {
       builder
-          .addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(lanceInterface()),
+          .addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(lanceInterface),
               PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
     }
 
-    builder.addLifecycleStore(LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE.apply(lanceInterface()));
+    builder.addLifecycleStore(LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE.apply(lanceInterface));
 
     return builder.build();
 
