@@ -4,6 +4,7 @@ import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 import de.uniulm.omi.cloudiator.lance.application.component.DockerComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties;
 import de.uniulm.omi.cloudiator.lance.application.component.RemoteDockerComponent;
+import de.uniulm.omi.cloudiator.lance.client.DeploymentHelper;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PortProvided;
@@ -36,9 +37,9 @@ public class PrivateDockerComponentSupplier extends DockerComponentSupplier impl
 
     // add all outports / required ports
     for (PortRequired required : task.requiredPorts()) {
-      //todo: PortUpdateHandler required?
-      //builder.addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(required),
-      //    PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
+      //todo: Create logic to use a portUpdateHandler
+      builder.addOutport(required.name(), DeploymentHelper.getEmptyPortUpdateHandler(),
+          PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
     }
 
     RemoteDockerComponent.DockerRegistry dReg = new RemoteDockerComponent.DockerRegistry(
