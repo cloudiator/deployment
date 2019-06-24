@@ -50,6 +50,9 @@ import io.github.cloudiator.deployment.scheduler.processes.SimulationProcessKill
 import io.github.cloudiator.deployment.scheduler.processes.SimulationProcessSpawner;
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessSpawnerImpl;
+import io.github.cloudiator.deployment.scheduler.processes.HdfsProcessKillerImpl;
+import io.github.cloudiator.deployment.scheduler.processes.HdfsProcessSpawnerImpl;
+
 import java.util.concurrent.TimeUnit;
 
 public class SchedulerModule extends AbstractModule {
@@ -91,6 +94,7 @@ public class SchedulerModule extends AbstractModule {
         .newSetBinder(binder(), ProcessSpawner.class);
     processSpawnerMultibinder.addBinding().to(LanceProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(SparkProcessSpawnerImpl.class);
+    processSpawnerMultibinder.addBinding().to(HdfsProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(FaasProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(SimulationProcessSpawner.class);
     bind(ProcessSpawner.class).to(CompositeProcessSpawnerImpl.class);
@@ -101,6 +105,7 @@ public class SchedulerModule extends AbstractModule {
     processKillerMultibinder.addBinding().to(LanceProcessKillerImpl.class);
     processKillerMultibinder.addBinding().to(SparkProcessKillerImpl.class);
     processKillerMultibinder.addBinding().to(SimulationProcessKiller.class);
+    processKillerMultibinder.addBinding().to(HdfsProcessKillerImpl.class);
     //todo: implement process killer for FaaS. Probably also no-op?
     bind(ProcessKiller.class).to(CompositeProcessKiller.class);
   }

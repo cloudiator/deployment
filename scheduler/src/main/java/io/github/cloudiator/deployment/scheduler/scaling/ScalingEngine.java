@@ -59,6 +59,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.cloudiator.messages.Process.CreateSparkClusterRequest;
 import org.cloudiator.messages.Process.SparkClusterCreatedResponse;
+import org.cloudiator.messages.Process.CreateHdfsdClusterRequest;
+import org.cloudiator.messages.Process.HdfsClusterCreatedResponse;
+
 import org.cloudiator.messages.entities.ProcessEntities.Nodes;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
@@ -249,6 +252,20 @@ public class ScalingEngine {
 
       settableFutureResponseCallback.get();
 
+      
+      final CreateHdfsClusterRequest hdfsClusterRequest = CreateHdfsClusterRequest.newBuilder()
+              .setUserId(schedule.userId()).setNodes(
+                  Nodes.newBuilder().addAllNodes(startedNodes.stream().map(
+                      NodeToNodeMessageConverter.INSTANCE).collect(Collectors.toSet())).build())
+              .build();
+
+          final SettableFutureResponseCallback<HdfsClusterCreatedResponse, HdfsClusterCreatedResponse> settableFutureResponseCallback = SettableFutureResponseCallback
+              .create();
+
+          processService.createHdfsClusterAsync(hdfsClusterRequest, settableFutureResponseCallback);
+
+          settableFutureResponseCallback.get();
+      
       final CloudiatorClusterProcess modifiedProcess = CloudiatorClusterProcessBuilder
           .of((CloudiatorClusterProcess) cloudiatorProcess)
           .addAllNodes(startedNodes.stream().map(
