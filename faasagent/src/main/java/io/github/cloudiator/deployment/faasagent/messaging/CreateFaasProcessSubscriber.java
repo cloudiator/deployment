@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import com.google.protobuf.util.Timestamps;
-import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
 import de.uniulm.omi.cloudiator.sword.domain.Cloud;
 import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.Function;
@@ -44,7 +43,6 @@ public class CreateFaasProcessSubscriber implements Runnable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateFaasProcessSubscriber.class);
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
-  private static final int RANDOM_LEN = 8;
 
   private final ProcessService processService;
   private final MessageInterface messageInterface;
@@ -153,8 +151,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
 
     ApplicationTemplate applicationTemplate = new ApplicationTemplate();
     // Generate app name in format TaskName-RandomString
-    applicationTemplate.name = SdkContext.randomResourceName(
-        task.name() + '-', taskName.length() + 1 + RANDOM_LEN);
+    applicationTemplate.name = task.name();
     applicationTemplate.region = locationMessageRepository
         .getRegionName(request.getUserId(), function.locationId());
     applicationTemplate.functions = new ArrayList<>();
