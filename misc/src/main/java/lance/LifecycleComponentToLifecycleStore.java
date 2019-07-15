@@ -40,10 +40,7 @@ import java.util.stream.Collectors;
 public class LifecycleComponentToLifecycleStore
     implements Function<LifecycleComponent, LifecycleStore> {
 
-    private final OsConverter osConverter;
-
     public LifecycleComponentToLifecycleStore() {
-        osConverter = new OsConverter();
     }
 
     private Map<LifecycleHandlerType, String> buildCommandMap(LifecycleComponent lc) {
@@ -81,9 +78,7 @@ public class LifecycleComponentToLifecycleStore
 
     @Nullable @Override public LifecycleStore apply(LifecycleComponent lc) {
 
-        Set<OperatingSystem> lanceOperatingSystems = lc.getApplicationComponents().stream().map(
-            applicationComponent -> osConverter
-                .apply(applicationComponent.getVirtualMachineTemplate().image().operatingSystem()))
+        Set<OperatingSystem> lanceOperatingSystems = lc.getApplicationComponents().stream()
             .collect(Collectors.toSet());
 
         final LifecycleStoreBuilder lifecycleStoreBuilder = new LifecycleStoreBuilder();

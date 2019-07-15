@@ -17,6 +17,10 @@
 package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemArchitecture;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemFamily;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemImpl;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemVersions;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationId;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationInstanceId;
 import de.uniulm.omi.cloudiator.lance.application.DeploymentContext;
@@ -25,7 +29,6 @@ import de.uniulm.omi.cloudiator.lance.application.component.DeployableComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.DockerComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.RemoteDockerComponent;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
-import de.uniulm.omi.cloudiator.lance.container.spec.os.OperatingSystem;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
@@ -54,7 +57,14 @@ public class CreateLanceProcessStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
   private final LanceInstallationStrategy lanceInstallationStrategy;
   private final LanceClientConnector lanceClientConnector;
+  private static final OperatingSystemImpl staticOsImpl;
 
+  static {
+    staticOsImpl = new OperatingSystemImpl(
+        OperatingSystemFamily.UBUNTU,
+        OperatingSystemArchitecture.AMD64,
+        OperatingSystemVersions.of(1604,"16.04"));
+  }
 
   @Inject
   CreateLanceProcessStrategy(
@@ -190,7 +200,7 @@ public class CreateLanceProcessStrategy {
       @Override
       public ComponentInstanceId call() throws Exception {
         return lifecycleClient
-            .deploy(deployInfo.deploymentContext, deployableComponent, OperatingSystem.UBUNTU_14_04,
+            .deploy(deployInfo.deploymentContext, deployableComponent, staticOsImpl,
                 containerType);
       }
     });
