@@ -30,7 +30,6 @@ import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -69,10 +68,13 @@ public class PeriodicScheduler {
 
     final Future<?> future = taskFutures.get(task);
     if (future == null) {
-      throw new NoSuchElementException(String.format("Task %s is not registered.", task));
+      return;
     }
 
-    future.cancel(force);
+    boolean result = future.cancel(force);
+    if (result) {
+      taskFutures.remove(task);
+    }
 
   }
 

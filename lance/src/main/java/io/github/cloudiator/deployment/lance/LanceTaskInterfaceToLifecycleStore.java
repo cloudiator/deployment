@@ -18,7 +18,11 @@ package io.github.cloudiator.deployment.lance;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import de.uniulm.omi.cloudiator.lance.container.spec.os.OperatingSystem;
+import de.uniulm.omi.cloudiator.domain.OperatingSystem;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemArchitecture;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemFamily;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemImpl;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemVersions;
 import de.uniulm.omi.cloudiator.lance.lifecycle.LifecycleHandler;
 import de.uniulm.omi.cloudiator.lance.lifecycle.LifecycleHandlerType;
 import de.uniulm.omi.cloudiator.lance.lifecycle.LifecycleStore;
@@ -32,6 +36,15 @@ import java.util.function.Function;
 
 public class LanceTaskInterfaceToLifecycleStore implements
     Function<LanceInterface, LifecycleStore> {
+
+  private static final OperatingSystem staticOs;
+
+  static {
+    staticOs = new OperatingSystemImpl(
+        OperatingSystemFamily.UBUNTU,
+        OperatingSystemArchitecture.AMD64,
+        OperatingSystemVersions.of(1604,"16.04"));
+  }
 
   private Map<LifecycleHandlerType, String> buildCommandMap(LanceInterface lanceInterface) {
     Map<LifecycleHandlerType, String> commands = Maps.newHashMap();
@@ -74,7 +87,7 @@ public class LanceTaskInterfaceToLifecycleStore implements
   public LifecycleStore apply(LanceInterface lanceInterface) {
 
     Set<OperatingSystem> lanceOperatingSystems = Sets
-        .newHashSet(OperatingSystem.UBUNTU_14_04);
+        .newHashSet(staticOs);
 
     final LifecycleStoreBuilder lifecycleStoreBuilder = new LifecycleStoreBuilder();
 
