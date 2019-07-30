@@ -17,6 +17,10 @@
 package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemArchitecture;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemFamily;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemImpl;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemVersions;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationId;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationInstanceId;
 import de.uniulm.omi.cloudiator.lance.application.DeploymentContext;
@@ -25,7 +29,6 @@ import de.uniulm.omi.cloudiator.lance.application.component.DeployableComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.DockerComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.RemoteDockerComponent;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
-import de.uniulm.omi.cloudiator.lance.container.spec.os.OperatingSystem;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
@@ -54,7 +57,14 @@ public class CreateLanceProcessStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
   private final LanceInstallationStrategy lanceInstallationStrategy;
   private final LanceClientConnector lanceClientConnector;
+  private static final OperatingSystemImpl staticOsImpl;
 
+  static {
+    staticOsImpl = new OperatingSystemImpl(
+        OperatingSystemFamily.UBUNTU,
+        OperatingSystemArchitecture.AMD64,
+        OperatingSystemVersions.of(1604,"16.04"));
+  }
 
   @Inject
   CreateLanceProcessStrategy(
@@ -175,7 +185,7 @@ public class CreateLanceProcessStrategy {
         .format("Creating Lifecycle component for task %s.",
             deployInfo.task));
     final DeployableComponent deployableComponent = new DeployableComponentSupplier(deployInfo.job,
-        deployInfo.task).get();
+        deployInfo.task, (LanceInterface) deployInfo.taskInterface).get();
     LOGGER.debug(
         String.format("Successfully build Lifecycle component %s", deployableComponent));
 
@@ -190,7 +200,7 @@ public class CreateLanceProcessStrategy {
       @Override
       public ComponentInstanceId call() throws Exception {
         return lifecycleClient
-            .deploy(deployInfo.deploymentContext, deployableComponent, OperatingSystem.UBUNTU_14_04,
+            .deploy(deployInfo.deploymentContext, deployableComponent, staticOsImpl,
                 containerType);
       }
     });
@@ -213,7 +223,7 @@ public class CreateLanceProcessStrategy {
             deployInfo.task));
 
     final RemoteDockerComponent remoteDockerComponent = new PrivateDockerComponentSupplier(
-        deployInfo.job, deployInfo.task).get();
+        deployInfo.job, deployInfo.task, (DockerInterface) deployInfo.taskInterface).get();
     LOGGER.debug(
         String.format("Successfully build Private Docker component %s", remoteDockerComponent));
 
@@ -260,7 +270,7 @@ public class CreateLanceProcessStrategy {
             deployInfo.task));
 
     final DockerComponent dockerComponent = new PublicDockerComponentSupplier(deployInfo.job,
-        deployInfo.task).get();
+        deployInfo.task, (DockerInterface) deployInfo.taskInterface).get();
     LOGGER.debug(
         String.format("Successfully build Public Docker component %s", dockerComponent));
 
@@ -298,7 +308,8 @@ public class CreateLanceProcessStrategy {
         .userId(deploymentInfo.getUserId())
         .node(deploymentInfo.getNode().id())
         .type(Type.LANCE)
-        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).startNow().build();
+        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule())
+        .startNow().build();
   }
 
   private CloudiatorProcess failProcess(@Nullable ComponentInstanceId cId,
@@ -324,7 +335,8 @@ public class CreateLanceProcessStrategy {
         .type(Type.LANCE)
         .taskInterface(deploymentInfo.getTaskInterface().getClass().getCanonicalName())
         .diagnostic(e.getMessage())
-        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule()).startNow().build();
+        .taskName(deploymentInfo.getTask().name()).scheduleId(deploymentInfo.getSchedule())
+        .startNow().build();
   }
 
   private void registerApplicationComponentsForApplicationInstance(

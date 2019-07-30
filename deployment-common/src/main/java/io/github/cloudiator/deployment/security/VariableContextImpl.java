@@ -19,18 +19,29 @@ package io.github.cloudiator.deployment.security;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.cloudiator.messages.entities.SecureStore.SecureStoreRetrieveRequest;
 import org.cloudiator.messaging.ResponseException;
 import org.cloudiator.messaging.services.SecureStoreService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VariableContextImpl implements VariableContext {
 
   private static final Pattern PATTERN = Pattern.compile("\\{\\{(.*?)\\}\\}");
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(VariableContextImpl.class);
 
   private final String userId;
   private final SecureStoreService secureStoreService;
@@ -52,11 +63,17 @@ public class VariableContextImpl implements VariableContext {
     final Matcher m = PATTERN.matcher(string);
     final StringBuffer b = new StringBuffer(string.length());
     while (m.find()) {
-      m.appendReplacement(b, retrieve(m.group(1).trim()));
+      String found = m.group(1).trim();
+      LOGGER.debug(String.format("Found variable %s for replacement in: %s", found, string));
+      String retrieve = retrieve(found);
+      LOGGER.debug(String.format("Replacing variable %s with replacement %s.", found, retrieve));
+      m.appendReplacement(b, retrieve);
     }
     m.appendTail(b);
 
-    return b.toString();
+    String replaced = b.toString();
+    LOGGER.debug(String.format("Replaced string %s with string %s", string, replaced));
+    return replaced;
   }
 
   @Override
@@ -64,14 +81,25 @@ public class VariableContextImpl implements VariableContext {
 
     checkNotNull(key);
 
-    try {
-      final String value = secureStoreService.retrieveSecret(
-          SecureStoreRetrieveRequest.newBuilder().setUserId(userId).setKey(key).build()).getValue();
-      checkState(!Strings.isNullOrEmpty(value),
-          String.format("Retrieved value for variable %s is null or empty.", key));
-      return value;
+    Retryer<String> retryer = RetryerBuilder.<String>newBuilder()
+        .retryIfExceptionOfType(ResponseException.class)
+        .withWaitStrategy(WaitStrategies.fixedWait(30, TimeUnit.SECONDS))
+        .withStopStrategy(StopStrategies.stopAfterAttempt(5))
+        .build();
 
-    } catch (ResponseException e) {
+    try {
+      return retryer.call(() -> {
+        final String value = secureStoreService.retrieveSecret(
+            SecureStoreRetrieveRequest.newBuilder().setUserId(userId).setKey(key).build())
+            .getValue();
+        checkState(!Strings.isNullOrEmpty(value),
+            String.format("Retrieved value for variable %s is null or empty.", key));
+        return value;
+      });
+    } catch (ExecutionException e) {
+      throw new VariableReplacementException("Could not retrieve value for variable " + key,
+          e.getCause());
+    } catch (RetryException e) {
       throw new VariableReplacementException("Could not retrieve value for variable " + key, e);
     }
   }

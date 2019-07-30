@@ -116,6 +116,16 @@ public class CloudiatorClusterProcessBuilder {
     return this;
   }
 
+  public CloudiatorClusterProcessBuilder removeNode(String node) {
+    this.nodes.remove(node);
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder removeAllNodes(Collection<String> nodes) {
+    this.nodes.removeAll(nodes);
+    return this;
+  }
+
   public CloudiatorClusterProcessBuilder state(CloudiatorProcess.ProcessState state) {
     this.state = state;
     return this;

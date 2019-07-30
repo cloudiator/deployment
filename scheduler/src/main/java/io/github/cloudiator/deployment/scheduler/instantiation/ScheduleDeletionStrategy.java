@@ -27,7 +27,10 @@ import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecuto
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
+import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import java.util.HashSet;
@@ -55,6 +58,8 @@ public class ScheduleDeletionStrategy {
       5);
   private static final Logger LOGGER = LoggerFactory
       .getLogger(ScheduleDeletionStrategy.class);
+  private final JobMessageRepository jobMessageRepository;
+  private final PeriodicScheduler periodicScheduler;
 
   static {
     MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
@@ -63,10 +68,14 @@ public class ScheduleDeletionStrategy {
   @Inject
   public ScheduleDeletionStrategy(ProcessService processService,
       NodeService nodeService,
-      NodeMessageRepository nodeMessageRepository) {
+      NodeMessageRepository nodeMessageRepository,
+      JobMessageRepository jobMessageRepository,
+      PeriodicScheduler periodicScheduler) {
     this.processService = processService;
     this.nodeService = nodeService;
     this.nodeMessageRepository = nodeMessageRepository;
+    this.jobMessageRepository = jobMessageRepository;
+    this.periodicScheduler = periodicScheduler;
   }
 
 
@@ -83,6 +92,14 @@ public class ScheduleDeletionStrategy {
 
     //delete all processes
     for (CloudiatorProcess cloudiatorProcess : schedule.processes()) {
+
+      //stop the periodic scheduler for any processes of this schedule
+      Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
+      checkState(job != null, "job is null");
+      Task task = job.getTask(cloudiatorProcess.taskId())
+          .orElseThrow(() -> new IllegalStateException("Task not present in job"));
+
+      periodicScheduler.cancel(task, true);
 
       //all nodes that are orphaned by deleting the process
       Set<String> orphanedNodeIds = new HashSet<>();

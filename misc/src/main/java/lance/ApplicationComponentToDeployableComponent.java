@@ -42,12 +42,10 @@ public class ApplicationComponentToDeployableComponent
 
     private final ApplicationComponentToComponentId applicationComponentToComponentId;
     private final LifecycleComponentToLifecycleStore lifecycleComponentToLifecycleStore;
-    private final OsConverter osConverter;
 
     public ApplicationComponentToDeployableComponent() {
         applicationComponentToComponentId = new ApplicationComponentToComponentId();
         lifecycleComponentToLifecycleStore = new LifecycleComponentToLifecycleStore();
-        osConverter = new OsConverter();
     }
 
     @Override public DeployableComponent apply(ApplicationComponent applicationComponent) {
@@ -80,8 +78,8 @@ public class ApplicationComponentToDeployableComponent
                 portUpdateHandler = DeploymentHelper.getEmptyPortUpdateHandler();
             } else {
                 BashBasedHandlerBuilder portUpdateBuilder = new BashBasedHandlerBuilder();
-                portUpdateBuilder.setOperatingSystem(osConverter.apply(
-                    applicationComponent.getVirtualMachineTemplate().image().operatingSystem()));
+                portUpdateBuilder.setOperatingSystem(
+                    applicationComponent.getVirtualMachineTemplate().image().operatingSystem());
                 portUpdateBuilder.addCommand(portRequired.updateAction().get());
                 portUpdateHandler = portUpdateBuilder.buildPortUpdateHandler();
             }
