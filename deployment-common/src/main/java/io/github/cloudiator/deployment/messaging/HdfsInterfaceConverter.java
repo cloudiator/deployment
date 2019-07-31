@@ -1,6 +1,5 @@
 package io.github.cloudiator.deployment.messaging;
 
-import com.google.common.base.Strings;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.ProcessMapping;
 import io.github.cloudiator.deployment.domain.HdfsInterface;
@@ -21,13 +20,6 @@ public class HdfsInterfaceConverter implements
   public TaskEntities.HdfsInterface applyBack(HdfsInterface hdfsInterface) {
     Builder builder = TaskEntities.HdfsInterface.newBuilder();
 
-    if (hdfsInterface.className().isPresent()) {
-      builder.setClassName(hdfsInterface.className().get());
-    }
-
-    builder.setFile(hdfsInterface.file()).addAllArguments(hdfsInterface.arguments())
-        .putAllHdfsArguments(hdfsInterface.hdfsArguments())
-        .putAllHdfsConfiguration(hdfsInterface.hdfsConfiguration());
 
     builder.setProcessMapping(PROCESS_MAPPING_CONVERTER.applyBack(hdfsInterface.processMapping()));
 
@@ -37,19 +29,9 @@ public class HdfsInterfaceConverter implements
   @Override
   public HdfsInterface apply(TaskEntities.HdfsInterface hdfsInterface) {
 
-    final HdfsInterfaceBuilder hdfsInterfaceBuilder = HdfsInterfaceBuilder.newBuilder()
-        .file(hdfsInterface.getFile())
+    HdfsInterfaceBuilder hdfsInterfaceBuilder = HdfsInterfaceBuilder.newBuilder();
 
-        .arguments(hdfsInterface.getArgumentsList())
-        .hdfsArguments(hdfsInterface.getHdfsArgumentsMap())
-        .hdfsConfiguration(hdfsInterface.getHdfsConfigurationMap());
-
-    if (!Strings.isNullOrEmpty(hdfsInterface.getClassName())) {
-      hdfsInterfaceBuilder.className(hdfsInterface.getClassName());
-    }
-
-    hdfsInterfaceBuilder
-        .processMapping(PROCESS_MAPPING_CONVERTER.apply(hdfsInterface.getProcessMapping()));
+    hdfsInterfaceBuilder.processMapping(PROCESS_MAPPING_CONVERTER.apply(hdfsInterface.getProcessMapping()));
 
     return hdfsInterfaceBuilder.build();
   }
