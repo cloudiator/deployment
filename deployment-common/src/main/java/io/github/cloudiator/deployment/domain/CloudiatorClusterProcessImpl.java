@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableSet;
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import javax.annotation.Nullable;
 
@@ -30,39 +29,6 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
 
     checkNotNull(nodes, "nodes is null");
     this.nodes = new HashSet<>(nodes);
-  }
-
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CloudiatorClusterProcessImpl that = (CloudiatorClusterProcessImpl) o;
-    return id().equals(that.id()) &&
-        originId().equals(that.originId()) &&
-        userId().equals(that.userId()) &&
-        scheduleId().equals(that.scheduleId()) &&
-        taskId().equals(that.taskId()) &&
-        taskInterface().equals(that.taskInterface()) &&
-        state() == that.state() &&
-        type() == that.type() &&
-        Objects.equals(diagnostic(), that.diagnostic()) &&
-        Objects.equals(reason(), that.reason()) &&
-        Objects.equals(endpoint(), that.endpoint()) &&
-        ipAddresses().equals(that.ipAddresses()) &&
-        nodes().equals(that.nodes());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects
-        .hash(id(), originId(), userId(), scheduleId(), taskId(), taskInterface(), state(), type(),
-            diagnostic(),
-            reason(), endpoint(), ipAddresses(), nodes());
   }
 
   @Override
