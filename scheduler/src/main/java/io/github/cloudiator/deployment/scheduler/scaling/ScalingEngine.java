@@ -163,9 +163,9 @@ public class ScalingEngine {
             nodes));
 
     if (nodes.isEmpty()) {
-      scaleInWithNodes(schedule, task, nodes);
+      scaleInWithoutNodes(schedule, job, task);
     } else {
-      scaleInWithoutNodes(schedule, job, task, nodes);
+      scaleInWithNodes(schedule, task, nodes);
     }
   }
 
@@ -179,8 +179,7 @@ public class ScalingEngine {
 
   }
 
-  private void scaleInWithoutNodes(Schedule schedule, Job job, Task task,
-      Collection<? extends Node> nodes) {
+  private void scaleInWithoutNodes(Schedule schedule, Job job, Task task) {
     throw new UnsupportedOperationException();
   }
 
