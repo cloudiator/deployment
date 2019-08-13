@@ -138,7 +138,7 @@ public class ProcessScheduler {
               node);
 
       return CloudiatorSingleProcessBuilder.of((CloudiatorSingleProcess) cloudiatorProcess)
-          .state(ProcessState.RUNNING)
+          .state(spawned.state())
           .originId(spawned.originId().orElse(null)).type(spawned.type())
           .endpoint(spawned.endpoint().orElse(null))
           .addAllIpAddresses(node.ipAddresses())
@@ -163,7 +163,7 @@ public class ProcessScheduler {
               nodeSet);
 
       return CloudiatorClusterProcessBuilder.of((CloudiatorClusterProcess) cloudiatorProcess)
-          .state(ProcessState.RUNNING)
+          .state(spawned.state())
           .originId(spawned.originId().orElse(null)).type(spawned.type())
           .endpoint(spawned.endpoint().orElse(null))
           .build();
