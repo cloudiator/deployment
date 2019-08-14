@@ -17,9 +17,10 @@
 package io.github.cloudiator.persistance;
 
 import com.google.inject.Inject;
-import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.DockerInterface;
+import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.SimulationInterface;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.domain.Trigger;
@@ -28,13 +29,16 @@ public class TaskInterfaceDomainRepository {
 
   private final TaskInterfaceModelRepository taskInterfaceModelRepository;
   private final TriggerDomainRepository triggerDomainRepository;
+  private final DistributionDomainRepository distributionDomainRepository;
 
   @Inject
   public TaskInterfaceDomainRepository(
       TaskInterfaceModelRepository taskInterfaceModelRepository,
-      TriggerDomainRepository triggerDomainRepository) {
+      TriggerDomainRepository triggerDomainRepository,
+      DistributionDomainRepository distributionDomainRepository) {
     this.taskInterfaceModelRepository = taskInterfaceModelRepository;
     this.triggerDomainRepository = triggerDomainRepository;
+    this.distributionDomainRepository = distributionDomainRepository;
   }
 
   TaskInterfaceModel saveAndGet(TaskInterface domain, TaskModel taskModel) {
@@ -55,6 +59,8 @@ public class TaskInterfaceDomainRepository {
       return createDockerInterfaceModel((DockerInterface) domain, taskModel);
     } else if (domain instanceof SparkInterface) {
       return createSparkInterfaceModel((SparkInterface) domain, taskModel);
+    } else if (domain instanceof SimulationInterface) {
+      return createSimulationTaskInterfaceModel((SimulationInterface) domain, taskModel);
     } else {
       throw new AssertionError("TaskInterface is of unknown type " + domain.getClass().getName());
     }
@@ -70,7 +76,7 @@ public class TaskInterfaceDomainRepository {
         domain.start(), domain.startDetection().orElse(null), domain.stopDetection().orElse(null),
         domain.postStart().orElse(null),
         domain.preStop().orElse(null), domain.stop().orElse(null), domain.postStop().orElse(null),
-        domain.shutdown().orElse(null));
+        domain.shutdown().orElse(null), domain.portUpdateAction().orElse(null));
 
   }
 
@@ -89,14 +95,24 @@ public class TaskInterfaceDomainRepository {
     }
     return faasInterfaceModel;
   }
-  
-  private DockerTaskInterfaceModel createDockerInterfaceModel(DockerInterface domain, TaskModel taskModel) {
-    return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(),domain.environment());
+
+  private DockerTaskInterfaceModel createDockerInterfaceModel(DockerInterface domain,
+      TaskModel taskModel) {
+    return new DockerTaskInterfaceModel(taskModel, domain.dockerImage(), domain.environment(),
+        domain.portUpdateAction().orElse(null));
   }
 
   private SparkTaskInterfaceModel createSparkInterfaceModel(SparkInterface domain,
       TaskModel taskModel) {
     return new SparkTaskInterfaceModel(taskModel, domain.file(), domain.className().orElse(null),
-        domain.arguments(), domain.sparkArguments(), domain.sparkConfiguration());
+        domain.arguments(), domain.sparkArguments(), domain.sparkConfiguration(),
+        domain.processMapping());
+  }
+
+  private SimulationTaskInterfaceModel createSimulationTaskInterfaceModel(
+      SimulationInterface domain, TaskModel taskModel) {
+    final DistributionModel startTime = distributionDomainRepository
+        .saveAndGet(domain.startTime());
+    return new SimulationTaskInterfaceModel(taskModel, startTime);
   }
 }

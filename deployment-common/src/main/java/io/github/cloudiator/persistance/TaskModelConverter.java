@@ -26,10 +26,11 @@ class TaskModelConverter implements OneWayConverter<TaskModel, Task> {
 
   final static TaskModelConverter INSTANCE = new TaskModelConverter();
 
-  private final TaskInterfaceModelConverter taskInterfaceConverter = new TaskInterfaceModelConverter();
-  private final PortModelConverter portConverter = new PortModelConverter();
-  private final RequirementModelConverter requirementModelConverter = new RequirementModelConverter();
-  private final OptimizationModelConverter optimizationModelConverter = new OptimizationModelConverter();
+  private static final TaskInterfaceModelConverter TASK_INTERFACE_MODEL_CONVERTER = new TaskInterfaceModelConverter();
+  private static final PortModelConverter PORT_MODEL_CONVERTER = new PortModelConverter();
+  private static final RequirementModelConverter REQUIREMENT_MODEL_CONVERTER = new RequirementModelConverter();
+  private static final OptimizationModelConverter OPTIMIZATION_MODEL_CONVERTER = new OptimizationModelConverter();
+  private static final BehaviourModelConverter BEHAVIOUR_MODEL_CONVERTER = BehaviourModelConverter.INSTANCE;
 
   private TaskModelConverter() {
 
@@ -43,12 +44,15 @@ class TaskModelConverter implements OneWayConverter<TaskModel, Task> {
     }
 
     return TaskBuilder.newBuilder().name(taskModel.getName())
-        .addPorts(taskModel.getPorts().stream().map(portConverter).collect(Collectors.toList()))
-        .addInterfaces(taskModel.getInterfaces().stream().map(taskInterfaceConverter).collect(
-            Collectors.toList()))
-        .addRequirements(taskModel.getRequirements().stream().map(requirementModelConverter)
+        .addPorts(
+            taskModel.getPorts().stream().map(PORT_MODEL_CONVERTER).collect(Collectors.toList()))
+        .addInterfaces(
+            taskModel.getInterfaces().stream().map(TASK_INTERFACE_MODEL_CONVERTER).collect(
+                Collectors.toList()))
+        .addRequirements(taskModel.getRequirements().stream().map(REQUIREMENT_MODEL_CONVERTER)
             .collect(Collectors.toList()))
-        .optimization(optimizationModelConverter.apply(taskModel.getOptimizationModel()))
+        .optimization(OPTIMIZATION_MODEL_CONVERTER.apply(taskModel.getOptimizationModel()))
+        .behaviour(BEHAVIOUR_MODEL_CONVERTER.apply(taskModel.getBehaviourModel()))
         .build();
   }
 }

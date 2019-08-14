@@ -16,14 +16,10 @@
 
 package io.github.cloudiator.deployment.domain;
 
-import java.util.Optional;
-
 /**
  * Created by daniel on 13.02.17.
  */
 public interface PortRequired extends Port {
-
-  Optional<String> updateAction();
 
   boolean isMandatory();
 

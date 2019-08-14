@@ -20,13 +20,13 @@ import de.uniulm.omi.cloudiator.util.OneWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorProcess> {
 
   static final ProcessModelConverter INSTANCE = new ProcessModelConverter();
-
-  NodeGroupConverter nodeGroupConverter = new NodeGroupConverter();
+  private static final IpAddressConverter IP_ADDRESS_CONVERTER = new IpAddressConverter();
 
   private ProcessModelConverter() {
   }
@@ -39,30 +39,50 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
       return null;
     }
 
-    if (processModel.getNodeGroup() == null && processModel.getNode() == null) {
-      throw new IllegalStateException(
-          "Persistence ProcessModel does not contain a nodeModel nor a nodeGroupModel!");
-    }
-
-    if (processModel.getNode() != null) {
+    if (processModel instanceof ProcessSingleModel) {
       return CloudiatorSingleProcessBuilder.create()
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
+          .originId(processModel.getOriginId())
           .userId(processModel.getTenant().getUserId())
-          .node(processModel.getNode())
+          .node(((ProcessSingleModel) processModel).getNode())
           .taskName(processModel.getTask())
-          .state(processModel.getState()).build();
-    } else {
+          .taskInterface(processModel.getTaskInterface())
+          .state(processModel.getState())
+          .diagnostic(processModel.getDiagnostic())
+          .reason(processModel.getReason())
+          .endpoint(processModel.getEndpoint())
+          .addAllIpAddresses(
+              processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
+                  Collectors.toSet()))
+          .start(processModel.getStart())
+          .stop(processModel.getStop())
+          .build();
+    } else if (processModel instanceof ProcessClusterModel) {
 
       return CloudiatorClusterProcessBuilder.create()
           .scheduleId(processModel.getSchedule().domainId())
           .type(processModel.getType())
           .id(processModel.getDomainId())
+          .originId(processModel.getOriginId())
           .userId(processModel.getTenant().getUserId())
-          .nodeGroup(processModel.getNodeGroup())
+          .addAllNodes(((ProcessClusterModel) processModel).getNodes())
           .taskName(processModel.getTask())
-          .state(processModel.getState()).build();
+          .taskInterface(processModel.getTaskInterface())
+          .state(processModel.getState())
+          .diagnostic(processModel.getDiagnostic())
+          .reason(processModel.getReason())
+          .endpoint(processModel.getEndpoint())
+          .addAllIpAddresses(
+              processModel.getIpAddresses().stream().map(IP_ADDRESS_CONVERTER).collect(
+                  Collectors.toSet()))
+          .start(processModel.getStart())
+          .stop(processModel.getStop())
+          .build();
+    } else {
+      throw new AssertionError(
+          "Illegal type of process model " + processModel.getClass().getSimpleName());
     }
   }
 

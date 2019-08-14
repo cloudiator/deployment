@@ -42,9 +42,9 @@ class AttributeRequirementModel extends RequirementModel {
 
   }
 
-  AttributeRequirementModel(TaskModel task, String requirementClass,
+  AttributeRequirementModel(TaskModel task, JobModel job, String requirementClass,
       String requirementAttribute, RequirementOperator requirementOperator, String value) {
-    super(task);
+    super(task, job);
 
     checkNotNull(requirementClass, "requirementClass is null");
     checkArgument(!requirementClass.isEmpty(), "requirementClass is empty");

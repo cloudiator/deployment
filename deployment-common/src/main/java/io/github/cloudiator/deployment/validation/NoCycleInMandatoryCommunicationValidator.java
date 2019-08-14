@@ -30,7 +30,7 @@ public class NoCycleInMandatoryCommunicationValidator extends AbstractModelValid
     final JobGraph graph = JobGraph.of(job);
     if (graph.hasCycle()) {
       addValidationMessage(ValidationMessage.of(String.format(
-          "Found at least one loop in the communication graph. %s are participants of the loop.",
+          "Found at least one loop in the mandatory communication graph. %s are participants of the loop. Use optional communication links to break the loop.",
           StringUtils.join(graph.cycles(), ",")), ValidationMessage.Type.ERROR));
     }
   }

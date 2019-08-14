@@ -16,18 +16,17 @@
 
 package io.github.cloudiator.deployment.scheduler.messaging;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.ScheduleImpl;
 import io.github.cloudiator.deployment.messaging.InstantiationConverter;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ScheduleConverter;
-import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.ScheduleStateMachine;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.CreateScheduleRequest;
@@ -45,23 +44,23 @@ public class ScheduleRequestSubscriber implements Runnable {
   private final MessageInterface messageInterface;
   private static final Logger LOGGER = LoggerFactory
       .getLogger(ScheduleRequestSubscriber.class);
+  private final ScheduleStateMachine scheduleStateMachine;
 
   private static final ScheduleConverter SCHEDULE_CONVERTER = ScheduleConverter.INSTANCE;
   private final ScheduleDomainRepository scheduleDomainRepository;
-  private final InstantiationStrategy instantiationStrategy;
 
 
   @Inject
   public ScheduleRequestSubscriber(ProcessService processService,
       JobMessageRepository jobMessageRepository,
       MessageInterface messageInterface,
-      ScheduleDomainRepository scheduleDomainRepository,
-      InstantiationStrategy instantiationStrategy) {
+      ScheduleStateMachine scheduleStateMachine,
+      ScheduleDomainRepository scheduleDomainRepository) {
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
     this.messageInterface = messageInterface;
+    this.scheduleStateMachine = scheduleStateMachine;
     this.scheduleDomainRepository = scheduleDomainRepository;
-    this.instantiationStrategy = instantiationStrategy;
   }
 
   @Transactional
@@ -96,28 +95,25 @@ public class ScheduleRequestSubscriber implements Runnable {
             return;
           }
 
-          Schedule schedule = ScheduleImpl.create(job, instantiation);
+          Schedule schedule = ScheduleImpl.init(job, instantiation);
 
           //persist the schedule
           persistSchedule(schedule);
 
-          LOGGER.info(String
-              .format("Using strategy %s to instantiate schedule %s, job %s for user %s",
-                  instantiationStrategy, schedule, job, userId));
-
-          //start the instantiation
-          instantiationStrategy.instantiate(schedule, job, userId);
-
-          //refresh the schedule object to receive the created processes
-          Schedule createdSchedule = scheduleDomainRepository
-              .findByIdAndUser(schedule.id(), userId);
-
-          checkState(createdSchedule != null, String
-              .format("Expected schedule with id %s to exist, but received null", schedule.id()));
+          switch (schedule.instantiation()) {
+            case MANUAL:
+              schedule = scheduleStateMachine.apply(schedule, ScheduleState.MANUAL, null);
+              break;
+            case AUTOMATIC:
+              schedule = scheduleStateMachine.apply(schedule, ScheduleState.RUNNING, null);
+              break;
+            default:
+              throw new AssertionError("Unknown instantiation type " + schedule.instantiation());
+          }
 
           messageInterface.reply(id,
               ScheduleCreatedResponse.newBuilder()
-                  .setSchedule(SCHEDULE_CONVERTER.applyBack(createdSchedule))
+                  .setSchedule(SCHEDULE_CONVERTER.applyBack(schedule))
                   .build());
 
         } catch (Exception e) {

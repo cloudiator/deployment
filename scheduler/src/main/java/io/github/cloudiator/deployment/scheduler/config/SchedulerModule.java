@@ -17,23 +17,40 @@
 package io.github.cloudiator.deployment.scheduler.config;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
+import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
+import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
+import de.uniulm.omi.cloudiator.util.execution.Schedulable;
+import de.uniulm.omi.cloudiator.util.execution.ScheduledThreadPoolExecutorExecutionService;
+import io.github.cloudiator.deployment.scheduler.Init;
+import io.github.cloudiator.deployment.scheduler.failure.FailureHandler;
+import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
+import io.github.cloudiator.deployment.scheduler.failure.ProcessFailureReportingInterface;
+import io.github.cloudiator.deployment.scheduler.failure.ScheduleEventReportingInterface;
+import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
+import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
+import io.github.cloudiator.deployment.scheduler.instantiation.OnDemandResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.PeriodicBehaviourSchedulableFactory;
+import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.FaasProcessSpawnerImpl;
-import io.github.cloudiator.deployment.scheduler.Init;
 import io.github.cloudiator.deployment.scheduler.processes.LanceProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.LanceProcessSpawnerImpl;
-import io.github.cloudiator.deployment.scheduler.OnDemandResourcePool;
 import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.ProcessSpawner;
-import io.github.cloudiator.deployment.scheduler.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessStatusChecker;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessStatusCheckerImpl;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessWatchdog;
+import io.github.cloudiator.deployment.scheduler.processes.SimulationProcessKiller;
+import io.github.cloudiator.deployment.scheduler.processes.SimulationProcessSpawner;
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessSpawnerImpl;
-import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
-import io.github.cloudiator.deployment.scheduler.instantiation.CompositeInstantiationStrategy;
-import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategy;
-import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiationStrategy;
+import java.util.concurrent.TimeUnit;
 
 public class SchedulerModule extends AbstractModule {
 
@@ -42,12 +59,32 @@ public class SchedulerModule extends AbstractModule {
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
     bind(Init.class).asEagerSingleton();
 
+    bind(NodeFailureReportingInterface.class).to(FailureHandler.class);
+    bind(ProcessFailureReportingInterface.class).to(FailureHandler.class);
+    bind(ScheduleEventReportingInterface.class).to(FailureHandler.class);
+
+    install(new FactoryModuleBuilder().build(PeriodicBehaviourSchedulableFactory.class));
+
+    Multibinder<Schedulable> schedulableMultibinder = Multibinder
+        .newSetBinder(binder(), Schedulable.class);
+    schedulableMultibinder.addBinding().to(ProcessWatchdog.class);
+
+    final ScheduledThreadPoolExecutorExecutionService scheduledThreadPoolExecutorExecutionService = new ScheduledThreadPoolExecutorExecutionService(
+        new LoggingScheduledThreadPoolExecutor(5));
+
+    scheduledThreadPoolExecutorExecutionService.delayShutdownHook(5, TimeUnit.MINUTES);
+
+    bind(ExecutionService.class).annotatedWith(Names.named("SchedulableExecution"))
+        .toInstance(scheduledThreadPoolExecutorExecutionService);
+
     Multibinder<InstantiationStrategy> instantiationStrategyMultibinder = Multibinder
         .newSetBinder(binder(), InstantiationStrategy.class);
     instantiationStrategyMultibinder.addBinding().to(AutomaticInstantiationStrategy.class);
     instantiationStrategyMultibinder.addBinding().to(ManualInstantiationStrategy.class);
 
-    bind(InstantiationStrategy.class).to(CompositeInstantiationStrategy.class);
+    bind(InstantiationStrategySelector.class);
+
+    bind(ProcessStatusChecker.class).to(ProcessStatusCheckerImpl.class);
 
     //multi binder for process spawners
     Multibinder<ProcessSpawner> processSpawnerMultibinder = Multibinder
@@ -55,6 +92,7 @@ public class SchedulerModule extends AbstractModule {
     processSpawnerMultibinder.addBinding().to(LanceProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(SparkProcessSpawnerImpl.class);
     processSpawnerMultibinder.addBinding().to(FaasProcessSpawnerImpl.class);
+    processSpawnerMultibinder.addBinding().to(SimulationProcessSpawner.class);
     bind(ProcessSpawner.class).to(CompositeProcessSpawnerImpl.class);
 
     //multi binder for process killers
@@ -62,6 +100,7 @@ public class SchedulerModule extends AbstractModule {
         .newSetBinder(binder(), ProcessKiller.class);
     processKillerMultibinder.addBinding().to(LanceProcessKillerImpl.class);
     processKillerMultibinder.addBinding().to(SparkProcessKillerImpl.class);
+    processKillerMultibinder.addBinding().to(SimulationProcessKiller.class);
     //todo: implement process killer for FaaS. Probably also no-op?
     bind(ProcessKiller.class).to(CompositeProcessKiller.class);
   }

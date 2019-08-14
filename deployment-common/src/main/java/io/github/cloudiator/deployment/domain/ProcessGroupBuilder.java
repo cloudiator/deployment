@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+@Deprecated
 public class ProcessGroupBuilder {
 
   private ProcessGroupBuilder() {

@@ -16,12 +16,17 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
-import com.google.common.base.Joiner;
+import static com.google.common.base.Preconditions.checkState;
+
+import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.security.VariableContextFactory;
+import io.github.cloudiator.domain.Node;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,40 +37,73 @@ import org.slf4j.LoggerFactory;
 public class CompositeProcessSpawnerImpl implements ProcessSpawner {
 
   private final Set<ProcessSpawner> processSpawners;
+  private final VariableContextFactory variableContextFactory;
 
   private static final Logger LOGGER = LoggerFactory
       .getLogger(CompositeProcessSpawnerImpl.class);
 
   @Inject
   public CompositeProcessSpawnerImpl(
-      Set<ProcessSpawner> strategies) {
+      Set<ProcessSpawner> strategies,
+      VariableContextFactory variableContextFactory) {
     this.processSpawners = strategies;
+    this.variableContextFactory = variableContextFactory;
   }
 
-  @Override
-  public boolean supports(Task task) {
-    return true;
+  private TaskInterface decorate(String userId, TaskInterface taskInterface) {
+    return taskInterface.decorateVariables(variableContextFactory.create(userId));
   }
 
-  @Override
-  public ProcessGroup spawn(String userId, String schedule, Job job, Task task,
-      NodeGroup nodeGroup) {
+  private ProcessSpawner determineSpawner(TaskInterface taskInterface) {
 
-    LOGGER.debug("Using CompositeProcessSpawner to determine correct ProcessSpawner");
+    LOGGER.debug(String
+        .format("%s determines correct ProcessSpawner for interface %s", this, taskInterface));
+
+    checkState(supports(taskInterface), String
+        .format("%s does not support spawning tasks with interface %s.", this, taskInterface));
 
     for (ProcessSpawner processSpawner : processSpawners) {
-      if (processSpawner.supports(task)) {
-        LOGGER.info(String.format("Using processSpawner %s to spawn task %s.",
-            processSpawner, task));
-
-        return processSpawner.spawn(userId, schedule, job, task, nodeGroup);
+      if (processSpawner.supports(taskInterface)) {
+        LOGGER.info(String.format("Using processSpawner %s to spawn taskInterface %s.",
+            processSpawner, taskInterface));
+        return processSpawner;
       }
     }
-    throw new IllegalStateException(String
-        .format("None of the found process spawners [%s] supports the task %s.",
-            Joiner.on(",").join(processSpawners),
-            task));
+
+    throw new AssertionError(
+        "Illegal condition bias between supports and determineSpawner. Supports states that a process spawner exists, but none was found.");
   }
 
+  @Override
+  public boolean supports(TaskInterface taskInterface) {
+    for (ProcessSpawner processSpawner : processSpawners) {
+      if (processSpawner.supports(taskInterface)) {
+        return true;
+      }
+    }
 
+    return false;
+  }
+
+  @Override
+  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Node node) throws ProcessSpawningException {
+
+    return determineSpawner(taskInterface)
+        .spawn(userId, schedule, job, task, decorate(userId, taskInterface), node);
+  }
+
+  @Override
+  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
+
+    return determineSpawner(taskInterface)
+        .spawn(userId, schedule, job, task, decorate(userId, taskInterface), nodes);
+
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("processSpawners", processSpawners).toString();
+  }
 }

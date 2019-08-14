@@ -20,29 +20,50 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress.IpAddressType;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
-  protected final String id;
-  protected final String scheduleId;
-  protected final String taskName;
-  protected final CloudiatorProcess.ProcessState state;
-  protected final Type type;
-  protected final String userId;
+  private final String id;
+  @Nullable
+  private final String originId;
+  private final String userId;
+  private final String scheduleId;
+  private final String taskName;
+  private final String taskInterface;
+  private final CloudiatorProcess.ProcessState state;
+  private final Type type;
   @Nullable
   private final String diagnostic;
   @Nullable
   private final String reason;
+  @Nullable
+  private final String endpoint;
+  private final Set<IpAddress> ipAddresses;
+  private final Date start;
+  @Nullable
+  private final Date stop;
 
-  CloudiatorProcessImpl(String id, String userId, String scheduleId, String taskName,
-      CloudiatorProcess.ProcessState state, Type type, @Nullable String diagnostic,
-      @Nullable String reason) {
+
+  CloudiatorProcessImpl(String id, @Nullable String originId, String userId, String scheduleId,
+      String taskName, String taskInterface,
+      ProcessState state, Type type, @Nullable String diagnostic,
+      @Nullable String reason, @Nullable String endpoint,
+      Set<IpAddress> ipAddresses, Date start, @Nullable Date stop) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
     this.id = id;
+
+    this.originId = originId;
 
     checkNotNull(userId, "userId is null");
     checkArgument(!userId.isEmpty(), "userId is empty");
@@ -56,6 +77,10 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     checkArgument(!taskName.isEmpty(), "taskName is empty");
     this.taskName = taskName;
 
+    checkNotNull(taskInterface, "taskInterface is null");
+    checkArgument(!taskInterface.isEmpty(), "taskInterface is empty");
+    this.taskInterface = taskInterface;
+
     checkNotNull(state, "state is null");
     this.state = state;
 
@@ -64,6 +89,37 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
 
     this.diagnostic = diagnostic;
     this.reason = reason;
+    this.endpoint = endpoint;
+
+    checkNotNull(ipAddresses, "ipAddresses is null");
+    this.ipAddresses = ipAddresses;
+
+    checkNotNull(start, "start is null");
+    this.start = start;
+
+    this.stop = stop;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    CloudiatorProcessImpl that = (CloudiatorProcessImpl) o;
+    return id.equals(that.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id);
+  }
+
+  @Override
+  public Optional<String> originId() {
+    return Optional.ofNullable(originId);
   }
 
   @Override
@@ -74,6 +130,11 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   @Override
   public String taskId() {
     return taskName;
+  }
+
+  @Override
+  public String taskInterface() {
+    return taskInterface;
   }
 
   @Override
@@ -107,11 +168,41 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     return Optional.ofNullable(reason);
   }
 
+  @Override
+  public Collection<IpAddress> ipAddresses() {
+    return ImmutableSet.copyOf(ipAddresses);
+  }
+
+  @Override
+  public Optional<String> endpoint() {
+    if (endpoint == null) {
+      return ipAddresses.stream().filter(ipAddress -> ipAddress.type().equals(IpAddressType.PUBLIC))
+          .map(
+              IpAddress::ip).findFirst();
+    }
+    return Optional.of(endpoint);
+  }
+
+  @Override
+  public Date start() {
+    return start;
+  }
+
+  @Override
+  public Optional<Date> stop() {
+    return Optional.ofNullable(stop);
+  }
+
   protected MoreObjects.ToStringHelper stringHelper() {
-    return MoreObjects.toStringHelper(this).add("id", id).add("userId", userId)
+    return MoreObjects.toStringHelper(this).add("id", id).add("originId", originId)
+        .add("userId", userId)
         .add("scheduleId", scheduleId)
-        .add("taskName", taskName).add("state", state).add("type", type)
-        .add("diagnostic", diagnostic).add("reason", reason);
+        .add("taskName", taskName)
+        .add("taskInterface", taskInterface)
+        .add("state", state).add("type", type)
+        .add("diagnostic", diagnostic).add("reason", reason)
+        .add("endpoint", endpoint).add("ipAddresses", ipAddresses)
+        .add("start", start).add("stop", stop);
   }
 
   @Override

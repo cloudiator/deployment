@@ -18,19 +18,32 @@ package io.github.cloudiator.deployment.scheduler;
 
 import com.google.inject.Inject;
 import com.google.inject.persist.PersistService;
+import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
+import de.uniulm.omi.cloudiator.util.execution.Schedulable;
+import java.util.Set;
+import javax.inject.Named;
 
 public class Init {
 
   private final PersistService persistService;
+  private final ExecutionService executionService;
+  private final Set<Schedulable> schedulables;
 
   @Inject
-  Init(PersistService persistService) {
+  Init(PersistService persistService,
+      @Named("SchedulableExecution") ExecutionService executionService,
+      Set<Schedulable> schedulables) {
     this.persistService = persistService;
+    this.executionService = executionService;
+    this.schedulables = schedulables;
     init();
   }
 
   private void init() {
     persistService.start();
+    for (Schedulable schedulable : schedulables) {
+      executionService.schedule(schedulable);
+    }
   }
 
 }

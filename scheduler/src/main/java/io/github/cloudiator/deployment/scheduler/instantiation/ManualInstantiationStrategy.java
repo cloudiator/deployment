@@ -18,23 +18,43 @@ package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import io.github.cloudiator.deployment.domain.Job;
+import com.google.common.util.concurrent.ListenableFuture;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
+import io.github.cloudiator.domain.Node;
+import java.util.Collection;
+import java.util.concurrent.Future;
+import javax.annotation.Nullable;
 
 public class ManualInstantiationStrategy implements InstantiationStrategy {
 
   @Override
-  public boolean supports(Instantiation instantiation) {
-    return instantiation.equals(Instantiation.MANUAL);
+  public Instantiation supports() {
+    return Instantiation.MANUAL;
   }
 
   @Override
-  public void instantiate(Schedule schedule, Job job, String userId) {
+  public Future<Collection<CloudiatorProcess>> deployTask(Task task, TaskInterface taskInterface,
+      Schedule schedule,
+      Collection<ListenableFuture<Node>> allocatedResources, @Nullable Dependencies dependencies) {
+    throw new UnsupportedOperationException(
+        String.format("%s does not support scheduling a single task.", this));
+  }
 
-    checkState(supports(schedule.instantiation()),
-        String.format("%s does not support instantiation %s.", this, schedule.instantiation()));
 
-    //noop
+  @Override
+  public Schedule instantiate(Schedule schedule) {
+
+    checkState(supports().equals(schedule.instantiation()),
+        String
+            .format("%s does not support instantiation type %s.", this, schedule.instantiation()));
+
+    return schedule.setState(ScheduleState.MANUAL);
+
   }
 }

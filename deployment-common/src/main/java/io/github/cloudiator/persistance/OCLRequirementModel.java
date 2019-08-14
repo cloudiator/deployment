@@ -32,8 +32,8 @@ public class OCLRequirementModel extends RequirementModel {
 
   }
 
-  OCLRequirementModel(TaskModel task, String oclConstraint) {
-    super(task);
+  OCLRequirementModel(TaskModel task, JobModel job, String oclConstraint) {
+    super(task, job);
     checkNotNull(oclConstraint, "oclConstraint is null");
     checkArgument(!oclConstraint.isEmpty(), "oclConstraint is empty");
     this.oclConstraint = oclConstraint;

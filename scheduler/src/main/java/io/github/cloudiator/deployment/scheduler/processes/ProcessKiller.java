@@ -17,11 +17,12 @@
 package io.github.cloudiator.deployment.scheduler.processes;
 
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.scheduler.exceptions.ProcessDeletionException;
 
 public interface ProcessKiller {
 
   boolean supports(CloudiatorProcess cloudiatorProcess);
 
-  void kill(CloudiatorProcess cloudiatorProcess);
+  void kill(CloudiatorProcess cloudiatorProcess) throws ProcessDeletionException;
 
 }

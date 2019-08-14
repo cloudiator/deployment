@@ -33,29 +33,26 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
 
   private final Job job;
   private final Task task;
+  private final LanceInterface lanceInterface;
   private static final LanceTaskInterfaceToLifecycleStore LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE = new LanceTaskInterfaceToLifecycleStore();
 
-  public DeployableComponentSupplier(Job job, Task task) {
+  public DeployableComponentSupplier(Job job, Task task, LanceInterface lanceInterface) {
     checkNotNull(job, "job is null");
     checkNotNull(task, "task is null");
 
-    checkArgument(job.tasks().contains(task), "Task %s is not member of job %s.", task, job);
+    checkArgument(job.tasks().contains(task),
+        String.format("Task %s is not member of job %s.", task, job));
 
     this.job = job;
     this.task = task;
-  }
-
-  private LanceInterface lanceInterface() {
-    return task.interfaceOfType(LanceInterface.class);
+    this.lanceInterface = lanceInterface;
   }
 
   @Override
   public DeployableComponent get() {
 
-
     final DeployableComponent.Builder builder = DeployableComponent.Builder
         .createBuilder(task.name(), ComponentId.fromString(job.id() + "/" + task.name()));
-
 
     // add all ingoing ports / provided ports
     for (PortProvided provided : task.providedPorts()) {
@@ -65,11 +62,12 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
 
     // add all outports / required ports
     for (PortRequired required : task.requiredPorts()) {
-      builder.addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(required),
-          PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
+      builder
+          .addOutport(required.name(), ComponentSupplierUtils.portUpdateHandler(lanceInterface),
+              PortProperties.INFINITE_CARDINALITY, ComponentSupplierUtils.deriveMinSinks(required));
     }
 
-    builder.addLifecycleStore(LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE.apply(lanceInterface()));
+    builder.addLifecycleStore(LANCE_TASK_INTERFACE_TO_LIFECYCLE_STORE.apply(lanceInterface));
 
     return builder.build();
 

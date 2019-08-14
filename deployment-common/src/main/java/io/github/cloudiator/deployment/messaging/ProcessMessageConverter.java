@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.messaging;
 
 import com.google.common.base.Strings;
+import com.google.protobuf.util.Timestamps;
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
@@ -24,7 +25,11 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
+import io.github.cloudiator.messaging.IpAddressMessageToIpAddress;
+import java.util.Date;
+import java.util.stream.Collectors;
 import org.cloudiator.messages.entities.ProcessEntities;
+import org.cloudiator.messages.entities.ProcessEntities.NodeCluster;
 import org.cloudiator.messages.entities.ProcessEntities.Process;
 import org.cloudiator.messages.entities.ProcessEntities.Process.Builder;
 import org.cloudiator.messages.entities.ProcessEntities.ProcessState;
@@ -35,6 +40,7 @@ public class ProcessMessageConverter implements
 
   public static final ProcessMessageConverter INSTANCE = new ProcessMessageConverter();
   public static final ProcessStateConverter PROCESS_STATE_CONVERTER = ProcessStateConverter.INSTANCE;
+  private static final IpAddressMessageToIpAddress IP_ADDRESS_CONVERTER = new IpAddressMessageToIpAddress();
 
 
   private ProcessMessageConverter() {
@@ -56,7 +62,8 @@ public class ProcessMessageConverter implements
     } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
       //Spark processes
       final Builder builder = Process.newBuilder()
-          .setNodeGroup(((CloudiatorClusterProcess) cloudiatorProcess).nodeGroup());
+          .setCluster(NodeCluster.newBuilder()
+              .addAllNodes(((CloudiatorClusterProcess) cloudiatorProcess).nodes()).build());
 
       return finishBuilding(cloudiatorProcess, builder);
 
@@ -71,7 +78,16 @@ public class ProcessMessageConverter implements
         .setSchedule(cloudiatorProcess.scheduleId()).setTask(cloudiatorProcess.taskId())
         .setType(ProcessTypeConverter.INSTANCE.applyBack(cloudiatorProcess.type()))
         .setState(PROCESS_STATE_CONVERTER.applyBack(cloudiatorProcess.state()))
+        .setTaskInterface(cloudiatorProcess.taskInterface())
+        .addAllIpAddresses(
+            cloudiatorProcess.ipAddresses().stream().map(IP_ADDRESS_CONVERTER::applyBack).collect(
+                Collectors.toSet()))
+        .setStart(Timestamps.fromMillis(cloudiatorProcess.start().getTime()))
     ;
+
+    if (cloudiatorProcess.originId().isPresent()) {
+      builder.setOriginId(cloudiatorProcess.originId().get());
+    }
 
     if (cloudiatorProcess.reason().isPresent()) {
       builder.setReason(cloudiatorProcess.reason().get());
@@ -79,6 +95,14 @@ public class ProcessMessageConverter implements
 
     if (cloudiatorProcess.diagnostic().isPresent()) {
       builder.setDiagnostic(cloudiatorProcess.diagnostic().get());
+    }
+
+    if (cloudiatorProcess.endpoint().isPresent()) {
+      builder.setEndpoint(cloudiatorProcess.endpoint().get());
+    }
+
+    if (cloudiatorProcess.stop().isPresent()) {
+      builder.setStop(Timestamps.fromMillis(cloudiatorProcess.stop().get().getTime()));
     }
 
     return builder.build();
@@ -92,40 +116,76 @@ public class ProcessMessageConverter implements
         final CloudiatorSingleProcessBuilder cloudiatorSingleProcessBuilder = CloudiatorSingleProcessBuilder
             .create()
             .id(process.getId())
+            .originId(process.getOriginId())
             .userId(process.getUserId())
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
+            .taskInterface(process.getTaskInterface())
             .node(process.getNode())
             .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
-            .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
+            .type(ProcessTypeConverter.INSTANCE.apply(process.getType()))
+            .addAllIpAddresses(
+                process.getIpAddressesList().stream().map(IP_ADDRESS_CONVERTER).collect(
+                    Collectors.toSet()))
+            .start(new Date(Timestamps.toMillis(process.getStart())));
+
+        if (!Strings.isNullOrEmpty(process.getOriginId())) {
+          cloudiatorSingleProcessBuilder.originId(process.getOriginId());
+        }
 
         if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
           cloudiatorSingleProcessBuilder.diagnostic(process.getDiagnostic());
         }
 
-        if (Strings.isNullOrEmpty(process.getReason())) {
+        if (!Strings.isNullOrEmpty(process.getReason())) {
           cloudiatorSingleProcessBuilder.reason(process.getReason());
+        }
+
+        if (!Strings.isNullOrEmpty(process.getEndpoint())) {
+          cloudiatorSingleProcessBuilder.endpoint(process.getEndpoint());
+        }
+
+        if (process.hasStop()) {
+          cloudiatorSingleProcessBuilder.stop(new Date(Timestamps.toMillis(process.getStop())));
         }
 
         return cloudiatorSingleProcessBuilder.build();
 
-      case NODEGROUP:
+      case CLUSTER:
         final CloudiatorClusterProcessBuilder cloudiatorClusterProcessBuilder = CloudiatorClusterProcessBuilder
             .create()
             .id(process.getId())
+            .originId(process.getOriginId())
             .userId(process.getUserId())
             .scheduleId(process.getSchedule())
             .taskName(process.getTask())
-            .nodeGroup(process.getNodeGroup())
+            .taskInterface(process.getTaskInterface())
+            .addAllNodes(process.getCluster().getNodesList())
             .state(PROCESS_STATE_CONVERTER.apply(process.getState()))
-            .type(ProcessTypeConverter.INSTANCE.apply(process.getType()));
+            .type(ProcessTypeConverter.INSTANCE.apply(process.getType()))
+            .addAllIpAddresses(
+                process.getIpAddressesList().stream().map(IP_ADDRESS_CONVERTER).collect(
+                    Collectors.toSet()))
+            .start(new Date(Timestamps.toMillis(process.getStart())));
+
+        if (!Strings.isNullOrEmpty(process.getOriginId())) {
+          cloudiatorClusterProcessBuilder.originId(process.getOriginId());
+        }
 
         if (!Strings.isNullOrEmpty(process.getDiagnostic())) {
           cloudiatorClusterProcessBuilder.diagnostic(process.getDiagnostic());
         }
 
-        if (Strings.isNullOrEmpty(process.getReason())) {
+        if (!Strings.isNullOrEmpty(process.getReason())) {
           cloudiatorClusterProcessBuilder.reason(process.getReason());
+        }
+
+        if (!Strings.isNullOrEmpty(process.getEndpoint())) {
+          cloudiatorClusterProcessBuilder.endpoint(process.getEndpoint());
+        }
+
+        if (process.hasStop()) {
+          cloudiatorClusterProcessBuilder.stop(new Date(Timestamps.toMillis(process.getStop())));
         }
 
         return cloudiatorClusterProcessBuilder.build();
@@ -154,14 +214,12 @@ public class ProcessMessageConverter implements
       switch (processState) {
         case DELETED:
           return ProcessState.PROCESS_STATE_DELETED;
-        case CREATED:
-          return ProcessState.PROCESS_STATE_CREATED;
+        case PENDING:
+          return ProcessState.PROCESS_STATE_PENDING;
         case ERROR:
           return ProcessState.PROCESS_STATE_ERROR;
         case RUNNING:
-          return ProcessState.PROCESS_STATE_FAILED;
-        case FAILED:
-          return ProcessState.PROCESS_STATE_FAILED;
+          return ProcessState.PROCESS_STATE_RUNNING;
         case FINISHED:
           return ProcessState.PROCESS_STATE_FINISHED;
         default:
@@ -172,12 +230,10 @@ public class ProcessMessageConverter implements
     @Override
     public CloudiatorProcess.ProcessState apply(ProcessState processState) {
       switch (processState) {
-        case PROCESS_STATE_FAILED:
-          return CloudiatorProcess.ProcessState.FAILED;
         case PROCESS_STATE_ERROR:
           return CloudiatorProcess.ProcessState.ERROR;
-        case PROCESS_STATE_CREATED:
-          return CloudiatorProcess.ProcessState.CREATED;
+        case PROCESS_STATE_PENDING:
+          return CloudiatorProcess.ProcessState.PENDING;
         case PROCESS_STATE_DELETED:
           return CloudiatorProcess.ProcessState.DELETED;
         case PROCESS_STATE_RUNNING:
@@ -203,6 +259,12 @@ public class ProcessMessageConverter implements
           return ProcessType.LANCE;
         case SPARK:
           return ProcessType.SPARK;
+        case FAAS:
+          return ProcessType.FAAS;
+        case SIMULATION:
+          return ProcessType.SIMULATION;
+        case UNKNOWN:
+          return ProcessType.UNKNOWN;
         default:
           throw new AssertionError("Unknown type: " + type);
       }
@@ -215,6 +277,12 @@ public class ProcessMessageConverter implements
           return Type.SPARK;
         case LANCE:
           return Type.LANCE;
+        case FAAS:
+          return Type.FAAS;
+        case SIMULATION:
+          return Type.SIMULATION;
+        case UNKNOWN:
+          return Type.UNKNOWN;
         case UNRECOGNIZED:
         default:
           throw new AssertionError("Unknown process type: " + processType);

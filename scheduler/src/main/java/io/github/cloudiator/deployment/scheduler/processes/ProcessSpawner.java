@@ -16,18 +16,22 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
+import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.NodeGroup;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.domain.Node;
+import java.util.Set;
 
 
 public interface ProcessSpawner {
 
-  boolean supports(Task task);
+  boolean supports(TaskInterface taskInterface);
 
-  ProcessGroup spawn(String userId, String schedule, Job job, Task task, NodeGroup nodeGroup);
+  CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Node node) throws ProcessSpawningException;
 
-
-
+  CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+      TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException;
 }

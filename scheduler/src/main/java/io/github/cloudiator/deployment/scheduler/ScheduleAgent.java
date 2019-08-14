@@ -20,12 +20,17 @@ import com.google.common.base.MoreObjects;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
+import io.github.cloudiator.deployment.config.DeploymentContext;
+import io.github.cloudiator.deployment.config.DeploymentModule;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteScheduleRequestSubscriber;
-import io.github.cloudiator.deployment.scheduler.messaging.ProcessGroupQuerySubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.NodeEventSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ProcessEventSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ScaleRequestSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ScheduleEventSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleGraphSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScheduleRequestSubscriber;
@@ -45,7 +50,8 @@ public class ScheduleAgent {
   private final static Injector INJECTOR = Guice
       .createInjector(
           new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
-          new SchedulerModule(), new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
+          new SchedulerModule(), new DeploymentModule(new DeploymentContext()),
+          new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
               Configuration.conf())));
 
   public static void main(String[] args) {
@@ -62,9 +68,6 @@ public class ScheduleAgent {
     LOGGER.info(String.format("Starting %s.", ProcessQuerySubscriber.class));
     INJECTOR.getInstance(ProcessQuerySubscriber.class).run();
 
-    LOGGER.info(String.format("Starting %s.", ProcessGroupQuerySubscriber.class));
-    INJECTOR.getInstance(ProcessGroupQuerySubscriber.class).run();
-
     LOGGER.info(String.format("Starting %s.", DeleteProcessRequestSubscriber.class));
     INJECTOR.getInstance(DeleteProcessRequestSubscriber.class).run();
 
@@ -73,6 +76,19 @@ public class ScheduleAgent {
 
     LOGGER.info(String.format("Starting %s.", ScheduleGraphSubscriber.class));
     INJECTOR.getInstance(ScheduleGraphSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", NodeEventSubscriber.class));
+    INJECTOR.getInstance(NodeEventSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", ProcessEventSubscriber.class));
+    INJECTOR.getInstance(ProcessEventSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", ScheduleEventSubscriber.class));
+    INJECTOR.getInstance(ScheduleEventSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", ScaleRequestSubscriber.class));
+    INJECTOR.getInstance(ScaleRequestSubscriber.class).run();
+
 
   }
 

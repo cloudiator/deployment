@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.security;
+package io.github.cloudiator.deployment.domain;
 
-import java.util.concurrent.ExecutionException;
+public interface ServiceBehaviour extends Behaviour {
 
-public class SecureStoreVariableReplacement implements VariableReplacement {
+  boolean restart();
 
-
-
-  @Override
-  public String apply(String s) throws ExecutionException {
-
-
-
-
-    return null;
-  }
 }

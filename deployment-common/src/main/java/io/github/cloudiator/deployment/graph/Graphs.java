@@ -18,9 +18,8 @@ public class Graphs {
     return JobGraph.of(job);
   }
 
-  public static ScheduleGraph scheduleGraph(Schedule schedule, Job job,
-      Set<Node> nodes) {
-    return new ScheduleGraph(schedule, job, nodes);
+  public static ScheduleGraph scheduleGraph(Schedule schedule, Job job) {
+    return new ScheduleGraph(schedule, job);
   }
 
 }

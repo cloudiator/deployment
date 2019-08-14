@@ -19,7 +19,10 @@ package io.github.cloudiator.deployment.lance;
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.messaging.DockerInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.JobConverter;
+import io.github.cloudiator.deployment.messaging.LanceInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
@@ -58,17 +61,33 @@ public class CreateLanceProcessSubscriber implements Runnable {
 
           try {
 
-
             final String userId = content.getUserId();
             final Job job = JOB_CONVERTER.apply(content.getLance().getJob());
             final String task = content.getLance().getTask();
-            final Node node = NODE_TO_NODE_MESSAGE_CONVERTER.applyBack(content.getLance().getNode());
+            final Node node = NODE_TO_NODE_MESSAGE_CONVERTER
+                .applyBack(content.getLance().getNode());
             final String schedule = content.getLance().getSchedule();
+
+            TaskInterface taskInterface;
+            switch (content.getLance().getTaskInterfaceCase()) {
+              case LANCEINTERFACE:
+                taskInterface = LanceInterfaceConverter.INSTANCE
+                    .apply(content.getLance().getLanceInterface());
+                break;
+              case DOCKERINTERFACE:
+                taskInterface = DockerInterfaceConverter.INSTANCE
+                    .apply(content.getLance().getDockerInterface());
+                break;
+              case TASKINTERFACE_NOT_SET:
+              default:
+                throw new AssertionError(
+                    "Illegal TaskInterface " + content.getLance().getTaskInterfaceCase());
+            }
 
             final CloudiatorProcess cloudiatorProcess = createLanceProcessStrategy
                 .execute(userId, schedule, job, job.getTask(task).orElseThrow(
                     () -> new IllegalStateException(
-                        String.format("Job %s does not contain task %s", job, task))), node);
+                        String.format("Job %s does not contain task %s", job, task))), node, taskInterface);
 
             final LanceProcessCreatedResponse lanceProcessCreatedResponse = LanceProcessCreatedResponse
                 .newBuilder()

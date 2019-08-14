@@ -2,16 +2,16 @@ package io.github.cloudiator.deployment.spark;
 
 import com.google.gson.Gson;
 import com.google.inject.Inject;
+import de.uniulm.omi.cloudiator.domain.Identifiable;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
+import io.github.cloudiator.deployment.config.Constants;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
-import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.domain.NodeGroup;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -19,8 +19,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import javax.inject.Named;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
@@ -47,7 +50,7 @@ public class CreateSparkProcessStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateSparkProcessStrategy.class);
 
-  private final NodeToNodeMessageConverter nodeMessageToNodeConverter = NodeToNodeMessageConverter.INSTANCE;
+  private static final NodeToNodeMessageConverter NODE_MESSAGE_CONVERTER = NodeToNodeMessageConverter.INSTANCE;
 
   private static final String SPARK_ARGUMENT_DELIMITER = ",";
 
@@ -58,7 +61,7 @@ public class CreateSparkProcessStrategy {
   private static final int SPARK_DRIVER_CORES = 1;
   private static final String SPARK_DRIVER_MEMORY = "1G";
   private static final int SPARK_EXECUTOR_NUMBER = 1;
-  private static final int  SPARK_EXECUTOR_CORES = 1;
+  private static final int SPARK_EXECUTOR_CORES = 1;
   private static final String SPARK_EXECUTOR_MEMORY = "1G";
 
   private static final String SPARK_PORT_RETRIES = "100";
@@ -71,25 +74,35 @@ public class CreateSparkProcessStrategy {
 
   private InstallationRequestService installationRequestService;
 
+  @Named(Constants.INSTALL_MELODIC_TOOLS)
+  @Inject(optional = true)
+  boolean installMelodicTools = false;
+
   @Inject
   CreateSparkProcessStrategy(InstallationRequestService installationRequestService) {
     this.installationRequestService = installationRequestService;
   }
 
 
-  private void installSparkWorkers(String userId, NodeGroup nodeGroup) {
+  private void installSparkWorkers(String userId, Set<Node> nodes) {
 
-    for (Node node : nodeGroup.getNodes()) {
+    for (Node node : nodes) {
 
       //TODO: trigger sync install request and check if installation was successfull
       LOGGER.debug("Installing Docker and Spark Worker on node: " + node.id());
 
       final Builder builder = Installation.newBuilder()
-          .setNode(nodeMessageToNodeConverter.apply(node))
+          .setNode(NODE_MESSAGE_CONVERTER.apply(node))
           .addTool(Tool.DOCKER)
           .addTool(Tool.SPARK_WORKER);
           //.addTool(Tool.ALLUXIO_CLIENT)
           //.addTool(Tool.DLMS_AGENT);
+
+      if (installMelodicTools) {
+        builder
+            .addTool(Tool.ALLUXIO_CLIENT)
+            .addTool(Tool.DLMS_AGENT);
+      }
 
       final InstallationRequest installationRequest = InstallationRequest.newBuilder()
           .setUserId(userId).setInstallation(builder.build()).build();
@@ -117,16 +130,10 @@ public class CreateSparkProcessStrategy {
   }
 
 
-  private void submitSparkProcessToLivy(Task task) {
+  private void submitSparkProcessToLivy(SparkInterface sparkInterface) {
 
     //find SparkInterface
     LOGGER.debug("Submitting Spark process to Livy Server...");
-    SparkInterface sparkInterface = task.interfaceOfType(SparkInterface.class);
-
-    if (sparkInterface == null) {
-      throw new IllegalStateException(
-          "No SparkInterface in TaskInterface set was found! Aborting Spark Process submission!");
-    }
 
     //execute HTTP POST call to Livy Server
     ResponseHandler<String> handler = new BasicResponseHandler();
@@ -238,7 +245,7 @@ public class CreateSparkProcessStrategy {
 
     if (sparkInterface.sparkArguments().containsKey("driverMemory")) {
       livyBatch.setDriverMemory(sparkInterface.sparkArguments().get("driverMemory"));
-    }else {
+    } else {
       livyBatch.setDriverMemory(SPARK_DRIVER_MEMORY);
     }
 
@@ -246,13 +253,13 @@ public class CreateSparkProcessStrategy {
         && Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")) > 0) {
       livyBatch
           .setDriverCores(Integer.parseInt(sparkInterface.sparkArguments().get("driverCores")));
-    }else {
+    } else {
       livyBatch.setDriverCores(SPARK_DRIVER_CORES);
     }
 
     if (sparkInterface.sparkArguments().containsKey("executorMemory")) {
       livyBatch.setExecutorMemory(sparkInterface.sparkArguments().get("executorMemory"));
-    }else {
+    } else {
       livyBatch.setExecutorMemory(SPARK_EXECUTOR_MEMORY);
     }
 
@@ -260,7 +267,7 @@ public class CreateSparkProcessStrategy {
         && Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")) > 0) {
       livyBatch
           .setExecutorCores(Integer.parseInt(sparkInterface.sparkArguments().get("executorCores")));
-    }else {
+    } else {
       livyBatch.setExecutorCores(SPARK_EXECUTOR_CORES);
     }
 
@@ -268,7 +275,7 @@ public class CreateSparkProcessStrategy {
         && Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")) > 0) {
       livyBatch
           .setNumExecutors(Integer.parseInt(sparkInterface.sparkArguments().get("numExecutors")));
-    }else {
+    } else {
       livyBatch.setNumExecutors(SPARK_EXECUTOR_NUMBER);
     }
 
@@ -295,44 +302,40 @@ public class CreateSparkProcessStrategy {
 
     Map sparkDefaultConfMap = new HashMap<String, String>();
 
-
     /**
      * set default values in Spark configuration
      */
-    if(!livyBatch.getConf().containsKey("spark.port.maxRetries")){
-      sparkDefaultConfMap.put("spark.port.maxRetries",SPARK_PORT_RETRIES);
+    if (!livyBatch.getConf().containsKey("spark.port.maxRetries")) {
+      sparkDefaultConfMap.put("spark.port.maxRetries", SPARK_PORT_RETRIES);
     }
 
-    if(!livyBatch.getConf().containsKey("spark.driver.port")){
-      sparkDefaultConfMap.put("spark.driver.port",SPARK_DRIVER_PORT);
+    if (!livyBatch.getConf().containsKey("spark.driver.port")) {
+      sparkDefaultConfMap.put("spark.driver.port", SPARK_DRIVER_PORT);
     }
 
-    if(!livyBatch.getConf().containsKey("spark.blockManager.port")){
-      sparkDefaultConfMap.put("spark.blockManager.port",SPARK_BLOCKMANAGER_PORT);
+    if (!livyBatch.getConf().containsKey("spark.blockManager.port")) {
+      sparkDefaultConfMap.put("spark.blockManager.port", SPARK_BLOCKMANAGER_PORT);
     }
 
-    if(!livyBatch.getConf().containsKey("spark.broadcast.port")){
-      sparkDefaultConfMap.put("spark.broadcast.port",SPARK_BROADCAST_PORT);
+    if (!livyBatch.getConf().containsKey("spark.broadcast.port")) {
+      sparkDefaultConfMap.put("spark.broadcast.port", SPARK_BROADCAST_PORT);
     }
 
-    if(!livyBatch.getConf().containsKey("spark.executor.port")){
-      sparkDefaultConfMap.put("spark.executor.port",SPARK_EXECUTOR_PORT);
+    if (!livyBatch.getConf().containsKey("spark.executor.port")) {
+      sparkDefaultConfMap.put("spark.executor.port", SPARK_EXECUTOR_PORT);
     }
 
-    if(!livyBatch.getConf().containsKey("spark.fileserver.port")){
-      sparkDefaultConfMap.put("spark.fileserver.port",SPARK_FILESERVER_PORT);
+    if (!livyBatch.getConf().containsKey("spark.fileserver.port")) {
+      sparkDefaultConfMap.put("spark.fileserver.port", SPARK_FILESERVER_PORT);
     }
 
-    if(!livyBatch.getConf().containsKey("spark.replClassServer.port")){
-      sparkDefaultConfMap.put("spark.replClassServer.port",SPARK_REPLCASSSERVER_PORT);
+    if (!livyBatch.getConf().containsKey("spark.replClassServer.port")) {
+      sparkDefaultConfMap.put("spark.replClassServer.port", SPARK_REPLCASSSERVER_PORT);
     }
-
-
 
     Map sparkConfigMap = new HashMap<String, String>();
     sparkConfigMap.putAll(sparkDefaultConfMap);
     sparkConfigMap.putAll(sparkInterface.sparkConfiguration());
-
 
     livyBatch.setConf(sparkConfigMap);
 
@@ -340,20 +343,41 @@ public class CreateSparkProcessStrategy {
   }
 
 
-  public CloudiatorProcess execute(String userId, String schedule, Job job, Task task,
-      NodeGroup nodeGroup) {
+
+  public void executeClusterDeployment(String userId, Set<Node> nodes) {
 
     LOGGER.info(String
-        .format("Creating new CloudiatorProcess for user: %s, schedule %s, task %s on node %s",
-            userId, schedule, task, nodeGroup));
+        .format("Deploying a new Spark cluster for user: %s  on nodes %s",
+            userId, nodes));
 
     try {
 
       LOGGER.debug("Triggering Spark Worker installations...");
-      this.installSparkWorkers(userId, nodeGroup);
+      this.installSparkWorkers(userId, nodes);
 
-      LOGGER.debug("Triggering Spark Process submission to Livy Server installations...");
-      this.submitSparkProcessToLivy(task);
+
+      LOGGER.debug("Successfully deployed Spark cluster!");
+
+
+
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not deploy Spark cluster on nodes " + nodes, e);
+    }
+
+  }
+
+
+  public CloudiatorProcess executeJobSubmission(String userId, String schedule, Task task,
+      SparkInterface sparkInterface,Set<Node> nodes) {
+
+    LOGGER.info(String
+        .format("Submitting new SparkJobSubmission for user: %s, schedule %s, task %s on nodes %s",
+            userId, schedule, task, nodes));
+
+    try {
+
+      LOGGER.debug("Triggering Spark Process submission to Livy Server...");
+      this.submitSparkProcessToLivy(sparkInterface);
 
       //TODO: get Livy Batch ID from Livy Server as soon as this is fixed in Livy or YARN is enabled
       //using temporary UUID meanwhile
@@ -361,16 +385,20 @@ public class CreateSparkProcessStrategy {
       String temporarySparkProcessUid = uuid.toString();
 
       return CloudiatorClusterProcessBuilder.create().id(temporarySparkProcessUid)
+          .originId(temporarySparkProcessUid)
           .userId(userId)
           .type(Type.SPARK)
-          .state(ProcessState.CREATED)
-          .nodeGroup(nodeGroup.id())
-          .taskName(task.name()).scheduleId(schedule).build();
+          .taskInterface(SparkInterface.class.getCanonicalName())
+          .state(ProcessState.RUNNING)
+          .addAllNodes(nodes.stream().map(Identifiable::id).collect(Collectors.toList()))
+          .taskName(task.name()).scheduleId(schedule).startNow().build();
 
     } catch (Exception e) {
       throw new IllegalStateException("Could not deploy task " + task, e);
     }
 
   }
+
+
 
 }

@@ -16,13 +16,71 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
-import io.github.cloudiator.deployment.domain.Job;
+import com.google.common.util.concurrent.ListenableFuture;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph.Dependencies;
+import io.github.cloudiator.domain.Node;
+import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import javax.annotation.Nullable;
 
 public interface InstantiationStrategy {
 
-  boolean supports(Instantiation instantiation);
+  class WaitLockImpl<T> implements Future<T> {
 
-  void instantiate(Schedule schedule, Job job, String userId) throws InstantiationException;
+    private final CountDownLatch countDownLatch;
+    private final T t;
+
+    public WaitLockImpl(CountDownLatch countDownLatch, T t) {
+      this.countDownLatch = countDownLatch;
+      this.t = t;
+    }
+
+    @Override
+    public boolean cancel(boolean b) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return countDownLatch.getCount() == 0;
+    }
+
+    @Override
+    public T get() throws InterruptedException {
+      countDownLatch.await();
+      return t;
+    }
+
+    @Override
+    public T get(long l, TimeUnit timeUnit)
+        throws InterruptedException, TimeoutException {
+      final boolean await = countDownLatch.await(l, timeUnit);
+      if (!await) {
+        throw new TimeoutException();
+      }
+      return t;
+    }
+  }
+
+  Instantiation supports();
+
+  Future<Collection<CloudiatorProcess>> deployTask(Task task, TaskInterface taskInterface,
+      Schedule schedule,
+      Collection<ListenableFuture<Node>> allocatedResources,
+      @Nullable Dependencies dependencies);
+
+  Schedule instantiate(Schedule schedule) throws InstantiationException;
 }

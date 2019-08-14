@@ -18,7 +18,6 @@ package io.github.cloudiator.persistance;
 
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
-import javax.persistence.Lob;
 import javax.persistence.OneToOne;
 
 /**
@@ -31,9 +30,7 @@ class PortRequiredModel extends PortModel {
 
   private @OneToOne(mappedBy = "requiredPort")
   CommunicationModel requiredCommunication;
-  private @Nullable
-  @Lob
-  String updateAction;
+
   private Boolean isMandatory;
 
   /**
@@ -42,11 +39,10 @@ class PortRequiredModel extends PortModel {
   protected PortRequiredModel() {
   }
 
-  public PortRequiredModel(String name, TaskModel taskModel, @Nullable String updateAction,
+  public PortRequiredModel(String name, TaskModel taskModel,
       @Nullable Boolean isMandatory) {
     super(name, taskModel);
 
-    this.updateAction = updateAction;
     if (isMandatory == null) {
       this.isMandatory = DEFAULT_MANDATORY;
     } else {
@@ -56,11 +52,6 @@ class PortRequiredModel extends PortModel {
 
   public CommunicationModel getRequiredCommunication() {
     return requiredCommunication;
-  }
-
-  @Nullable
-  public String getUpdateAction() {
-    return updateAction;
   }
 
   public Boolean getMandatory() {

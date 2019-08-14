@@ -16,15 +16,18 @@
 
 package io.github.cloudiator.deployment.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
+import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ScheduleImpl implements Schedule {
 
@@ -33,23 +36,33 @@ public class ScheduleImpl implements Schedule {
   private final String job;
   private final Set<CloudiatorProcess> processes;
   private final Instantiation instantiation;
+  private ScheduleState scheduleState;
 
   private ScheduleImpl(String id, String userId, String job,
-      Instantiation instantiation) {
+      Instantiation instantiation, ScheduleState scheduleState) {
+
+    checkNotNull(id, "id is null");
+    checkNotNull(userId, "userId is null");
+    checkNotNull(job, "job is null");
+    checkNotNull(instantiation, "instantiation is null");
+    checkNotNull(scheduleState, "scheduleState is null");
+
     this.id = id;
     this.job = job;
     this.userId = userId;
     this.instantiation = instantiation;
     this.processes = new HashSet<>();
+    this.scheduleState = scheduleState;
   }
 
-  public static Schedule create(Job job, Instantiation instantiation) {
-    return new ScheduleImpl(UUID.randomUUID().toString(), job.userId(), job.id(), instantiation);
+  public static Schedule init(Job job, Instantiation instantiation) {
+    return new ScheduleImpl(UUID.randomUUID().toString(), job.userId(), job.id(), instantiation,
+        ScheduleState.PENDING);
   }
 
-  public static Schedule create(String id, String userId, String jobId,
-      Instantiation instantiation) {
-    return new ScheduleImpl(id, userId, jobId, instantiation);
+  public static Schedule of(String id, String userId, String jobId,
+      Instantiation instantiation, ScheduleState scheduleState) {
+    return new ScheduleImpl(id, userId, jobId, instantiation, scheduleState);
   }
 
   @Override
@@ -85,21 +98,60 @@ public class ScheduleImpl implements Schedule {
   }
 
   @Override
-  public Set<CloudiatorProcess> targets(CloudiatorProcess cloudiatorProcess, Job job) {
+  public ScheduleState state() {
+    return scheduleState;
+  }
 
-    //todo: implement
+  @Override
+  public Schedule setState(ScheduleState scheduleState) {
+    this.scheduleState = scheduleState;
+    return this;
+  }
 
-    checkNotNull(cloudiatorProcess, "cloudiatorProcess is null");
-    checkNotNull(job, "job is null");
+  @Override
+  public boolean runsOnNode(Node node) {
 
-    checkArgument(job().equals(job.id()),
-        String.format("job %s does not match job id %s", job, job()));
+    for (CloudiatorProcess cloudiatorProcess : processes) {
+      if (cloudiatorProcess.nodes().contains(node.id())) {
+        return true;
+      }
+    }
 
-    final Task task = job.getTask(cloudiatorProcess.taskId())
-        .orElseThrow(() -> new IllegalStateException(
-            String.format("job %s does not contain task %s", job, cloudiatorProcess.taskId())));
+    return false;
+  }
 
-    return null;
+  @Override
+  public Task getTask(CloudiatorProcess cloudiatorProcess, Job job) {
+
+    return job.getTask(cloudiatorProcess.taskId()).orElseThrow(() -> new IllegalArgumentException(
+        String.format("Job %s does not contain the task the process %s is referencing.", job,
+            cloudiatorProcess)));
+
+  }
+
+  @Override
+  public Set<CloudiatorProcess> processesForTask(Task task) {
+    return processes.stream().filter(
+        cloudiatorProcess -> cloudiatorProcess.taskId().equals(task.name()))
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public Set<CloudiatorProcess> processesForNode(Node node) {
+
+    Set<CloudiatorProcess> processesForNode = new HashSet<>();
+    for (CloudiatorProcess cloudiatorProcess : processes) {
+      if (cloudiatorProcess.nodes().contains(node.id())) {
+        processesForNode.add(cloudiatorProcess);
+      }
+    }
+    return ImmutableSet.copyOf(processesForNode);
+  }
+
+  @Override
+  public Set<String> nodes() {
+    return processes().stream().flatMap(
+        (Function<CloudiatorProcess, Stream<String>>) cloudiatorProcess -> cloudiatorProcess.nodes().stream()).collect(Collectors.toSet());
   }
 
   @Override

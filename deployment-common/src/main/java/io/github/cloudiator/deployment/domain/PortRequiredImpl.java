@@ -16,33 +16,17 @@
 
 package io.github.cloudiator.deployment.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.base.MoreObjects.ToStringHelper;
 import java.util.Objects;
-import java.util.Optional;
-import javax.annotation.Nullable;
 
 class PortRequiredImpl extends PortImpl implements PortRequired {
 
-  @Nullable
-  private final String updateAction;
   private final boolean isMandatory;
 
-  PortRequiredImpl(String name, @Nullable String updateAction, boolean isMandatory) {
+  PortRequiredImpl(String name, boolean isMandatory) {
     super(name);
 
-    if (updateAction != null) {
-      checkArgument(!updateAction.isEmpty(), "updateAction is empty");
-    }
-
-    this.updateAction = updateAction;
     this.isMandatory = isMandatory;
-  }
-
-  @Override
-  public Optional<String> updateAction() {
-    return Optional.ofNullable(updateAction);
   }
 
   @Override
@@ -62,18 +46,17 @@ class PortRequiredImpl extends PortImpl implements PortRequired {
       return false;
     }
     PortRequiredImpl that = (PortRequiredImpl) o;
-    return isMandatory == that.isMandatory &&
-        Objects.equals(updateAction, that.updateAction);
+    return isMandatory == that.isMandatory;
   }
 
   @Override
   public int hashCode() {
 
-    return Objects.hash(super.hashCode(), updateAction, isMandatory);
+    return Objects.hash(super.hashCode(), isMandatory);
   }
 
   @Override
   protected ToStringHelper toStringHelper() {
-    return super.toStringHelper().add("updateAction", updateAction).add("isMandatory", isMandatory);
+    return super.toStringHelper().add("isMandatory", isMandatory);
   }
 }

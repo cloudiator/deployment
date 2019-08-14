@@ -1,10 +1,13 @@
 package io.github.cloudiator.deployment.domain;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
-import java.util.Objects;
+import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -13,50 +16,28 @@ import javax.annotation.Nullable;
 public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implements
     CloudiatorClusterProcess {
 
-  private final String nodeGroup;
+  private final Set<String> nodes;
 
 
-  CloudiatorClusterProcessImpl(String id, String userId, String scheduleId, String taskName,
-      CloudiatorProcess.ProcessState state, Type type, String nodeGroup,
-      @Nullable String diagnostic, @Nullable String reason) {
-    super(id, userId, scheduleId, taskName, state, type, diagnostic, reason);
+  CloudiatorClusterProcessImpl(String id, @Nullable String originId, String userId,
+      String scheduleId, String taskName, String lifecycleInterface,
+      CloudiatorProcess.ProcessState state, Type type, Set<String> nodes,
+      @Nullable String diagnostic, @Nullable String reason, @Nullable String endpoint,
+      Set<IpAddress> ipAddresses, Date start, @Nullable Date stop) {
+    super(id, originId, userId, scheduleId, taskName, lifecycleInterface, state, type, diagnostic,
+        reason, endpoint, ipAddresses, start, stop);
 
-    checkNotNull(nodeGroup, "nodeGroup is null");
-    checkArgument(!nodeGroup.isEmpty(), "nodeGroup is empty");
-    this.nodeGroup = nodeGroup;
-  }
-
-
-  @Override
-  public String nodeGroup() {
-    return nodeGroup;
-  }
-
-  @Override
-  public int hashCode() {
-
-    return Objects.hash(id, userId, scheduleId, taskName, nodeGroup);
-  }
-
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CloudiatorClusterProcessImpl that = (CloudiatorClusterProcessImpl) o;
-    return Objects.equals(id, that.id) &&
-        Objects.equals(userId, that.userId) &&
-        Objects.equals(scheduleId, that.scheduleId) &&
-        Objects.equals(taskName, that.taskName) &&
-        Objects.equals(nodeGroup, that.nodeGroup);
+    checkNotNull(nodes, "nodes is null");
+    this.nodes = new HashSet<>(nodes);
   }
 
   @Override
   protected ToStringHelper stringHelper() {
-    return super.stringHelper().add("nodeGroup", nodeGroup);
+    return super.stringHelper().add("nodes", nodes);
+  }
+
+  @Override
+  public Set<String> nodes() {
+    return ImmutableSet.copyOf(nodes);
   }
 }

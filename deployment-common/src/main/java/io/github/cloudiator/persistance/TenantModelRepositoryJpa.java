@@ -59,7 +59,6 @@ class TenantModelRepositoryJpa extends BaseModelRepositoryJpa<TenantModel> imple
       return byUserId;
     }
     TenantModel tenant = new TenantModel(userId);
-    save(tenant);
-    return tenant;
+    return save(tenant);
   }
 }

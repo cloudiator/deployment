@@ -20,17 +20,16 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Port;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
-import javax.annotation.Nullable;
 import org.cloudiator.matchmaking.domain.Requirement;
 
 class TaskDomainRepository {
 
   private final TaskModelRepository taskModelRepository;
-  private static final TaskModelConverter TASK_MODEL_CONVERTER = TaskModelConverter.INSTANCE;
   private final PortDomainRepository portDomainRepository;
   private final TaskInterfaceDomainRepository taskInterfaceDomainRepository;
   private final RequirementDomainRepository requirementDomainRepository;
   private final OptimizationDomainRepository optimizationDomainRepository;
+  private final BehaviourDomainRepository behaviourDomainRepository;
 
   @Inject
   public TaskDomainRepository(
@@ -38,12 +37,14 @@ class TaskDomainRepository {
       PortDomainRepository portDomainRepository,
       TaskInterfaceDomainRepository taskInterfaceDomainRepository,
       RequirementDomainRepository requirementDomainRepository,
-      OptimizationDomainRepository optimizationDomainRepository) {
+      OptimizationDomainRepository optimizationDomainRepository,
+      BehaviourDomainRepository behaviourDomainRepository) {
     this.taskModelRepository = taskModelRepository;
     this.portDomainRepository = portDomainRepository;
     this.taskInterfaceDomainRepository = taskInterfaceDomainRepository;
     this.requirementDomainRepository = requirementDomainRepository;
     this.optimizationDomainRepository = optimizationDomainRepository;
+    this.behaviourDomainRepository = behaviourDomainRepository;
   }
 
   void save(Task domain, JobModel jobModel) {
@@ -64,7 +65,10 @@ class TaskDomainRepository {
           .saveAndGet(domain.optimization().get());
     }
 
-    final TaskModel taskModel = new TaskModel(domain.name(), jobModel, optimizationModel);
+    BehaviourModel behaviourModel = behaviourDomainRepository.saveAndGet(domain.behaviour());
+
+    final TaskModel taskModel = new TaskModel(domain.name(), jobModel, optimizationModel,
+        behaviourModel);
     taskModelRepository.save(taskModel);
 
     for (Port port : domain.ports()) {
@@ -77,7 +81,7 @@ class TaskDomainRepository {
     }
 
     for (Requirement requirement : domain.requirements()) {
-      requirementDomainRepository.saveAndGet(requirement, taskModel);
+      requirementDomainRepository.saveAndGet(requirement, taskModel, null);
     }
 
     return taskModel;

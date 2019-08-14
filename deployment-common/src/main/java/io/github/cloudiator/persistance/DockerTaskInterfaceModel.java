@@ -35,14 +35,18 @@ public class DockerTaskInterfaceModel extends TaskInterfaceModel {
   @ElementCollection
   private Map<String, String> environmentMap = new HashMap<>();
 
+  @Nullable
+  private String portUpdateAction;
+
   public DockerTaskInterfaceModel(TaskModel taskModel, String dockerImage,
-      Map<String, String> environmentMap) {
+      Map<String, String> environmentMap, @Nullable String portUpdateAction) {
     super(taskModel);
 
     checkNotNull(dockerImage, "DockerImage is null");
 
     this.dockerImage = dockerImage;
     this.environmentMap = environmentMap;
+    this.portUpdateAction = portUpdateAction;
   }
 
   public String getDockerImage() {
@@ -71,5 +75,10 @@ public class DockerTaskInterfaceModel extends TaskInterfaceModel {
     checkNotNull(value, "value is null");
     environmentMap.put(key, value);
     return this;
+  }
+
+  @Nullable
+  public String getPortUpdateAction() {
+    return portUpdateAction;
   }
 }

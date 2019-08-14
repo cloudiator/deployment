@@ -3,6 +3,8 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
+import io.github.cloudiator.deployment.security.VariableContext;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,10 +18,12 @@ public class SparkInterfaceImpl implements SparkInterface {
   private final List<String> arguments;
   private final Map<String, String> sparkArguments;
   private final Map<String, String> sparkConfiguration;
+  private final ProcessMapping processMapping;
 
   public SparkInterfaceImpl(String file, @Nullable String className,
       List<String> arguments, Map<String, String> sparkArguments,
-      Map<String, String> sparkConfiguration) {
+      Map<String, String> sparkConfiguration,
+      ProcessMapping processMapping) {
 
     checkNotNull(file, "file is null");
     checkArgument(!file.isEmpty(), "file is empty");
@@ -35,6 +39,10 @@ public class SparkInterfaceImpl implements SparkInterface {
     this.sparkArguments = sparkArguments;
     checkNotNull(sparkConfiguration, "sparkConfiguration is null");
     this.sparkConfiguration = sparkConfiguration;
+
+    checkNotNull(processMapping, "processMapping is null");
+    this.processMapping = processMapping;
+
   }
 
 
@@ -61,5 +69,45 @@ public class SparkInterfaceImpl implements SparkInterface {
   @Override
   public Map<String, String> sparkConfiguration() {
     return sparkConfiguration;
+  }
+
+  @Override
+  public ProcessMapping processMapping() {
+    return processMapping;
+  }
+
+  @Override
+  public boolean isStaticallyConfigured() {
+    return true;
+  }
+
+  @Override
+  public boolean requiresManualWait(TaskInterface dependency) {
+    return true;
+  }
+
+  @Override
+  public TaskInterface decorateEnvironment(Environment environment) {
+
+    final SparkInterfaceBuilder sparkInterfaceBuilder = SparkInterfaceBuilder.of(this);
+    environment.forEach((key, value) -> {
+      sparkInterfaceBuilder.addArgument("--" + key);
+      sparkInterfaceBuilder.addArgument(value);
+    });
+
+    return sparkInterfaceBuilder.build();
+  }
+
+  @Override
+  public TaskInterface decorateVariables(VariableContext variableContext) {
+    return SparkInterfaceBuilder.of(this).decorate(variableContext).build();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("file", file).add("className", className)
+        .add("arguments", arguments).add("sparkArguments", sparkArguments)
+        .add("sparkConfiguration", sparkConfiguration).add("processMapping", processMapping)
+        .toString();
   }
 }

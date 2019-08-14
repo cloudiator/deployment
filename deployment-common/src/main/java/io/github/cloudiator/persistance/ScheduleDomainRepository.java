@@ -18,8 +18,10 @@ package io.github.cloudiator.persistance;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Schedule;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,8 +55,14 @@ public class ScheduleDomainRepository {
         .apply(scheduleModelRepository.findByIdAndUser(scheduleId, userId));
   }
 
-  public void save(Schedule domain) {
-    saveAndGet(domain);
+  @Nullable
+  public Schedule findByProcess(CloudiatorProcess cloudiatorProcess) {
+    return SCHEDULE_MODEL_CONVERTER.apply(scheduleModelRepository
+        .findByProcessAndUser(cloudiatorProcess.id(), cloudiatorProcess.userId()));
+  }
+
+  public Schedule save(Schedule domain) {
+    return SCHEDULE_MODEL_CONVERTER.apply(saveAndGet(domain));
   }
 
   public void delete(Schedule domain, String userId) {
@@ -70,19 +78,37 @@ public class ScheduleDomainRepository {
   }
 
   ScheduleModel saveAndGet(Schedule domain) {
-    return createScheduleModel(domain);
+
+    //check if exists
+    ScheduleModel scheduleModel = scheduleModelRepository
+        .findByIdAndUser(domain.id(), domain.userId());
+
+    if (scheduleModel == null) {
+      scheduleModel = createScheduleModel(domain);
+    } else {
+      scheduleModel = updateScheduleModel(domain, scheduleModel);
+    }
+
+    scheduleModelRepository.save(scheduleModel);
+
+    return scheduleModel;
+  }
+
+  private ScheduleModel updateScheduleModel(Schedule domain, ScheduleModel scheduleModel) {
+
+    checkState(domain.id().equals(scheduleModel.domainId()), "Domain ids are not equal");
+
+    scheduleModel.setState(domain.state());
+
+    return scheduleModel;
   }
 
   private ScheduleModel createScheduleModel(Schedule domain) {
 
     final TenantModel tenantModel = tenantModelRepository.createOrGet(domain.userId());
 
-    final ScheduleModel scheduleModel = new ScheduleModel(domain.id(), tenantModel, domain.job(),
-        domain.instantiation());
-
-    scheduleModelRepository.save(scheduleModel);
-
-    return scheduleModel;
+    return new ScheduleModel(domain.id(), tenantModel, domain.job(),
+        domain.instantiation(), domain.state());
   }
 
 }

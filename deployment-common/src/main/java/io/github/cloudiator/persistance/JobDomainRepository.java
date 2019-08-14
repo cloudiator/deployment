@@ -23,12 +23,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 public class JobDomainRepository {
 
   private final JobModelRepository jobModelRepository;
   private final TaskDomainRepository taskDomainRepository;
   private final TenantModelRepository tenantModelRepository;
+  private final RequirementDomainRepository requirementDomainRepository;
+  private final OptimizationDomainRepository optimizationDomainRepository;
 
   private final CommunicationDomainRepository communicationDomainRepository;
   private static final JobModelConverter JOB_MODEL_CONVERTER = JobModelConverter.INSTANCE;
@@ -38,10 +41,14 @@ public class JobDomainRepository {
       JobModelRepository jobModelRepository,
       TaskDomainRepository taskDomainRepository,
       TenantModelRepository tenantModelRepository,
+      RequirementDomainRepository requirementDomainRepository,
+      OptimizationDomainRepository optimizationDomainRepository,
       CommunicationDomainRepository communicationDomainRepository) {
     this.jobModelRepository = jobModelRepository;
     this.taskDomainRepository = taskDomainRepository;
     this.tenantModelRepository = tenantModelRepository;
+    this.requirementDomainRepository = requirementDomainRepository;
+    this.optimizationDomainRepository = optimizationDomainRepository;
     this.communicationDomainRepository = communicationDomainRepository;
   }
 
@@ -82,6 +89,18 @@ public class JobDomainRepository {
     //create all communications
     for (Communication communication : domain.communications()) {
       communicationDomainRepository.save(communication, jobModel);
+    }
+
+    //create optimization model
+    OptimizationModel optimizationModel = null;
+    if (domain.optimization().isPresent()) {
+      optimizationModel = optimizationDomainRepository
+          .saveAndGet(domain.optimization().get());
+    }
+
+    //create all requirements
+    for (Requirement requirement : domain.requirements()) {
+      requirementDomainRepository.saveAndGet(requirement, null, jobModel);
     }
 
     return jobModel;

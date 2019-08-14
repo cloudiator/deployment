@@ -17,11 +17,14 @@
 package io.github.cloudiator.deployment.domain;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface DockerInterface extends TaskInterface {
 
   String dockerImage();
 
   Map<String, String> environment();
+
+  Optional<String> portUpdateAction();
 
 }

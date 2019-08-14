@@ -74,7 +74,8 @@ public class JobAddedSubscriber implements Runnable {
         Job job = JobBuilder.newBuilder().generateId().name(jobNew.name())
             .userId(createJobRequest.getUserId())
             .addCommunications(jobNew.communications())
-            .addTasks(jobNew.tasks()).build();
+            .addTasks(jobNew.tasks()).addRequirements(jobNew.requirements())
+            .optimization(jobNew.optimization().orElse(null)).build();
 
         try {
           modelValidationService.validate(job);
@@ -86,6 +87,9 @@ public class JobAddedSubscriber implements Runnable {
         }
 
         persistJob(job);
+
+        LOGGER
+            .info(String.format("User %s created new job %s.", createJobRequest.getUserId(), job));
 
         final JobCreatedResponse jobCreatedResponse = JobCreatedResponse.newBuilder()
             .setJob(JOB_CONVERTER.applyBack(job)).build();

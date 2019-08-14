@@ -23,47 +23,28 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
-import io.github.cloudiator.deployment.domain.ProcessGroup;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 public class ProcessDomainRepository {
 
   private final ProcessModelRepository processModelRepository;
   private final ScheduleModelRepository scheduleModelRepository;
   private static final ProcessModelConverter PROCESS_MODEL_CONVERTER = ProcessModelConverter.INSTANCE;
-  private static final ProcessGroupConverter PROCESS_GROUP_CONVERTER = new ProcessGroupConverter();
-  private final ProcessGroupModelRepository processGroupModelRepository;
+  private final IpAddressDomainRepository ipAddressDomainRepository;
+  private final IpGroupModelRepository ipGroupModelRepository;
 
   @Inject
   ProcessDomainRepository(
       ProcessModelRepository processModelRepository,
       ScheduleModelRepository scheduleModelRepository,
-      ProcessGroupModelRepository processGroupModelRepository) {
+      IpAddressDomainRepository ipAddressDomainRepository,
+      IpGroupModelRepository ipGroupModelRepository) {
     this.processModelRepository = processModelRepository;
     this.scheduleModelRepository = scheduleModelRepository;
-    this.processGroupModelRepository = processGroupModelRepository;
-
-  }
-
-  public void save(ProcessGroup processGroup) {
-    checkNotNull(processGroup, "processGroup is null");
-
-    final ScheduleModel scheduleModel = getScheduleModel(processGroup.scheduleId(),
-        processGroup.userId());
-
-    final ProcessGroupModel processGroupModel = new ProcessGroupModel(processGroup.id(),
-        scheduleModel);
-    processGroupModelRepository.save(processGroupModel);
-
-    for (CloudiatorProcess cloudiatorProcess : processGroup.cloudiatorProcesses()) {
-      final ProcessModel processModel = saveAndGet(cloudiatorProcess);
-      processGroupModel.addProcess(processModel);
-      processModel.assignGroup(processGroupModel);
-      processModelRepository.save(processModel);
-    }
-
-    processGroupModelRepository.save(processGroupModel);
+    this.ipAddressDomainRepository = ipAddressDomainRepository;
+    this.ipGroupModelRepository = ipGroupModelRepository;
   }
 
   public void delete(String processId, String userId) {
@@ -95,15 +76,14 @@ public class ProcessDomainRepository {
         Collectors.toList());
   }
 
-  /*
-  void save(CloudiatorProcess domain, ScheduleModel scheduleModel, ProcessGroupModel processGroupModel ) {
-    saveAndGet(domain, scheduleModel, processGroupModel);
+  public List<CloudiatorProcess> getAll() {
+    return processModelRepository.findAll().stream().map(PROCESS_MODEL_CONVERTER).collect(
+        Collectors.toList());
   }
-  */
 
-  public void save(CloudiatorProcess domain) {
+  public CloudiatorProcess save(CloudiatorProcess domain) {
     checkNotNull(domain, "domain is null");
-    saveAndGet(domain);
+    return PROCESS_MODEL_CONVERTER.apply(saveAndGet(domain));
   }
 
 
@@ -139,10 +119,32 @@ public class ProcessDomainRepository {
     checkState(processModel.getDomainId().equals(domain.id()), "domain id is not equal");
 
     processModel.setState(domain.state());
+    processModel.setOriginId(domain.originId().orElse(null));
+    processModel.setDiagnostic(domain.diagnostic().orElse(null));
+    processModel.setType(domain.type());
+    processModel.setIpGroupModel(generateIpModel(domain));
+    processModel.setEndpoint(domain.endpoint().orElse(null));
+    processModel.setStart(processModel.getStart());
+    processModel.setStop(processModel.getStop());
+
+    if (processModel instanceof ProcessClusterModel) {
+      ((ProcessClusterModel) processModel).setNodes(domain.nodes());
+    }
 
     return processModel;
 
   }
+
+  @Nullable
+  private IpGroupModel generateIpModel(CloudiatorProcess domain) {
+    IpGroupModel ipGroupModel = null;
+    if (!domain.ipAddresses().isEmpty()) {
+      ipGroupModel = ipAddressDomainRepository.saveAndGet(domain.ipAddresses());
+      ipGroupModelRepository.save(ipGroupModel);
+    }
+    return ipGroupModel;
+  }
+
 
   private ProcessModel createProcessModel(CloudiatorProcess domain) {
 
@@ -153,35 +155,28 @@ public class ProcessDomainRepository {
 
     if (domain instanceof CloudiatorSingleProcess) {
 
-      return new ProcessModel(domain.id(), scheduleModel,
-          domain.taskId(),
-          ((CloudiatorSingleProcess) domain).node(),
-          null, domain.state(), domain.type(), null);
+      return new ProcessSingleModel(domain.id(), domain.originId().orElse(null), scheduleModel,
+          domain.taskId(), domain.taskInterface(), domain.state(),
+          domain.type(), ((CloudiatorSingleProcess) domain).node(),
+          domain.diagnostic().orElse(null), domain.reason().orElse(null),
+          domain.endpoint().orElse(null), generateIpModel(domain), domain.start(),
+          domain.stop().orElse(null));
 
     } else if (domain instanceof CloudiatorClusterProcess) {
 
-      return new ProcessModel(domain.id(), scheduleModel,
-          domain.taskId(), null,
-          ((CloudiatorClusterProcess) domain).nodeGroup(), domain.state(), domain.type(),
-          null);
+      return new ProcessClusterModel(domain.id(), domain.originId().orElse(null), scheduleModel,
+          domain.taskId(), domain.taskInterface(), domain.state(),
+          domain.type(), domain.nodes(),
+          domain.diagnostic().orElse(null), domain.reason().orElse(null),
+          domain.endpoint().orElse(null), generateIpModel(domain), domain.start(),
+          domain.stop().orElse(null));
+
     } else {
-      throw new IllegalStateException(
+      throw new AssertionError(
           "Unknown CloudiatorProcess interface for persisting CloudiatorProcess: " + domain
               .getClass().getName());
     }
 
 
   }
-
-  public List<ProcessGroup> findGroupsByTenant(String userId) {
-    return processGroupModelRepository.findByTenant(userId).stream().map(PROCESS_GROUP_CONVERTER)
-        .collect(Collectors.toList());
-  }
-
-  public ProcessGroup findGroupByTenantAndId(String userId, String processGroupId) {
-    return PROCESS_GROUP_CONVERTER
-        .apply(processGroupModelRepository.findByTenantAndDomainId(userId, processGroupId));
-  }
-
-
 }

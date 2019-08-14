@@ -16,9 +16,21 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import io.github.cloudiator.deployment.security.VariableContext;
+
 /**
  * Created by daniel on 13.02.17.
  */
 public interface TaskInterface {
+
+  ProcessMapping processMapping();
+
+  boolean isStaticallyConfigured();
+
+  boolean requiresManualWait(TaskInterface dependency);
+
+  TaskInterface decorateEnvironment(Environment environment);
+
+  TaskInterface decorateVariables(VariableContext variableContext);
 
 }

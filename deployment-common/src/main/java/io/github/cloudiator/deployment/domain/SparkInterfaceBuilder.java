@@ -3,6 +3,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Lists;
+import io.github.cloudiator.deployment.security.VariableContext;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +16,7 @@ public class SparkInterfaceBuilder {
   private List<String> arguments;
   private Map<String, String> sparkArguments;
   private Map<String, String> sparkConfiguration;
+  private ProcessMapping processMapping;
 
   private SparkInterfaceBuilder() {
     arguments = new LinkedList<>();
@@ -22,8 +24,21 @@ public class SparkInterfaceBuilder {
     sparkConfiguration = new HashMap<>();
   }
 
+  private SparkInterfaceBuilder(SparkInterface sparkInterface) {
+    file = sparkInterface.file();
+    className = sparkInterface.className().orElse(null);
+    arguments = new LinkedList<>(sparkInterface.arguments());
+    sparkArguments = new HashMap<>(sparkInterface.sparkArguments());
+    sparkConfiguration = new HashMap<>(sparkInterface.sparkConfiguration());
+    processMapping = sparkInterface.processMapping();
+  }
+
   public static SparkInterfaceBuilder newBuilder() {
     return new SparkInterfaceBuilder();
+  }
+
+  public static SparkInterfaceBuilder of(SparkInterface sparkInterface) {
+    return new SparkInterfaceBuilder(sparkInterface);
   }
 
   public SparkInterfaceBuilder file(String file) {
@@ -71,9 +86,24 @@ public class SparkInterfaceBuilder {
     return this;
   }
 
+  public SparkInterfaceBuilder processMapping(ProcessMapping processMapping) {
+    this.processMapping = processMapping;
+    return this;
+  }
+
+  public SparkInterfaceBuilder decorate(VariableContext variableContext) {
+
+    arguments.replaceAll(variableContext::parse);
+    sparkArguments.replaceAll((k, v) -> variableContext.parse(v));
+    sparkConfiguration.replaceAll((k, v) -> variableContext.parse(v));
+
+    return this;
+  }
+
 
   public SparkInterface build() {
-    return new SparkInterfaceImpl(file, className, arguments, sparkArguments, sparkConfiguration);
+    return new SparkInterfaceImpl(file, className, arguments, sparkArguments, sparkConfiguration,
+        processMapping);
   }
 
 

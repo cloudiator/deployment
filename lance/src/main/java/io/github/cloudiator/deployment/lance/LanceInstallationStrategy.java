@@ -18,9 +18,11 @@ package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerType;
+import io.github.cloudiator.deployment.config.Constants;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import java.util.concurrent.ExecutionException;
+import javax.inject.Named;
 import org.cloudiator.messages.Installation.InstallationRequest;
 import org.cloudiator.messages.Installation.InstallationResponse;
 import org.cloudiator.messages.InstallationEntities.Installation;
@@ -33,6 +35,10 @@ public class LanceInstallationStrategy {
 
   private final InstallationRequestService installationRequestService;
   private static final NodeToNodeMessageConverter nodeToNodeMessageConverter = NodeToNodeMessageConverter.INSTANCE;
+
+  @Named(Constants.INSTALL_MELODIC_TOOLS)
+  @Inject(optional = true)
+  boolean installMelodicTools = false;
 
   @Inject
   public LanceInstallationStrategy(
@@ -50,6 +56,13 @@ public class LanceInstallationStrategy {
         .equals(containerType)) {
       builder.addTool(Tool.DOCKER);
     }
+    //install Melodic specific tools
+    if(installMelodicTools){
+      builder
+          .addTool(Tool.ALLUXIO_CLIENT)
+          .addTool(Tool.DLMS_AGENT);
+    }
+
     doExecute(builder, userId);
   }
 

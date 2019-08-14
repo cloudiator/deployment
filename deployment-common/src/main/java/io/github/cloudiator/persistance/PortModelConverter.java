@@ -34,8 +34,7 @@ class PortModelConverter implements OneWayConverter<PortModel, Port> {
 
     if (portModel instanceof PortRequiredModel) {
       return PortRequiredBuilder.newBuilder().name(portModel.getName())
-          .isMandatory(((PortRequiredModel) portModel).getMandatory())
-          .updateAction(((PortRequiredModel) portModel).getUpdateAction()).build();
+          .isMandatory(((PortRequiredModel) portModel).getMandatory()).build();
     } else if (portModel instanceof PortProvidedModel) {
       return PortProvidedBuilder.newBuilder().name(portModel.getName())
           .port(((PortProvidedModel) portModel).getPort()).build();

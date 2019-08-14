@@ -112,6 +112,10 @@ public class LanceInterfaceConverter implements
     if (lanceInterface.stopDetection().isPresent()) {
       builder.setStopDetection(lanceInterface.stopDetection().get());
     }
+    if (lanceInterface.portUpdateAction().isPresent()) {
+      builder.setPortUpdateAction(lanceInterface.portUpdateAction().get());
+    }
+
     builder.setStart(lanceInterface.start());
 
     return builder.build();
@@ -160,6 +164,9 @@ public class LanceInterfaceConverter implements
     }
     if (!isNullOrEmpty(lanceInterface.getStopDetection())) {
       lanceInterfaceBuilder.stopDetection(lanceInterface.getStopDetection());
+    }
+    if (!isNullOrEmpty(lanceInterface.getPortUpdateAction())) {
+      lanceInterfaceBuilder.portUpdateAction(lanceInterface.getPortUpdateAction());
     }
 
     lanceInterfaceBuilder.start(lanceInterface.getStart());

@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import java.util.List;
 
+@Deprecated
 public interface ProcessGroup extends Identifiable {
 
   String userId();

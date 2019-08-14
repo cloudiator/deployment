@@ -17,32 +17,43 @@
 package io.github.cloudiator.deployment.domain;
 
 import de.uniulm.omi.cloudiator.domain.Identifiable;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.Stateful;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
+import java.util.Collection;
+import java.util.Date;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Created by daniel on 13.02.17.
  */
-public interface CloudiatorProcess extends Identifiable, Stateful {
+public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> {
 
   enum ProcessState implements State {
-    CREATED,
-    FAILED,
+    PENDING,
     RUNNING,
+    FINISHED,
     ERROR,
-    DELETED,
-    FINISHED
+    DELETED
   }
 
   enum Type {
     LANCE,
-    SPARK
+    SPARK,
+    FAAS,
+    SIMULATION,
+    UNKNOWN
   }
+
+  Optional<String> originId();
 
   String scheduleId();
 
   String taskId();
+
+  String taskInterface();
 
   ProcessState state();
 
@@ -53,5 +64,15 @@ public interface CloudiatorProcess extends Identifiable, Stateful {
   Optional<String> diagnostic();
 
   Optional<String> reason();
+
+  Set<String> nodes();
+
+  Optional<String> endpoint();
+
+  Collection<IpAddress> ipAddresses();
+
+  Date start();
+
+  Optional<Date> stop();
 
 }

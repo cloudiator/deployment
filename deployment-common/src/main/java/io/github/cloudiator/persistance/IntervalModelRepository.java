@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.security;
+package io.github.cloudiator.persistance;
 
-import de.uniulm.omi.cloudiator.util.function.ThrowingFunction;
-import java.util.function.Function;
-
-public interface VariableReplacement extends ThrowingFunction<String,String> {
+interface IntervalModelRepository extends ModelRepository<IntervalModel> {
 
 }

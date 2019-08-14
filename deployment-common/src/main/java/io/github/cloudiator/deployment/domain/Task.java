@@ -42,10 +42,21 @@ public interface Task {
         type::isInstance).map(taskInterface -> (T) taskInterface)
         .collect(StreamUtil.getOnly())
         .orElseThrow(() -> new IllegalArgumentException(
-            String.format("Task %s does not supply a lance interface.", this)));
+            String.format("Task %s does not supply a interface of type %s.", this, type)));
+  }
+
+  default TaskInterface interfaceOfName(String name) {
+    try {
+      //noinspection unchecked
+      return interfaceOfType((Class<? extends TaskInterface>) Class.forName(name));
+    } catch (ClassNotFoundException | ClassCastException e) {
+      throw new IllegalArgumentException("Could not resolve task interface with name " + name);
+    }
   }
 
   Set<Requirement> requirements();
+
+  Set<Requirement> requirements(Job fallback);
 
   Optional<Optimization> optimization();
 
@@ -72,5 +83,7 @@ public interface Task {
 
     return ports(type).stream().filter(t -> name.equals(t.name())).collect(StreamUtil.getOnly());
   }
+
+  Behaviour behaviour();
 
 }

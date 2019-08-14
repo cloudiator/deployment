@@ -18,6 +18,8 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
+import io.github.cloudiator.deployment.security.VariableContext;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -50,6 +52,8 @@ class LanceInterfaceImpl implements LanceInterface {
   private final String postStop;
   @Nullable
   private final String shutdown;
+  @Nullable
+  private final String portUpdateAction;
 
   LanceInterfaceImpl(LanceContainerType containerType, @Nullable String init,
       @Nullable String preInstall,
@@ -58,7 +62,7 @@ class LanceInterfaceImpl implements LanceInterface {
       @Nullable String startDetection,
       @Nullable String stopDetection, @Nullable String postStart, @Nullable String preStop,
       @Nullable String stop,
-      @Nullable String postStop, @Nullable String shutdown) {
+      @Nullable String postStop, @Nullable String shutdown, @Nullable String portUpdateAction) {
 
     checkNotNull(containerType, "containerType is null");
     this.lanceContainerType = containerType;
@@ -79,6 +83,7 @@ class LanceInterfaceImpl implements LanceInterface {
     this.stop = stop;
     this.postStop = postStop;
     this.shutdown = shutdown;
+    this.portUpdateAction = portUpdateAction;
   }
 
   @Override
@@ -153,6 +158,11 @@ class LanceInterfaceImpl implements LanceInterface {
   }
 
   @Override
+  public Optional<String> portUpdateAction() {
+    return Optional.ofNullable(portUpdateAction);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
@@ -174,32 +184,61 @@ class LanceInterfaceImpl implements LanceInterface {
         Objects.equals(preStop, that.preStop) &&
         Objects.equals(stop, that.stop) &&
         Objects.equals(postStop, that.postStop) &&
-        Objects.equals(shutdown, that.shutdown);
+        Objects.equals(shutdown, that.shutdown) &&
+        Objects.equals(portUpdateAction, that.portUpdateAction);
   }
 
   @Override
   public int hashCode() {
 
     return Objects.hash(lanceContainerType, init, preInstall, install, postInstall, preStart, start,
-        startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown);
+        startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown,
+        portUpdateAction);
   }
 
   @Override
   public String toString() {
-    return "LanceInterfaceImpl{" +
-        "init='" + init + '\'' +
-        ", preInstall='" + preInstall + '\'' +
-        ", install='" + install + '\'' +
-        ", postInstall='" + postInstall + '\'' +
-        ", preStart='" + preStart + '\'' +
-        ", start='" + start + '\'' +
-        ", startDetection='" + startDetection + '\'' +
-        ", stopDetection='" + stopDetection + '\'' +
-        ", postStart='" + postStart + '\'' +
-        ", preStop='" + preStop + '\'' +
-        ", stop='" + stop + '\'' +
-        ", postStop='" + postStop + '\'' +
-        ", shutdown='" + shutdown + '\'' +
-        '}';
+    return MoreObjects.toStringHelper(this)
+        .add("lanceContainerType", lanceContainerType)
+        .add("init", init)
+        .add("preInstall", preInstall)
+        .add("install", install)
+        .add("postInstall", postInstall)
+        .add("preStart", preStart)
+        .add("start", start)
+        .add("startDetection", startDetection)
+        .add("stopDetection", stopDetection)
+        .add("postStart", postStart)
+        .add("preStop", preStop)
+        .add("stop", stop)
+        .add("postStop", postStop)
+        .add("shutdown", shutdown)
+        .add("portUpdateAction", portUpdateAction)
+        .toString();
+  }
+
+  @Override
+  public ProcessMapping processMapping() {
+    return ProcessMapping.SINGLE;
+  }
+
+  @Override
+  public boolean isStaticallyConfigured() {
+    return !portUpdateAction().isPresent();
+  }
+
+  @Override
+  public boolean requiresManualWait(TaskInterface dependency) {
+    return false;
+  }
+
+  @Override
+  public TaskInterface decorateEnvironment(Environment environment) {
+    return this;
+  }
+
+  @Override
+  public TaskInterface decorateVariables(VariableContext variableContext) {
+    return LanceInterfaceBuilder.of(this).decorate(variableContext).build();
   }
 }

@@ -21,7 +21,6 @@ import com.google.inject.Singleton;
 import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.util.stateMachine.ErrorAwareStateMachine;
 import de.uniulm.omi.cloudiator.util.stateMachine.ErrorTransition;
-import de.uniulm.omi.cloudiator.util.stateMachine.State;
 import de.uniulm.omi.cloudiator.util.stateMachine.StateMachineBuilder;
 import de.uniulm.omi.cloudiator.util.stateMachine.StateMachineHook;
 import de.uniulm.omi.cloudiator.util.stateMachine.Transition.TransitionAction;
@@ -34,7 +33,10 @@ import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessScheduler;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessSpawningException;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
+import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import org.cloudiator.messages.Process.ProcessEvent;
 import org.cloudiator.messaging.services.ProcessService;
@@ -42,49 +44,56 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorProcess> {
+public class ProcessStateMachine implements
+    ErrorAwareStateMachine<CloudiatorProcess, ProcessState> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ProcessStateMachine.class);
-  private final ErrorAwareStateMachine<CloudiatorProcess> stateMachine;
+  private final ErrorAwareStateMachine<CloudiatorProcess, ProcessState> stateMachine;
   private final ProcessDomainRepository processDomainRepository;
   private final ProcessKiller processKiller;
+  private final ProcessScheduler processScheduler;
 
   @Inject
   public ProcessStateMachine(ProcessService processService,
       ProcessDomainRepository processDomainRepository,
-      ProcessKiller processKiller) {
+      ProcessKiller processKiller,
+      ProcessScheduler processScheduler) {
     this.processDomainRepository = processDomainRepository;
 
     //noinspection unchecked
-    stateMachine = StateMachineBuilder.<CloudiatorProcess>builder().errorTransition(error())
+    stateMachine = StateMachineBuilder.<CloudiatorProcess, ProcessState>builder()
+        .errorTransition(error())
         .addTransition(
-            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.CREATED)
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.PENDING)
                 .to(ProcessState.RUNNING)
-                .action(createdToRunning())
+                .action(pendingToRunning())
                 .build())
         .addTransition(
-            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.RUNNING)
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.RUNNING)
                 .to(ProcessState.DELETED)
                 .action(delete())
                 .build())
         .addTransition(
-            Transitions.<CloudiatorProcess>transitionBuilder().from(ProcessState.ERROR)
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.ERROR)
                 .to(ProcessState.DELETED)
                 .action(delete())
                 .build())
-        .addHook(new StateMachineHook<CloudiatorProcess>() {
+        .addHook(new StateMachineHook<CloudiatorProcess, ProcessState>() {
           @Override
-          public void pre(CloudiatorProcess process, State to) {
+          public void pre(CloudiatorProcess process, ProcessState to) {
             //intentionally left empty
           }
 
           @Override
-          public void post(State from, CloudiatorProcess process) {
+          public void post(ProcessState from, CloudiatorProcess process) {
 
             final ProcessEvent processEvent = ProcessEvent.newBuilder()
                 .setProcess(ProcessMessageConverter.INSTANCE.applyBack(process))
                 .setFrom(ProcessMessageConverter.PROCESS_STATE_CONVERTER.applyBack(
-                    (CloudiatorProcess.ProcessState) from))
+                    from))
                 .setTo(ProcessMessageConverter.PROCESS_STATE_CONVERTER.applyBack(process.state()))
                 .build();
 
@@ -97,13 +106,13 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
         })
         .build();
     this.processKiller = processKiller;
+    this.processScheduler = processScheduler;
   }
 
   @SuppressWarnings("WeakerAccess")
   @Transactional
   CloudiatorProcess save(CloudiatorProcess process) {
-    processDomainRepository.save(process);
-    return process;
+    return processDomainRepository.save(process);
   }
 
   private static CloudiatorProcess updateProcess(CloudiatorProcess process, ProcessState newState,
@@ -140,12 +149,18 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
     processDomainRepository.delete(process.id(), process.userId());
   }
 
-  private TransitionAction<CloudiatorProcess> createdToRunning() {
+  private TransitionAction<CloudiatorProcess> pendingToRunning() {
 
     return (o, arguments) -> {
-      final CloudiatorProcess running = updateProcess(o, ProcessState.DELETED, null);
-      save(running);
-      return running;
+
+      try {
+        final CloudiatorProcess running = updateProcess(processScheduler.schedule(o),
+            ProcessState.RUNNING, null);
+        save(running);
+        return running;
+      } catch (ProcessSpawningException e) {
+        throw new ExecutionException("Error while scheduling process.", e);
+      }
     };
   }
 
@@ -153,27 +168,33 @@ public class ProcessStateMachine implements ErrorAwareStateMachine<CloudiatorPro
 
     return (process, arguments) -> {
 
-      processKiller.kill(process);
+      try {
+        processKiller.kill(process);
+      } catch (Exception e) {
+        LOGGER.warn(String
+            .format("Exception while deleting process %s. Still marking process as deleted.", e));
+      }
+
       delete(process);
 
       return updateProcess(process, ProcessState.DELETED, null);
     };
   }
 
-  private ErrorTransition<CloudiatorProcess> error() {
+  private ErrorTransition<CloudiatorProcess, ProcessState> error() {
 
-    return Transitions.<CloudiatorProcess>errorTransitionBuilder()
+    return Transitions.<CloudiatorProcess, ProcessState>errorTransitionBuilder()
         .action((o, arguments, throwable) -> {
 
           final String message = throwable != null ? throwable.getMessage() : null;
 
           return save(updateProcess(o, ProcessState.ERROR, message));
-        }).build();
+        }).errorState(ProcessState.ERROR).build();
   }
 
 
   @Override
-  public CloudiatorProcess apply(CloudiatorProcess object, State to, Object[] arguments) {
+  public CloudiatorProcess apply(CloudiatorProcess object, ProcessState to, Object[] arguments) {
     return stateMachine.apply(object, to, arguments);
   }
 

@@ -19,7 +19,6 @@ package io.github.cloudiator.deployment.domain;
 public class PortRequiredBuilder {
 
   private String name;
-  private String updateAction;
   private boolean isMandatory;
 
   private PortRequiredBuilder() {
@@ -34,18 +33,13 @@ public class PortRequiredBuilder {
     return this;
   }
 
-  public PortRequiredBuilder updateAction(String updateAction) {
-    this.updateAction = updateAction;
-    return this;
-  }
-
   public PortRequiredBuilder isMandatory(boolean isMandatory) {
     this.isMandatory = isMandatory;
     return this;
   }
 
   public PortRequired build() {
-    return new PortRequiredImpl(name, updateAction, isMandatory);
+    return new PortRequiredImpl(name, isMandatory);
   }
 
 }

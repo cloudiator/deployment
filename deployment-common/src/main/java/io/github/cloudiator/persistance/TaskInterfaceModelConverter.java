@@ -17,14 +17,25 @@
 package io.github.cloudiator.persistance;
 
 import de.uniulm.omi.cloudiator.util.OneWayConverter;
-import io.github.cloudiator.deployment.domain.*;
-import javax.annotation.Nullable;
+import io.github.cloudiator.deployment.domain.DockerInterface;
+import io.github.cloudiator.deployment.domain.DockerInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.FaasInterface;
+import io.github.cloudiator.deployment.domain.FaasInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.LanceInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.SimulationInterface;
+import io.github.cloudiator.deployment.domain.SimulationInterfaceImpl;
+import io.github.cloudiator.deployment.domain.SparkInterface;
+import io.github.cloudiator.deployment.domain.SparkInterfaceBuilder;
+import io.github.cloudiator.deployment.domain.TaskInterface;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 class TaskInterfaceModelConverter implements
     OneWayConverter<TaskInterfaceModel, TaskInterface> {
 
   private static final TriggerModelConverter TRIGGER_MODEL_CONVERTER = new TriggerModelConverter();
+  private static final DistributionModelConverter DISTRIBUTION_MODEL_CONVERTER = new DistributionModelConverter();
 
   @Nullable
   @Override
@@ -42,6 +53,8 @@ class TaskInterfaceModelConverter implements
       return dockerInterface((DockerTaskInterfaceModel) taskInterfaceModel);
     } else if (taskInterfaceModel instanceof SparkTaskInterfaceModel) {
       return sparkInterface((SparkTaskInterfaceModel) taskInterfaceModel);
+    } else if (taskInterfaceModel instanceof SimulationTaskInterfaceModel) {
+      return simulationInterface((SimulationTaskInterfaceModel) taskInterfaceModel);
     } else {
       throw new AssertionError(
           String.format("taskInterfaceModel has illegal type %s.", taskInterfaceModel.getClass()));
@@ -63,7 +76,8 @@ class TaskInterfaceModelConverter implements
         .start(lanceTaskInterfaceModel.getStart())
         .startDetection(lanceTaskInterfaceModel.getStartDetection())
         .stop(lanceTaskInterfaceModel.getStop())
-        .stopDetection(lanceTaskInterfaceModel.getStopDetection()).build();
+        .stopDetection(lanceTaskInterfaceModel.getStopDetection())
+        .portUpdateAction(lanceTaskInterfaceModel.getPortUpdateAction()).build();
   }
 
   private FaasInterface faasInterface(FaasTaskInterfaceModel faasTaskInterfaceModel) {
@@ -79,11 +93,12 @@ class TaskInterfaceModelConverter implements
         .functionEnvironment(faasTaskInterfaceModel.getFunctionEnvironment())
         .build();
   }
-  
+
   private DockerInterface dockerInterface(DockerTaskInterfaceModel dockerTaskInterfaceModel) {
     return DockerInterfaceBuilder.newBuilder()
         .dockerImage(dockerTaskInterfaceModel.getDockerImage())
-        .environment(dockerTaskInterfaceModel.getEnvVars()).build();
+        .environment(dockerTaskInterfaceModel.getEnvVars())
+        .portUpdateAction(dockerTaskInterfaceModel.getPortUpdateAction()).build();
   }
 
   private SparkInterface sparkInterface(SparkTaskInterfaceModel sparkTaskInterfaceModel) {
@@ -91,6 +106,13 @@ class TaskInterfaceModelConverter implements
         .className(sparkTaskInterfaceModel.getClassName())
         .arguments(sparkTaskInterfaceModel.getArguments())
         .sparkArguments(sparkTaskInterfaceModel.getSparkArguments())
-        .sparkConfiguration(sparkTaskInterfaceModel.getSparkConfiguration()).build();
+        .sparkConfiguration(sparkTaskInterfaceModel.getSparkConfiguration())
+        .processMapping(sparkTaskInterfaceModel.getProcessMapping()).build();
+  }
+
+  private SimulationInterface simulationInterface(
+      SimulationTaskInterfaceModel simulationTaskInterfaceModel) {
+    return new SimulationInterfaceImpl(
+        DISTRIBUTION_MODEL_CONVERTER.apply(simulationTaskInterfaceModel.getStartTime()));
   }
 }

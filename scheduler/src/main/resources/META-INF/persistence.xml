@@ -25,7 +25,10 @@
     <class>io.github.cloudiator.persistance.TenantModel</class>
     <class>io.github.cloudiator.persistance.ScheduleModel</class>
     <class>io.github.cloudiator.persistance.ProcessModel</class>
-    <class>io.github.cloudiator.persistance.ProcessGroupModel</class>
+    <class>io.github.cloudiator.persistance.ProcessSingleModel</class>
+    <class>io.github.cloudiator.persistance.ProcessClusterModel</class>
+    <class>io.github.cloudiator.persistance.IpGroupModel</class>
+    <class>io.github.cloudiator.persistance.IpAddressModel</class>
 
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

@@ -28,20 +28,19 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Communication;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.domain.Node;
-import java.util.Optional;
+import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DirectedPseudograph;
+import org.jgrapht.graph.EdgeReversedGraph;
 
 /**
  * Created by daniel on 15.07.16.
@@ -49,37 +48,18 @@ import org.jgrapht.graph.DirectedPseudograph;
 public class ScheduleGraph {
 
   private final DirectedPseudograph<CloudiatorProcess, CommunicationInstanceEdge> scheduleGraph;
-  private final Set<Node> nodes;
 
-  ScheduleGraph(Schedule schedule, Job job, Set<Node> nodes) {
+  ScheduleGraph(Schedule schedule, Job job) {
     scheduleGraph = GraphFactory.of(schedule, job);
-    this.nodes = nodes;
-  }
-
-  private Optional<Node> nodeFor(CloudiatorProcess cloudiatorProcess) {
-    // replace with MoreCollectors.toOptional() if guava is upgraded
-    final Set<Node> nodes = this.nodes.stream().filter(new Predicate<Node>() {
-      @Override
-      public boolean test(Node node) {
-
-        if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
-          CloudiatorSingleProcess cloudiatorSingleProcess = (CloudiatorSingleProcess) cloudiatorProcess;
-          return cloudiatorSingleProcess.node().equals(node.id());
-        }
-        return false;
-      }
-    }).collect(Collectors.toSet());
-
-    if (nodes.isEmpty()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(nodes.iterator().next());
   }
 
   public static class CommunicationInstanceEdge extends DefaultEdge {
 
-    public CommunicationInstanceEdge() {
+    private final Communication communication;
+
+    public CommunicationInstanceEdge(
+        Communication communication) {
+      this.communication = communication;
     }
 
     public CloudiatorProcess source() {
@@ -88,6 +68,10 @@ public class ScheduleGraph {
 
     public CloudiatorProcess target() {
       return (CloudiatorProcess) super.getTarget();
+    }
+
+    public Communication getCommunication() {
+      return communication;
     }
   }
 
@@ -108,7 +92,10 @@ public class ScheduleGraph {
       final ObjectNode data = vertex.with("data");
       data.put("id", process.id())
           .put("task", process.taskId()).put("state", process.state().toString());
-      nodeFor(process).ifPresent(present -> data.put("ip", present.connectTo().ip()));
+      final ArrayNode ipAddresses = data.putArray("ipAddresses");
+      for (IpAddress ipAddress : process.ipAddresses()) {
+        ipAddresses.add(ipAddress.ip());
+      }
     });
     final ArrayNode edges = objectNode.putArray("edges");
     this.scheduleGraph.edgeSet().forEach(communicationEdge -> {
@@ -121,6 +108,21 @@ public class ScheduleGraph {
     return objectNode;
   }
 
+  public Graph<CloudiatorProcess, CommunicationInstanceEdge> reverse() {
+    return new EdgeReversedGraph<>(scheduleGraph);
+  }
+
+  public List<CloudiatorProcess> getDependentProcesses(CloudiatorProcess cloudiatorProcess) {
+    return org.jgrapht.Graphs.successorListOf(scheduleGraph, cloudiatorProcess);
+  }
+
+  public List<CloudiatorProcess> getDependencies(CloudiatorProcess cloudiatorProcess) {
+    return org.jgrapht.Graphs.predecessorListOf(scheduleGraph, cloudiatorProcess);
+  }
+
+  public CommunicationInstanceEdge getEdge(CloudiatorProcess source, CloudiatorProcess target) {
+    return scheduleGraph.getEdge(source, target);
+  }
 
   private static class GraphFactory {
 
@@ -149,7 +151,8 @@ public class ScheduleGraph {
 
             for (CloudiatorProcess otherProcess : schedule.processes()) {
               if (otherProcess.taskId().equals(requiredTask.name())) {
-                instanceGraph.addEdge(cloudiatorProcess, otherProcess);
+                instanceGraph.addEdge(cloudiatorProcess, otherProcess,
+                    new CommunicationInstanceEdge(communication));
               }
             }
           }

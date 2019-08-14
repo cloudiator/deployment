@@ -18,28 +18,40 @@ package io.github.cloudiator.persistance;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Inheritance;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 
 /**
  * Created by daniel on 12.12.14.
  */
 @Entity
-class ProcessModel extends Model {
+@Inheritance(strategy = javax.persistence.InheritanceType.TABLE_PER_CLASS)
+abstract class ProcessModel extends Model {
 
   @Column(unique = true, nullable = false)
   private String domainId;
+
+  private String originId;
 
   @ManyToOne(optional = false)
   private ScheduleModel schedule;
@@ -47,12 +59,8 @@ class ProcessModel extends Model {
   @Column(nullable = false)
   private String task;
 
-  //TODO: refactor this to proper inheritance?
-  @Column(nullable = true)
-  private String node;
-
-  @Column(nullable = true)
-  private String nodeGroup;
+  @Column(nullable = false)
+  private String taskInterface;
 
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.Type type;
@@ -60,9 +68,42 @@ class ProcessModel extends Model {
   @Enumerated(EnumType.STRING)
   private CloudiatorProcess.ProcessState state;
 
-  @ManyToOne
   @Nullable
-  private ProcessGroupModel processGroupModel;
+  @Lob
+  private String diagnostic;
+
+  @Nullable
+  @Lob
+  private String reason;
+
+  @Basic
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(nullable = false)
+  private Date start;
+
+  @Basic
+  @Temporal(TemporalType.TIMESTAMP)
+  @Nullable
+  private Date stop;
+
+
+  public ProcessModel setEndpoint(@Nullable String endpoint) {
+    this.endpoint = endpoint;
+    return this;
+  }
+
+  @Nullable
+  private String endpoint;
+
+  public ProcessModel setIpGroupModel(@Nullable IpGroupModel ipGroupModel) {
+    this.ipGroupModel = ipGroupModel;
+    return this;
+  }
+
+  @Nullable
+  @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+  private IpGroupModel ipGroupModel;
+
 
   /**
    * Empty constructor for hibernate
@@ -70,10 +111,11 @@ class ProcessModel extends Model {
   protected ProcessModel() {
   }
 
-  public ProcessModel(String domainId, ScheduleModel schedule, String task, @Nullable String node,
-      @Nullable String nodeGroup,
+  public ProcessModel(String domainId, String orginId, ScheduleModel schedule, String task,
+      String taskInterface,
       CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
-      @Nullable ProcessGroupModel processGroupModel) {
+      @Nullable String diagnostic, @Nullable String reason, @Nullable String endpoint,
+      @Nullable IpGroupModel ipGroupModel, Date start, @Nullable Date stop) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -83,41 +125,36 @@ class ProcessModel extends Model {
     checkNotNull(task, "task is null");
     checkArgument(!task.isEmpty(), "task is empty");
 
-    //checkNotNull(nodeGroupModel, "nodeGroup is null");
-    //checkArgument(!nodeGroupModel.isEmpty(), "nodeGroup is empty");
-
     checkNotNull(type, "type is null");
+    checkNotNull(start, "start is null");
 
     this.domainId = domainId;
+    this.originId = orginId;
     this.schedule = schedule;
     this.task = task;
+    this.taskInterface = taskInterface;
     this.state = state;
-    this.node = node;
-    this.nodeGroup = nodeGroup;
     this.type = type;
-    this.processGroupModel = processGroupModel;
+    this.diagnostic = diagnostic;
+    this.reason = reason;
+    this.endpoint = endpoint;
+    this.ipGroupModel = ipGroupModel;
+    this.start = start;
+    this.stop = stop;
 
   }
 
   @Override
   protected ToStringHelper stringHelper() {
     return super.stringHelper().add("domainId", domainId).add("schedule", schedule)
-        .add("task", task).add("state", state).add("nodeGroup", nodeGroup).add("node", node);
-  }
-  
-  public ProcessModel assignGroup(ProcessGroupModel processGroupModel) {
-    checkState(this.processGroupModel == null, "Process Group was already assigned.");
-    this.processGroupModel = processGroupModel;
-    return this;
+        .add("task", task).add("taskInterface", taskInterface).add("state", state)
+        .add("endpoint", endpoint).add("ipAddresses", ipGroupModel).add("start", start)
+        .add("stop", stop);
   }
 
-
-  public String getNodeGroup() {
-    return nodeGroup;
-  }
-
-  public String getNode() {
-    return node;
+  @Override
+  public String toString() {
+    return stringHelper().toString();
   }
 
   public String getDomainId() {
@@ -147,6 +184,75 @@ class ProcessModel extends Model {
   public ProcessModel setState(
       ProcessState state) {
     this.state = state;
+    return this;
+  }
+
+  public ProcessModel setOriginId(String originId) {
+    this.originId = originId;
+    return this;
+  }
+
+  public String getOriginId() {
+    return originId;
+  }
+
+  public String getTaskInterface() {
+    return taskInterface;
+  }
+
+  @Nullable
+  public String getDiagnostic() {
+    return diagnostic;
+  }
+
+  public ProcessModel setDiagnostic(String diagnostic) {
+    this.diagnostic = diagnostic;
+    return this;
+  }
+
+  @Nullable
+  public String getReason() {
+    return reason;
+  }
+
+  public ProcessModel setType(Type type) {
+    this.type = type;
+    return this;
+  }
+
+  @Nullable
+  public String getEndpoint() {
+    return endpoint;
+  }
+
+  @Nullable
+  public IpGroupModel getIpGroupModel() {
+    return ipGroupModel;
+  }
+
+  public Set<IpAddressModel> getIpAddresses() {
+    if (ipGroupModel == null) {
+      return Collections.emptySet();
+    }
+    return ipGroupModel.getIpAddresses();
+  }
+
+  public Date getStart() {
+    return start;
+  }
+
+  public ProcessModel setStart(Date start) {
+    this.start = start;
+    return this;
+  }
+
+  @Nullable
+  public Date getStop() {
+    return stop;
+  }
+
+  public ProcessModel setStop(@Nullable Date stop) {
+    this.stop = stop;
     return this;
   }
 }

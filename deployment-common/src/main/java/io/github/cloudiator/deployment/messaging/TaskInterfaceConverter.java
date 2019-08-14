@@ -17,9 +17,10 @@
 package io.github.cloudiator.deployment.messaging;
 
 import de.uniulm.omi.cloudiator.util.TwoWayConverter;
-import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.DockerInterface;
+import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.SimulationInterface;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import org.cloudiator.messages.entities.TaskEntities;
@@ -33,6 +34,7 @@ public class TaskInterfaceConverter implements
   private static final FaasInterfaceConverter FAAS_INTERFACE_CONVERTER = FaasInterfaceConverter.INSTANCE;
   private static final SparkInterfaceConverter SPARK_INTERFACE_CONVERTER = SparkInterfaceConverter.INSTANCE;
   private static final DockerInterfaceConverter DOCKER_INTERFACE_CONVERTER = DockerInterfaceConverter.INSTANCE;
+  private static final SimulationInterfaceConverter SIMULATION_INTERFACE_CONVERTER = SimulationInterfaceConverter.INSTANCE;
 
   private TaskInterfaceConverter() {
 
@@ -57,6 +59,10 @@ public class TaskInterfaceConverter implements
       return TaskEntities.TaskInterface.newBuilder()
           .setDockerInterface(DOCKER_INTERFACE_CONVERTER.applyBack(
               (DockerInterface) taskInterface)).build();
+    } else if (taskInterface instanceof SimulationInterface) {
+      return TaskEntities.TaskInterface.newBuilder()
+          .setSimulationInterface(SIMULATION_INTERFACE_CONVERTER.applyBack(
+              (SimulationInterface) taskInterface)).build();
     } else {
       throw new AssertionError(
           "Unknown type for task interface " + taskInterface.getClass().getName());
@@ -75,6 +81,8 @@ public class TaskInterfaceConverter implements
         return FAAS_INTERFACE_CONVERTER.apply(taskInterface.getFaasInterface());
       case SPARKINTERFACE:
         return SPARK_INTERFACE_CONVERTER.apply(taskInterface.getSparkInterface());
+      case SIMULATIONINTERFACE:
+        return SIMULATION_INTERFACE_CONVERTER.apply(taskInterface.getSimulationInterface());
       case TASKINTERFACE_NOT_SET:
         throw new AssertionError("TaskInterface is not set");
       default:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.scheduler;
+package io.github.cloudiator.persistance;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.domain.NodeGroup;
-import javax.annotation.Nullable;
-import org.cloudiator.matchmaking.domain.Requirement;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
+import javax.persistence.EntityManager;
 
+class BehaviourModelRepositoryJpa extends
+    BaseModelRepositoryJpa<BehaviourModel> implements BehaviourModelRepository {
 
-public interface ResourcePool {
-
-  ListenableFuture<NodeGroup> allocate(String userId,
-      Iterable<? extends Requirement> requirements, @Nullable String name);
+  @Inject
+  protected BehaviourModelRepositoryJpa(
+      Provider<EntityManager> entityManager,
+      TypeLiteral<BehaviourModel> type) {
+    super(entityManager, type);
+  }
 }

@@ -32,7 +32,8 @@ public class TaskImplTest {
     LanceInterface lanceInterface = LanceInterfaceBuilder.newBuilder()
         .containerType(LanceContainerType.BOTH).start("./start.sh").build();
 
-    Task task = TaskBuilder.newBuilder().addInterface(lanceInterface).name("test").build();
+    Task task = TaskBuilder.newBuilder().addInterface(lanceInterface).name("test")
+        .behaviour(Behaviours.service(true)).build();
 
     assertThat(task.interfaceOfType(LanceInterface.class), equalTo(lanceInterface));
 
@@ -40,7 +41,7 @@ public class TaskImplTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void interfaceOfTypeDoesNotExist() {
-    Task task = TaskBuilder.newBuilder().name("test").build();
+    Task task = TaskBuilder.newBuilder().name("test").behaviour(Behaviours.service(true)).build();
     task.interfaceOfType(LanceInterface.class);
   }
 
@@ -52,10 +53,10 @@ public class TaskImplTest {
     PortProvided provided = PortProvidedBuilder.newBuilder().name("PortProvided").port(1234)
         .build();
     PortRequired required = PortRequiredBuilder.newBuilder().name("PortRequired").isMandatory(true)
-        .updateAction("./update.sh").build();
+        .build();
 
     Task task = TaskBuilder.newBuilder().addInterface(lanceInterface).name("providedPortTests")
-        .addPort(provided).addPort(required)
+        .addPort(provided).addPort(required).behaviour(Behaviours.service(true))
         .build();
 
     assertThat(task.providedPorts(), contains(provided));
@@ -76,14 +77,14 @@ public class TaskImplTest {
     PortProvided provided = PortProvidedBuilder.newBuilder().name("PortProvided").port(1234)
         .build();
     PortRequired required = PortRequiredBuilder.newBuilder().name("PortRequired").isMandatory(true)
-        .updateAction("./update.sh").build();
+        .build();
 
     Task thisTask = TaskBuilder.newBuilder().addInterface(lanceInterface).name("providedPortTests")
-        .addPort(provided).addPort(required)
+        .addPort(provided).addPort(required).behaviour(Behaviours.service(true))
         .build();
 
     Task thatTask = TaskBuilder.newBuilder().addInterface(lanceInterface).name("providedPortTests")
-        .addPort(provided).addPort(required)
+        .addPort(provided).addPort(required).behaviour(Behaviours.service(true))
         .build();
 
     assertThat(thisTask, equalTo(thatTask));

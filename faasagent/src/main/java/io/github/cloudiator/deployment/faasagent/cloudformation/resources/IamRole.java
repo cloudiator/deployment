@@ -64,7 +64,9 @@ public class IamRole extends AbstractResource {
                 .put("Version", "2012-10-17")
                 .put("Statement", new JSONArray()
                     .put(getCreateLogStreamPolicyStatement())
-                    .put(getPutLogEventsPolicyStatement()))
+                    .put(getPutLogEventsPolicyStatement())
+                    .put(allowSSM())
+                )
             )
         );
   }
@@ -83,6 +85,17 @@ public class IamRole extends AbstractResource {
         .put("Action", new JSONArray()
             .put("logs:PutLogEvents"))
         .put("Resource", getAllResources(2));
+  }
+
+  private JSONObject allowSSM() {
+    return new JSONOrderedObject()
+        .put("Effect", "Allow")
+        .put("Action", new JSONArray()
+            .put("ssm:PutParameter")
+            .put("ssm:GetParameters")
+            .put("ssm:GetParameter")
+        )
+        .put("Resource", "*");
   }
 
   private JSONArray getAllResources(int level) {
