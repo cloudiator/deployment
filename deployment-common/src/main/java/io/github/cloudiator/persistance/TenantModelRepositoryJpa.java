@@ -52,7 +52,7 @@ class TenantModelRepositoryJpa extends BaseModelRepositoryJpa<TenantModel> imple
   }
 
   @Override
-  public TenantModel createOrGet(String userId) {
+  public synchronized TenantModel createOrGet(String userId) {
     checkNotNull(userId, "userId is null");
     final TenantModel byUserId = findByUserId(userId);
     if (byUserId != null) {
