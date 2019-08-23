@@ -1,12 +1,11 @@
 package io.github.cloudiator.deployment.faasagent.messaging;
 
 import com.google.inject.Inject;
-import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Function;
 import io.github.cloudiator.deployment.domain.FunctionBuilder;
+import io.github.cloudiator.deployment.faasagent.helper.SaveFunctionHelper;
 import io.github.cloudiator.deployment.messaging.FunctionConverter;
 import io.github.cloudiator.messaging.RuntimeConverter;
-import io.github.cloudiator.persistance.FunctionDomainRepository;
 import org.cloudiator.messages.Function.CreateFunctionRequestMessage;
 import org.cloudiator.messages.Function.FunctionCreatedResponse;
 import org.cloudiator.messages.General;
@@ -19,15 +18,15 @@ public class CreateFunctionSubscriber implements Runnable {
   private static final Logger LOGGER = LoggerFactory
       .getLogger(CreateFunctionSubscriber.class);
   private final MessageInterface messageInterface;
-  private final FunctionDomainRepository functionDomainRepository;
+  private final SaveFunctionHelper saveFunctionHelper;
   private final FunctionConverter functionConverter = new FunctionConverter();
   private final RuntimeConverter runtimeConverter = RuntimeConverter.INSTANCE;
 
   @Inject
   public CreateFunctionSubscriber(MessageInterface messageInterface,
-      FunctionDomainRepository functionDomainRepository) {
+                                  SaveFunctionHelper saveFunctionHelper) {
     this.messageInterface = messageInterface;
-    this.functionDomainRepository = functionDomainRepository;
+    this.saveFunctionHelper = saveFunctionHelper;
   }
 
   @Override
@@ -41,7 +40,7 @@ public class CreateFunctionSubscriber implements Runnable {
 
             Function function = createFunction(functionRequest);
 
-            persistFunction(function, userId);
+            saveFunctionHelper.persistFunction(function, userId);
 
             FunctionCreatedResponse functionCreatedResponse = FunctionCreatedResponse.newBuilder()
                 .setFunction(functionConverter.applyBack(function)).build();
@@ -53,11 +52,6 @@ public class CreateFunctionSubscriber implements Runnable {
                 General.Error.newBuilder().setCode(500).setMessage(e.getMessage()).build());
           }
         });
-  }
-
-  @Transactional
-  void persistFunction(Function function, String userId) {
-    functionDomainRepository.save(function, userId);
   }
 
   private Function createFunction(FaasEntities.FunctionRequest request) {
