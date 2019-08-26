@@ -140,21 +140,12 @@ public class CreateLanceProcessStrategy {
         applicationInstanceId, applicationId, lifecycleClient));
 
     try {
-      final boolean couldRegister = lifecycleClient
-          .registerApplicationInstance(applicationInstanceId, applicationId);
+      lifecycleClient.registerApplicationInstance(applicationInstanceId, applicationId);
 
-      //if the instance could still be registered we need to register its subparts
-      if (couldRegister) {
-        registerApplicationComponentsForApplicationInstance(lifecycleClient,
-            applicationInstanceId, job);
+        registerApplicationComponentsForApplicationInstance(lifecycleClient, applicationInstanceId, job);
         LOGGER.debug(String.format(
             "Could register applicationInstance %s, therefore registering all components of the job",
             applicationInstanceId));
-      } else {
-        LOGGER.debug(String.format(
-            "Could not register applicationInstance %s, assuming it was already registered.",
-            applicationInstanceId));
-      }
 
     } catch (RegistrationException e) {
       throw new IllegalStateException("Could not register application instance", e);

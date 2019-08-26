@@ -100,6 +100,17 @@
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
     </dependency>
+    <dependency>
+        <groupId>io.github.cloudiator.lance</groupId>
+        <artifactId>client</artifactId>
+        <version>0.3.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.cloudiator.deployment</groupId>
+      <artifactId>lance</artifactId>
+      <version>0.3.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   <build>
