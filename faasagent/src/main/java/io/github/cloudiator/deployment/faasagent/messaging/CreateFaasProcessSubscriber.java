@@ -7,6 +7,7 @@ import com.google.protobuf.util.Timestamps;
 import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationInstanceId;
 import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
+import de.uniulm.omi.cloudiator.lance.application.component.ComponentIdGenerator;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import de.uniulm.omi.cloudiator.lance.lca.LcaRegistry;
 import de.uniulm.omi.cloudiator.lance.lca.LcaRegistryConstants;
@@ -19,7 +20,6 @@ import io.github.cloudiator.deployment.faasagent.cloudformation.models.Applicati
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
-import io.github.cloudiator.deployment.lance.ComponentIdGenerator;
 import io.github.cloudiator.deployment.faasagent.helper.SaveFunctionHelper;
 import io.github.cloudiator.deployment.messaging.FaasInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.JobConverter;
