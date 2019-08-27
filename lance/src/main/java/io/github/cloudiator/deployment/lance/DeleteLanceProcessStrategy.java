@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationInstanceId;
+import de.uniulm.omi.cloudiator.lance.application.component.ComponentIdGenerator;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClient;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
