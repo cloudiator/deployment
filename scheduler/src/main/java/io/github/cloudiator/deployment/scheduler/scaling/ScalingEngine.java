@@ -191,19 +191,22 @@ public class ScalingEngine {
       affectedProcesses.addAll(schedule.processesForNode(node));
     }
 
+    //check if it is only one process, and if yes if it is a cluster process
     if (affectedProcesses.size() == 1) {
       CloudiatorProcess process = affectedProcesses.iterator().next();
       if (process instanceof CloudiatorClusterProcess) {
+        //scale in the cluster
         scaleInCluster((CloudiatorClusterProcess) process, nodes);
-      } else {
-        throw new IllegalStateException();
+        return;
       }
-    } else {
-      for (CloudiatorProcess affectedProcess : affectedProcesses) {
-        checkState(affectedProcess instanceof CloudiatorSingleProcess);
-      }
-      scaleInSingle(schedule, nodes);
     }
+
+    //assume that it is single processes
+    for (CloudiatorProcess affectedProcess : affectedProcesses) {
+      checkState(affectedProcess instanceof CloudiatorSingleProcess);
+    }
+    scaleInSingle(schedule, nodes);
+
   }
 
   private void scaleInSingle(Schedule schedule,
