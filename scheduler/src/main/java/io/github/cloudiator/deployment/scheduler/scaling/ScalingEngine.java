@@ -159,8 +159,9 @@ public class ScalingEngine {
     schedule = checkSchedule(schedule);
 
     LOGGER.info(String
-        .format("Scale In. Schedule: %s, Job: %s, Task: %s, Nodes: %s", schedule, job, task,
-            nodes));
+        .format("Scale In. Schedule: %s, Job: %s, Task: %s, Nodes: %s", schedule.id(), job.id(),
+            task.name(),
+            nodes.stream().map(Identifiable::id).collect(Collectors.toList())));
 
     if (nodes.isEmpty()) {
       scaleInWithoutNodes(schedule, job, task);
@@ -216,7 +217,8 @@ public class ScalingEngine {
 
     for (Node node : nodes) {
       checkArgument(schedule.runsOnNode(node),
-          String.format("Schedule does not have node %s", schedule));
+          String.format("Schedule %s does not run on node %s. Nodes are: %s", schedule.id(), node,
+              schedule.nodes()));
       affectedProcesses.addAll(schedule.processesForNode(node));
     }
 
