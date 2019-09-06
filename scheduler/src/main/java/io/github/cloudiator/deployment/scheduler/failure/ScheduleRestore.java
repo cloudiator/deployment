@@ -170,7 +170,7 @@ public class ScheduleRestore {
       final Future<Collection<CloudiatorProcess>> collectionFuture = instantiationStrategySelector
           .get(schedule.instantiation())
           .deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
-              dependencyGraph.forTask(task));
+              dependencyGraph.forTask(job, schedule, task));
       futures.add(collectionFuture);
 
     }

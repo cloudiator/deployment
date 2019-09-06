@@ -23,7 +23,6 @@ import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.Set;
-import org.cloudiator.messages.entities.ProcessEntities.Nodes;
 
 public interface Schedule extends Identifiable, Stateful<ScheduleState> {
 
@@ -67,4 +66,6 @@ public interface Schedule extends Identifiable, Stateful<ScheduleState> {
   Set<CloudiatorProcess> processesForNode(Node node);
 
   Set<String> nodes();
+
+  void notifyOfProcess(Job job, CloudiatorProcess cloudiatorProcess, TaskUpdater taskUpdater);
 }

@@ -306,7 +306,7 @@ public class ScalingEngine {
     final List<ListenableFuture<Node>> allocate = resourcePool
         .allocate(schedule, matchmaking, nodes, task.name());
 
-    scaleOutInternally(schedule, task, allocate);
+    scaleOutInternally(schedule, job, task, allocate);
   }
 
   private void scaleOutWithNodes(Schedule schedule, Job job, Task task,
@@ -322,11 +322,12 @@ public class ScalingEngine {
         .format("Executing scale for task %s of job %s in schedule %s on nodes %s.", task, job,
             schedule, nodes));
 
-    scaleOutInternally(schedule, task, nodesToFutures(nodes));
+    scaleOutInternally(schedule, job, task, nodesToFutures(nodes));
 
   }
 
-  private void scaleOutInternally(Schedule schedule, Task task,
+  private void scaleOutInternally(Schedule schedule, Job job,
+      Task task,
       Collection<ListenableFuture<Node>> nodes) throws InstantiationException {
 
     TaskInterfaceSelection taskInterfaceSelection = new TaskInterfaceSelection();
@@ -337,7 +338,7 @@ public class ScalingEngine {
         scaleOutCluster(schedule, task, nodes);
         break;
       case SINGLE:
-        scaleOutSingle(schedule, task, taskInterface, nodes);
+        scaleOutSingle(schedule, job, task, taskInterface, nodes);
         break;
       default:
         throw new AssertionError("Unknown process mapping " + taskInterface.processMapping());
@@ -394,7 +395,7 @@ public class ScalingEngine {
     }
   }
 
-  private Collection<CloudiatorProcess> scaleOutSingle(Schedule schedule, Task task,
+  private Collection<CloudiatorProcess> scaleOutSingle(Schedule schedule, Job job, Task task,
       TaskInterface taskInterface,
       Collection<ListenableFuture<Node>> nodes) throws InstantiationException {
 
@@ -402,7 +403,7 @@ public class ScalingEngine {
 
     final Future<Collection<CloudiatorProcess>> processFutures = automaticInstantiationStrategy
         .deployTask(task, taskInterface, schedule, nodes,
-            DependencyGraph.noDependencies(task));
+            DependencyGraph.noDependencies(job, schedule, task));
 
     try {
       final Collection<CloudiatorProcess> cloudiatorProcesses = processFutures.get();
