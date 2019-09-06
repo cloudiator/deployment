@@ -23,6 +23,7 @@ import de.uniulm.omi.cloudiator.util.StreamUtil;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import org.cloudiator.matchmaking.domain.Requirement;
 
 /**
  * Created by daniel on 13.02.17.
@@ -39,8 +40,6 @@ public interface Job extends JobNew, Identifiable {
   Task providingTask(Communication communication);
 
   Task requiredTask(Communication communication);
-
-  Optional<Communication> between(Task provided, Task required);
 
   Set<Task> consumedBy(Task task);
 

@@ -19,7 +19,6 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.github.cloudiator.deployment.security.VariableContext;
-import java.util.Optional;
 
 public class SimulationInterfaceImpl implements SimulationInterface {
 

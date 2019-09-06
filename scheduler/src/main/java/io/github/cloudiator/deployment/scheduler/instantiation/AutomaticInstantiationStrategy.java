@@ -37,7 +37,6 @@ import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.ServiceBehaviour;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
-import io.github.cloudiator.deployment.domain.TaskUpdater;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
@@ -77,7 +76,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private static final ExecutorService EXECUTOR = new LoggingThreadPoolExecutor(0,
       2147483647, 60L, TimeUnit.SECONDS, new SynchronousQueue());
   private final MatchmakingEngine matchmakingEngine;
-  private final TaskUpdater taskUpdaters;
 
   static {
     MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
@@ -92,13 +90,11 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   @Inject
   public AutomaticInstantiationStrategy(
       MatchmakingEngine matchmakingEngine,
-      TaskUpdaters taskUpdaters,
       ResourcePool resourcePool, ProcessService processService,
       JobMessageRepository jobMessageRepository,
       ScheduleDomainRepository scheduleDomainRepository,
       PeriodicScheduler periodicScheduler) {
     this.matchmakingEngine = matchmakingEngine;
-    this.taskUpdaters = taskUpdaters;
     this.resourcePool = resourcePool;
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
@@ -128,12 +124,11 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
     private final Task task;
     private final TaskInterface taskInterface;
     private final Runnable beforeExecute;
-    private final Consumer<CloudiatorProcess> afterExecute;
+    private final Runnable afterExecute;
     private final Consumer<CloudiatorProcess> onSuccess;
 
     protected NodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable beforeExecute,
-        Consumer<CloudiatorProcess> afterExecute,
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute,
         Consumer<CloudiatorProcess> onSuccess) {
       this.schedule = schedule;
       this.task = task;
@@ -149,14 +144,13 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         beforeExecute.run();
         final CloudiatorProcess cloudiatorProcess = doSuccess(result).get();
         onSuccess.accept(cloudiatorProcess);
-        afterExecute.accept(cloudiatorProcess);
       } catch (InterruptedException e) {
         throw new IllegalStateException("Interrupted while waiting for result.", e);
       } catch (ExecutionException e) {
         throw new IllegalStateException("Unexpected exception while waiting for result",
             e.getCause());
       } finally {
-        afterExecute.accept(null);
+        afterExecute.run();
       }
     }
 
@@ -166,7 +160,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         beforeExecute.run();
         doFailure(t);
       } finally {
-        afterExecute.accept(null);
+        afterExecute.run();
       }
     }
 
@@ -190,8 +184,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class SingleNodeCallback extends NodeCallback<Node> {
 
     private SingleNodeCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable beforeExecute,
-        Consumer<CloudiatorProcess> afterExecute,
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute,
         Consumer<CloudiatorProcess> onSuccess) {
       super(schedule, task, taskInterface, beforeExecute, afterExecute, onSuccess);
     }
@@ -219,8 +212,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private class ClusterCallback extends NodeCallback<List<Node>> {
 
     private ClusterCallback(Schedule schedule, Task task,
-        TaskInterface taskInterface, Runnable beforeExecute,
-        Consumer<CloudiatorProcess> afterExecute,
+        TaskInterface taskInterface, Runnable beforeExecute, Runnable afterExecute,
         Consumer<CloudiatorProcess> onSuccess) {
       super(schedule, task, taskInterface, beforeExecute, afterExecute, onSuccess);
     }
@@ -274,20 +266,15 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
         countDownLatch = new CountDownLatch(1);
         final ListenableFuture<List<Node>> nodeFutures = Futures.allAsList(allocatedResources);
         Futures.addCallback(nodeFutures,
-            new ClusterCallback(schedule, task, taskInterface, new Runnable() {
-              @Override
-              public void run() {
-                try {
-                  dependencies.await();
-                } catch (InterruptedException e) {
-                  throw new IllegalStateException(e);
-                }
+            new ClusterCallback(schedule, task, taskInterface, () -> {
+              try {
+                dependencies.await();
+              } catch (InterruptedException e) {
+                throw new IllegalStateException(e);
               }
-            }, new Consumer<CloudiatorProcess>() {
-              @Override
-              public void accept(CloudiatorProcess cloudiatorProcess) {
-                dependencies.fulfill(cloudiatorProcess, taskUpdaters);
-              }
+            }, () -> {
+              countDownLatch.countDown();
+              dependencies.fulfill();
             }, onSuccessConsumer),
             EXECUTOR);
         break;
@@ -301,13 +288,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
                 } catch (InterruptedException e) {
                   throw new IllegalStateException(e);
                 }
-              }, new Consumer<CloudiatorProcess>() {
-                @Override
-                public void accept(CloudiatorProcess cloudiatorProcess) {
-                  countDownLatch.countDown();
-                  if (countDownLatch.getCount() == 0) {
-                    dependencies.fulfill(cloudiatorProcess, taskUpdaters);
-                  }
+              }, () -> {
+                countDownLatch.countDown();
+                if (countDownLatch.getCount() == 0) {
+                  dependencies.fulfill();
                 }
               }, onSuccessConsumer),
               EXECUTOR);
@@ -355,7 +339,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
           taskFutureMap
               .put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
-                  dependencyGraph.forTask(job, schedule, task)));
+                  dependencyGraph.forTask(task)));
 
         } catch (MatchmakingException e) {
           throw new InstantiationException("Error while scheduling.", e);
