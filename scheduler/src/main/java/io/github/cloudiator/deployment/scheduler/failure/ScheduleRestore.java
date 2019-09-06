@@ -140,7 +140,8 @@ public class ScheduleRestore {
 
     final Map<Task, TaskInterface> taskInterfaceSelection = new TaskInterfaceSelection()
         .select(job);
-    final DependencyGraph dependencyGraph = DependencyGraph.of(job, taskInterfaceSelection);
+    final DependencyGraph dependencyGraph = DependencyGraph
+        .of(job, taskInterfaceSelection);
 
     for (Task task : job.tasks()) {
 
@@ -170,7 +171,7 @@ public class ScheduleRestore {
       final Future<Collection<CloudiatorProcess>> collectionFuture = instantiationStrategySelector
           .get(schedule.instantiation())
           .deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
-              dependencyGraph.forTask(job, schedule, task));
+              dependencyGraph.forTask(job, task));
       futures.add(collectionFuture);
 
     }

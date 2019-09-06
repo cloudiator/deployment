@@ -286,7 +286,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             }, new Consumer<CloudiatorProcess>() {
               @Override
               public void accept(CloudiatorProcess cloudiatorProcess) {
-                dependencies.fulfill(cloudiatorProcess, taskUpdaters);
+                dependencies.fulfill(refresh(schedule), cloudiatorProcess, taskUpdaters);
               }
             }, onSuccessConsumer),
             EXECUTOR);
@@ -306,7 +306,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
                 public void accept(CloudiatorProcess cloudiatorProcess) {
                   countDownLatch.countDown();
                   if (countDownLatch.getCount() == 0) {
-                    dependencies.fulfill(cloudiatorProcess, taskUpdaters);
+                    dependencies.fulfill(refresh(schedule), cloudiatorProcess, taskUpdaters);
                   }
                 }
               }, onSuccessConsumer),
@@ -355,7 +355,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
           taskFutureMap
               .put(task, deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
-                  dependencyGraph.forTask(job, schedule, task)));
+                  dependencyGraph.forTask(job, task)));
 
         } catch (MatchmakingException e) {
           throw new InstantiationException("Error while scheduling.", e);

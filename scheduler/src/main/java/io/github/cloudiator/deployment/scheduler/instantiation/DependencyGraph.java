@@ -38,13 +38,10 @@ public class DependencyGraph {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DependencyGraph.class);
 
-  private final Job job;
   private final Map<Task, TaskLock> locks = new HashMap<>();
   private final Map<Task, TaskInterface> selectedInterfaces;
 
   private DependencyGraph(Job job, Map<Task, TaskInterface> selectedInterfaces) {
-
-    this.job = job;
 
     this.selectedInterfaces = selectedInterfaces;
 
@@ -86,11 +83,11 @@ public class DependencyGraph {
     }
   }
 
-  public static Dependencies noDependencies(Job job, Schedule schedule, Task task) {
-    return new Dependencies(job, schedule, task, Collections.emptySet(), new UpStream(null));
+  public static Dependencies noDependencies(Job job, Task task) {
+    return new Dependencies(job, task, Collections.emptySet(), new UpStream(null));
   }
 
-  public Dependencies forTask(Job job, Schedule schedule, Task task) {
+  public Dependencies forTask(Job job, Task task) {
 
     final JobGraph jobGraph = JobGraph.of(job);
     final HashSet<DownStream> downStreams = new HashSet<>();
@@ -107,7 +104,7 @@ public class DependencyGraph {
 
     }
 
-    return new Dependencies(job, schedule, task, downStreams, new UpStream(locks.get(task)));
+    return new Dependencies(job, task, downStreams, new UpStream(locks.get(task)));
   }
 
   public interface Dependency {
@@ -175,15 +172,13 @@ public class DependencyGraph {
   public static class Dependencies {
 
     private final Job job;
-    private final Schedule schedule;
     private final Task task;
     private final Set<DownStream> dependencies;
     private final UpStream upStream;
 
-    private Dependencies(Job job, Schedule schedule, Task task, Set<DownStream> dependencies,
+    private Dependencies(Job job, Task task, Set<DownStream> dependencies,
         UpStream upStream) {
       this.job = job;
-      this.schedule = schedule;
       this.task = task;
       this.dependencies = dependencies;
       this.upStream = upStream;
@@ -204,7 +199,8 @@ public class DependencyGraph {
               Joiner.on(",").join(dependencies)));
     }
 
-    public void fulfill(@Nullable CloudiatorProcess cloudiatorProcess, TaskUpdater taskUpdater) {
+    public void fulfill(Schedule schedule, @Nullable CloudiatorProcess cloudiatorProcess,
+        TaskUpdater taskUpdater) {
       LOGGER.info(String.format("Task %s is now fulfilling it's dependencies.", task));
       upStream.fulfill();
       if (cloudiatorProcess != null) {
