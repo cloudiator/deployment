@@ -20,9 +20,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
+import io.github.cloudiator.deployment.graph.Graphs;
+import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -151,7 +154,25 @@ public class ScheduleImpl implements Schedule {
   @Override
   public Set<String> nodes() {
     return processes().stream().flatMap(
-        (Function<CloudiatorProcess, Stream<String>>) cloudiatorProcess -> cloudiatorProcess.nodes().stream()).collect(Collectors.toSet());
+        (Function<CloudiatorProcess, Stream<String>>) cloudiatorProcess -> cloudiatorProcess.nodes()
+            .stream()).collect(Collectors.toSet());
+  }
+
+  @Override
+  public void notifyOfProcess(Job job, CloudiatorProcess cloudiatorProcess,
+      TaskUpdater taskUpdater) {
+    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(this, job);
+    final List<CloudiatorProcess> dependentProcesses = scheduleGraph
+        .getDependentProcesses(cloudiatorProcess);
+
+    for (CloudiatorProcess dependent : dependentProcesses) {
+      Task task = job.getTask(dependent.taskId()).orElseThrow(IllegalStateException::new);
+      final TaskInterface taskInterface = task.interfaceOfName(dependent.taskInterface());
+
+      if (taskUpdater.supports(taskInterface)) {
+        taskUpdater.update(this, job, taskInterface, task, cloudiatorProcess);
+      }
+    }
   }
 
   @Override
