@@ -274,6 +274,8 @@ abstract class DockerComponentSupplier {
     createOptionMap.put(Option.ENVIRONMENT, setEnvVars);
     createOptionMap.put(Option.RESTART, new ArrayList<>(Arrays.asList("no")));
     createOptionMap.put(Option.INTERACTIVE, new ArrayList<>(Arrays.asList("")));
+    // make colocated apps accessible over the "cloud_nw"
+    createOptionMap.put(Option.ADD_HOST, new ArrayList<>(Arrays.asList("host.cloudiator.com:$CLOUD_IP")));
 
     List<String> mappedPorts = getMappedPorts();
     if (mappedPorts.size() > 0) {
