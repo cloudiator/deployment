@@ -16,10 +16,12 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.domain.Identifiable;
 import io.github.cloudiator.deployment.graph.Graphs;
 import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.domain.Node;
@@ -161,6 +163,14 @@ public class ScheduleImpl implements Schedule {
   @Override
   public void notifyOfProcess(Job job, CloudiatorProcess cloudiatorProcess,
       TaskUpdater taskUpdater) {
+
+    checkArgument(cloudiatorProcess.scheduleId().equals(this.id()),
+        String.format("Process %s does not belong to this schedule.", cloudiatorProcess));
+
+    checkArgument(processes().stream().map(Identifiable::id).collect(Collectors.toSet())
+            .contains(cloudiatorProcess.id()),
+        String.format("Schedule %s does not contain process %s", this, cloudiatorProcess));
+
     final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(this, job);
     final List<CloudiatorProcess> dependentProcesses = scheduleGraph
         .getDependentProcesses(cloudiatorProcess);
