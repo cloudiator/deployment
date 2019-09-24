@@ -216,7 +216,7 @@ public class ScalingEngine {
 
     for (Node node : nodes) {
       checkArgument(schedule.runsOnNode(node),
-          String.format("Schedule does not have node %s", schedule));
+          String.format("Schedule %s does not have node %s", schedule, node));
       affectedProcesses.addAll(schedule.processesForNode(node));
     }
 
