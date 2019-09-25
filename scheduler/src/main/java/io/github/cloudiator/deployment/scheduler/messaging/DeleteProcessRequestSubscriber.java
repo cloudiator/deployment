@@ -81,6 +81,15 @@ public class DeleteProcessRequestSubscriber implements Runnable {
           //retrieve the process
           final CloudiatorProcess process = getProcess(processId, userId);
 
+          if (!process.state().isRemovable()) {
+            messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(403)
+                .setMessage(String
+                    .format("Process with id %s is in state %s and can not be removed.", processId,
+                        process.state()))
+                .build());
+            return;
+          }
+
           if (process == null) {
             messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(404)
                 .setMessage(String.format("Process with id %s does not exist.", processId))

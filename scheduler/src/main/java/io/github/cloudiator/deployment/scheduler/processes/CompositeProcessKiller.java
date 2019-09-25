@@ -51,6 +51,9 @@ public class CompositeProcessKiller implements ProcessKiller {
     checkState(supports(cloudiatorProcess),
         String.format("%s does not support killing the process %s.", this, cloudiatorProcess));
 
+    checkState(cloudiatorProcess.state().isRemovable(),
+        String.format("Process is in state %s and can not be removed.", cloudiatorProcess.state()));
+
     for (ProcessKiller processKiller : processKillers) {
       if (processKiller.supports(cloudiatorProcess)) {
         processKiller.kill(cloudiatorProcess);

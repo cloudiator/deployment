@@ -24,6 +24,8 @@ import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
 import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import de.uniulm.omi.cloudiator.util.execution.ScheduledThreadPoolExecutorExecutionService;
+import io.github.cloudiator.deployment.domain.LanceTaskUpdater;
+import io.github.cloudiator.deployment.domain.TaskUpdater;
 import io.github.cloudiator.deployment.scheduler.Init;
 import io.github.cloudiator.deployment.scheduler.failure.FailureHandler;
 import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
@@ -36,6 +38,7 @@ import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiati
 import io.github.cloudiator.deployment.scheduler.instantiation.OnDemandResourcePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.PeriodicBehaviourSchedulableFactory;
 import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.TaskUpdaters;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.FaasProcessSpawnerImpl;
@@ -103,5 +106,11 @@ public class SchedulerModule extends AbstractModule {
     processKillerMultibinder.addBinding().to(SimulationProcessKiller.class);
     //todo: implement process killer for FaaS. Probably also no-op?
     bind(ProcessKiller.class).to(CompositeProcessKiller.class);
+
+    bind(TaskUpdater.class).to(TaskUpdaters.class);
+    Multibinder<TaskUpdater> taskUpdaterMultibinder = Multibinder
+        .newSetBinder(binder(), TaskUpdater.class);
+    taskUpdaterMultibinder.addBinding().to(LanceTaskUpdater.class);
+
   }
 }
