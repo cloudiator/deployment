@@ -159,8 +159,9 @@ public class ScalingEngine {
     schedule = checkSchedule(schedule);
 
     LOGGER.info(String
-        .format("Scale In. Schedule: %s, Job: %s, Task: %s, Nodes: %s", schedule, job, task,
-            nodes));
+        .format("Scale In. Schedule: %s, Job: %s, Task: %s, Nodes: %s", schedule.id(), job.id(),
+            task.name(),
+            nodes.stream().map(Identifiable::id).collect(Collectors.toList())));
 
     if (nodes.isEmpty()) {
       scaleInWithoutNodes(schedule, job, task);
