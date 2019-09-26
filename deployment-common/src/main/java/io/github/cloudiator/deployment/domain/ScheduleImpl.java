@@ -161,15 +161,21 @@ public class ScheduleImpl implements Schedule {
   }
 
   @Override
-  public void notifyOfProcess(Job job, CloudiatorProcess cloudiatorProcess,
-      TaskUpdater taskUpdater) {
+  public boolean hasProcess(CloudiatorProcess cloudiatorProcess) {
 
     checkArgument(cloudiatorProcess.scheduleId().equals(this.id()),
         String.format("Process %s does not belong to this schedule.", cloudiatorProcess));
 
-    checkArgument(processes().stream().map(Identifiable::id).collect(Collectors.toSet())
-            .contains(cloudiatorProcess.id()),
-        String.format("Schedule %s does not contain process %s", this, cloudiatorProcess));
+    return processes().stream().map(Identifiable::id).collect(Collectors.toSet())
+        .contains(cloudiatorProcess.id());
+  }
+
+  @Override
+  public void notifyOfProcess(Job job, CloudiatorProcess cloudiatorProcess,
+      TaskUpdater taskUpdater) {
+
+    checkArgument(hasProcess(cloudiatorProcess),
+        String.format("Schedule %s does not have process %s.", this, cloudiatorProcess));
 
     final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(this, job);
     final List<CloudiatorProcess> dependentProcesses = scheduleGraph

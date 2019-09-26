@@ -78,6 +78,12 @@ public class ProcessScheduler {
     return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule refreshSchedule(Schedule schedule) {
+    return scheduleDomainRepository.findByIdAndUser(schedule.id(), schedule.userId());
+  }
+
   public CloudiatorProcess schedule(CloudiatorProcess cloudiatorProcess)
       throws ProcessSpawningException {
 
@@ -116,7 +122,7 @@ public class ProcessScheduler {
         .select(optionalTask.get());
 
     //decorate the environment
-    final Environment environment = EnvironmentGenerator.of(job, schedule)
+    final Environment environment = EnvironmentGenerator.of(job, refreshSchedule(schedule))
         .generate(cloudiatorProcess);
 
     LOGGER.debug(

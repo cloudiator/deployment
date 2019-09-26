@@ -67,5 +67,7 @@ public interface Schedule extends Identifiable, Stateful<ScheduleState> {
 
   Set<String> nodes();
 
+  boolean hasProcess(CloudiatorProcess cloudiatorProcess);
+
   void notifyOfProcess(Job job, CloudiatorProcess cloudiatorProcess, TaskUpdater taskUpdater);
 }
