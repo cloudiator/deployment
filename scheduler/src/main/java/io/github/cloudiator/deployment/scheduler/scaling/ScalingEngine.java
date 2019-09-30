@@ -222,11 +222,21 @@ public class ScalingEngine {
     }
 
     for (CloudiatorProcess affectedProcess : affectedProcesses) {
-      deleteProcess(affectedProcess);
+      try {
+        deleteProcess(affectedProcess);
+      } catch (Exception e) {
+        LOGGER.error(String.format("Failed to delete process %s.", affectedProcess));
+      }
+
     }
 
     for (Node node : nodes) {
-      deleteNode(node.userId(), node.id());
+      try {
+        deleteNode(node.userId(), node.id());
+      } catch (Exception e) {
+        LOGGER.error(String.format("Failed to delete node %s.", node));
+      }
+
     }
 
 

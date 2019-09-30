@@ -49,8 +49,6 @@ public class ProcessDomainRepository {
 
   public void delete(String processId, String userId) {
 
-    //todo: check if we can delete an empty group model
-
     final ProcessModel processModel = processModelRepository.findByIdAndUser(processId, userId);
     if (processModel == null) {
       throw new IllegalStateException(String
