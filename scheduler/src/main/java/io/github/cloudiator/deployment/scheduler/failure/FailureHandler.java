@@ -59,6 +59,8 @@ public class FailureHandler implements NodeFailureReportingInterface,
         .findByIdAndUser(scheduleId, userId);
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
   Job findJob(Schedule schedule) {
     final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
 
