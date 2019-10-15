@@ -84,7 +84,7 @@ public class OnDemandResourcePool implements ResourcePool {
     for (NodeCandidate nodeCandidate : toStart) {
 
       final Builder builder = NodeRequestMessage.newBuilder().setUserId(schedule.userId())
-          .setNodeCandidate(NODE_CANDIDATE_CONVERTER.applyBack(nodeCandidate));
+          .setNodeCandidate(nodeCandidate.id());
       if (name != null) {
         builder.setGroupName(name);
       }
