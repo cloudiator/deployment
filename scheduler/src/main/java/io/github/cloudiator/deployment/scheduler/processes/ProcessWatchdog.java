@@ -27,6 +27,7 @@ import io.github.cloudiator.deployment.scheduler.processes.ProcessStatusChecker.
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.cloudiator.messaging.ResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,12 @@ public class ProcessWatchdog implements Schedulable {
     return processDomainRepository.getAll();
   }
 
+  @Transactional
+  @Nullable
+  CloudiatorProcess getProcess(String id, String userId) {
+    return processDomainRepository.getByIdAndUser(id, userId);
+  }
+
   @Override
   public void run() {
 
@@ -95,11 +102,17 @@ public class ProcessWatchdog implements Schedulable {
                   "Remote process state %s is different from local process state %s. Updating the state.",
                   processStatus.processState(), cloudiatorProcess.state()));
 
-              if (processStatus.processState().equals(ProcessState.ERROR)) {
-                processStateMachine.fail(cloudiatorProcess, null,
-                    new IllegalStateException(processStatus.information().orElse(null)));
+              if (getProcess(cloudiatorProcess.id(), cloudiatorProcess.userId()) != null) {
+
+                if (processStatus.processState().equals(ProcessState.ERROR)) {
+                  processStateMachine.fail(cloudiatorProcess, null,
+                      new IllegalStateException(processStatus.information().orElse(null)));
+                } else {
+                  processStateMachine.apply(cloudiatorProcess, processStatus.processState(), null);
+                }
               } else {
-                processStateMachine.apply(cloudiatorProcess, processStatus.processState(), null);
+                LOGGER.warn(String.format("Process %s failed but does not longer exist."),
+                    cloudiatorProcess);
               }
 
             } else {

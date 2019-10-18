@@ -172,9 +172,6 @@ public class ScalingEngine {
   private void scaleInWithNodes(Schedule schedule, Task task,
       Collection<? extends Node> nodes) {
 
-    checkState(schedule.instantiation().equals(Instantiation.MANUAL),
-        "Scaling with nodes attached is only allowed for MANUAL instantiation.");
-
     scaleInInternally(schedule, task, nodes);
 
   }
