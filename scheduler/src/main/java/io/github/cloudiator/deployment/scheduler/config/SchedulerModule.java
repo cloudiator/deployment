@@ -24,6 +24,7 @@ import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
 import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import de.uniulm.omi.cloudiator.util.execution.ScheduledThreadPoolExecutorExecutionService;
+import io.github.cloudiator.deployment.config.DeploymentContext;
 import io.github.cloudiator.deployment.domain.LanceTaskUpdater;
 import io.github.cloudiator.deployment.domain.TaskUpdater;
 import io.github.cloudiator.deployment.scheduler.Init;
@@ -54,8 +55,19 @@ import io.github.cloudiator.deployment.scheduler.processes.SimulationProcessSpaw
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessSpawnerImpl;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SchedulerModule extends AbstractModule {
+
+  private final DeploymentContext deploymentContext;
+
+  public SchedulerModule(DeploymentContext deploymentContext) {
+    this.deploymentContext = deploymentContext;
+  }
+
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(SchedulerModule.class);
 
   @Override
   protected void configure() {
@@ -70,7 +82,11 @@ public class SchedulerModule extends AbstractModule {
 
     Multibinder<Schedulable> schedulableMultibinder = Multibinder
         .newSetBinder(binder(), Schedulable.class);
-    schedulableMultibinder.addBinding().to(ProcessWatchdog.class);
+
+    if (deploymentContext.isProcessWatchdogEnabled()) {
+      LOGGER.info("Enabling process watchdog.");
+      schedulableMultibinder.addBinding().to(ProcessWatchdog.class);
+    }
 
     final ScheduledThreadPoolExecutorExecutionService scheduledThreadPoolExecutorExecutionService = new ScheduledThreadPoolExecutorExecutionService(
         new LoggingScheduledThreadPoolExecutor(5));

@@ -50,7 +50,7 @@ public class ScheduleAgent {
   private final static Injector INJECTOR = Guice
       .createInjector(
           new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
-          new SchedulerModule(), new DeploymentModule(new DeploymentContext()),
+          new SchedulerModule(new DeploymentContext()), new DeploymentModule(new DeploymentContext()),
           new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
               Configuration.conf())));
 
