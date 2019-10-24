@@ -111,8 +111,8 @@ public class ProcessWatchdog implements Schedulable {
                   processStateMachine.apply(cloudiatorProcess, processStatus.processState(), null);
                 }
               } else {
-                LOGGER.warn(String.format("Process %s failed but does not longer exist."),
-                    cloudiatorProcess);
+                LOGGER.warn(String.format("Process %s failed but does not longer exist.",
+                    cloudiatorProcess));
               }
 
             } else {
