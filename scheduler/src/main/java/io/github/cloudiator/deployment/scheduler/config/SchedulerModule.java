@@ -71,6 +71,9 @@ public class SchedulerModule extends AbstractModule {
 
   @Override
   protected void configure() {
+
+
+
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
     bind(Init.class).asEagerSingleton();
 
