@@ -115,7 +115,7 @@ public class ProcessStateMachine implements
 
   @SuppressWarnings("WeakerAccess")
   @Transactional
-  CloudiatorProcess save(CloudiatorProcess process) {
+  synchronized CloudiatorProcess save(CloudiatorProcess process) {
     return processDomainRepository.save(process);
   }
 
@@ -149,7 +149,7 @@ public class ProcessStateMachine implements
 
   @SuppressWarnings("WeakerAccess")
   @Transactional
-  void delete(CloudiatorProcess process) {
+  synchronized void delete(CloudiatorProcess process) {
     processDomainRepository.delete(process.id(), process.userId());
   }
 
