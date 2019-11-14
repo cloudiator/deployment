@@ -99,6 +99,25 @@ class JobImpl extends JobNewImpl implements Job {
   }
 
   @Override
+  public Optional<Communication> between(Task provided, Task required) {
+
+    final Set<String> providedPorts = provided.ports(PortProvided.class).stream().map(Port::name)
+        .collect(Collectors.toSet());
+    final Set<String> requiredPorts = required.ports(PortRequired.class).stream().map(Port::name)
+        .collect(Collectors.toSet());
+
+    for (Communication communication : communications()) {
+      if (providedPorts.contains(communication.portProvided())) {
+        if (requiredPorts.contains(communication.portRequired())) {
+          return Optional.of(communication);
+        }
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  @Override
   public Set<Task> consumedBy(Task task) {
 
     Set<Task> targets = new HashSet<>();

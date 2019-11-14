@@ -42,6 +42,14 @@ public class DeploymentContext {
     }
   }
 
+  public boolean isProcessWatchdogEnabled() {
+    try {
+      return config.getBoolean(Constants.IS_PROCESS_WATCHDOG_ENABLED);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("config", config).toString();

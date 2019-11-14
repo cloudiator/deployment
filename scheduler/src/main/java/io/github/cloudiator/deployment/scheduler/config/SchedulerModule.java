@@ -24,6 +24,9 @@ import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
 import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import de.uniulm.omi.cloudiator.util.execution.ScheduledThreadPoolExecutorExecutionService;
+import io.github.cloudiator.deployment.config.DeploymentContext;
+import io.github.cloudiator.deployment.domain.LanceTaskUpdater;
+import io.github.cloudiator.deployment.domain.TaskUpdater;
 import io.github.cloudiator.deployment.scheduler.Init;
 import io.github.cloudiator.deployment.scheduler.failure.FailureHandler;
 import io.github.cloudiator.deployment.scheduler.failure.NodeFailureReportingInterface;
@@ -36,6 +39,7 @@ import io.github.cloudiator.deployment.scheduler.instantiation.ManualInstantiati
 import io.github.cloudiator.deployment.scheduler.instantiation.OnDemandResourcePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.PeriodicBehaviourSchedulableFactory;
 import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
+import io.github.cloudiator.deployment.scheduler.instantiation.TaskUpdaters;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.FaasProcessSpawnerImpl;
@@ -51,11 +55,25 @@ import io.github.cloudiator.deployment.scheduler.processes.SimulationProcessSpaw
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.SparkProcessSpawnerImpl;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SchedulerModule extends AbstractModule {
 
+  private final DeploymentContext deploymentContext;
+
+  public SchedulerModule(DeploymentContext deploymentContext) {
+    this.deploymentContext = deploymentContext;
+  }
+
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(SchedulerModule.class);
+
   @Override
   protected void configure() {
+
+
+
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
     bind(Init.class).asEagerSingleton();
 
@@ -67,7 +85,11 @@ public class SchedulerModule extends AbstractModule {
 
     Multibinder<Schedulable> schedulableMultibinder = Multibinder
         .newSetBinder(binder(), Schedulable.class);
-    schedulableMultibinder.addBinding().to(ProcessWatchdog.class);
+
+    if (deploymentContext.isProcessWatchdogEnabled()) {
+      LOGGER.info("Enabling process watchdog.");
+      schedulableMultibinder.addBinding().to(ProcessWatchdog.class);
+    }
 
     final ScheduledThreadPoolExecutorExecutionService scheduledThreadPoolExecutorExecutionService = new ScheduledThreadPoolExecutorExecutionService(
         new LoggingScheduledThreadPoolExecutor(5));
@@ -103,5 +125,11 @@ public class SchedulerModule extends AbstractModule {
     processKillerMultibinder.addBinding().to(SimulationProcessKiller.class);
     //todo: implement process killer for FaaS. Probably also no-op?
     bind(ProcessKiller.class).to(CompositeProcessKiller.class);
+
+    bind(TaskUpdater.class).to(TaskUpdaters.class);
+    Multibinder<TaskUpdater> taskUpdaterMultibinder = Multibinder
+        .newSetBinder(binder(), TaskUpdater.class);
+    taskUpdaterMultibinder.addBinding().to(LanceTaskUpdater.class);
+
   }
 }

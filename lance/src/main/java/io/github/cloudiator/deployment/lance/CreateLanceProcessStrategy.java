@@ -60,7 +60,7 @@ public class CreateLanceProcessStrategy {
     staticOsImpl = new OperatingSystemImpl(
         OperatingSystemFamily.UBUNTU,
         OperatingSystemArchitecture.AMD64,
-        OperatingSystemVersions.of(1604,"16.04"));
+        OperatingSystemVersions.of(1404,"14.04"));
   }
 
   @Inject

@@ -1,5 +1,6 @@
 package io.github.cloudiator.deployment.scheduler.statistics;
 
+import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.util.statistics.MetricBuilder;
 import de.uniulm.omi.cloudiator.util.statistics.StatisticInterface;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -11,12 +12,13 @@ public class ScheduleStatistics {
   private final StatisticInterface statisticsInterface;
   private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleStatistics.class);
 
+  @Inject
   public ScheduleStatistics(
       StatisticInterface statisticsInterface) {
     this.statisticsInterface = statisticsInterface;
   }
 
-  public void initialStartTime(String user, Schedule schedule, long time) {
+  public void initialStartTime(Schedule schedule, long time) {
 
     try {
       final MetricBuilder metricBuilder = MetricBuilder.create().name("schedule-start-time")
@@ -25,7 +27,7 @@ public class ScheduleStatistics {
           .addTag("instantiation", schedule.instantiation().name())
           .addTag("number_processes", String.valueOf(schedule.processes().size()))
           .addTag("number_nodes", String.valueOf(schedule.nodes().size()))
-          .addTag("user", user).addTag("job", schedule.job());
+          .addTag("user", schedule.userId()).addTag("job", schedule.job());
 
       statisticsInterface.reportMetric(metricBuilder.build());
 

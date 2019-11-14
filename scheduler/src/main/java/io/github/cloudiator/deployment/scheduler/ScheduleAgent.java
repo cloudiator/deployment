@@ -20,6 +20,8 @@ import com.google.common.base.MoreObjects;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
+import de.uniulm.omi.cloudiator.util.statistics.StatisticsContext;
+import de.uniulm.omi.cloudiator.util.statistics.StatisticsModule;
 import io.github.cloudiator.deployment.config.DeploymentContext;
 import io.github.cloudiator.deployment.config.DeploymentModule;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
@@ -50,9 +52,11 @@ public class ScheduleAgent {
   private final static Injector INJECTOR = Guice
       .createInjector(
           new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
-          new SchedulerModule(), new DeploymentModule(new DeploymentContext()),
+          new SchedulerModule(new DeploymentContext()),
+          new DeploymentModule(new DeploymentContext()),
           new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
-              Configuration.conf())));
+              Configuration.conf())),
+          new StatisticsModule(new StatisticsContext()));
 
   public static void main(String[] args) {
 

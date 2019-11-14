@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.github.cloudiator.deployment.graph.Graphs;
@@ -46,6 +47,9 @@ public class EnvironmentGenerator {
 
     Environment environment = new Environment();
     final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job);
+
+    checkArgument(schedule.hasProcess(cloudiatorProcess),
+        String.format("Process %s does not belong to schedule %s.", cloudiatorProcess, schedule));
 
     for (CloudiatorProcess dependency : scheduleGraph.getDependencies(cloudiatorProcess)) {
 
