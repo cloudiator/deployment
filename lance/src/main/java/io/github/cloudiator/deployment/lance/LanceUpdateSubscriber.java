@@ -36,6 +36,8 @@ import org.cloudiator.messages.Process.LanceUpdateRequest;
 import org.cloudiator.messages.Process.LanceUpdateResponse;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LanceUpdateSubscriber implements Runnable {
 
@@ -43,6 +45,7 @@ public class LanceUpdateSubscriber implements Runnable {
   private final LanceClientConnector lanceClientConnector;
   private static final ProcessMessageConverter PROCESS_MESSAGE_CONVERTER = ProcessMessageConverter.INSTANCE;
   private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
+  private static final Logger LOGGER = LoggerFactory.getLogger(LanceUpdateSubscriber.class);
 
   @Inject
   public LanceUpdateSubscriber(MessageInterface messageInterface,
@@ -85,13 +88,15 @@ public class LanceUpdateSubscriber implements Runnable {
                       LifecycleHandlerType.START).taskName(spawnedProcess.taskId())
                   .pubIp(spawnedProcess.endpoint().get()).providedPortContext(
                       generateProvidedPortContext(job, spawnedProcess,
-                          content.getLanceUpdate().getTaskToBeUpdated().getName())).build();
+                          content.getLanceUpdate().getTaskToBeUpdated().getName()))
+                  .build();
 
               registryWrapper.injectExternalDeploymentContext(externalContextParameters);
 
               messageInterface.reply(id, LanceUpdateResponse.newBuilder().build());
 
             } catch (Exception e) {
+              LOGGER.error("Error while updating lance config", e);
               messageInterface.reply(id,
                   Error.newBuilder().setMessage("Error occurred " + e.getMessage()).setCode(500)
                       .build());
@@ -103,12 +108,13 @@ public class LanceUpdateSubscriber implements Runnable {
   }
 
   private static final ExternalContextParameters.ProvidedPortContext generateProvidedPortContext(
-      Job job, CloudiatorProcess spawned, String taskRunning) {
+      Job job, CloudiatorProcess running, String toBeUpdated) {
 
-    Task spawnedTask = job.getTask(spawned.taskId()).orElseThrow(IllegalStateException::new);
-    Task runningTask = job.getTask(taskRunning).orElseThrow(IllegalStateException::new);
+    Task runningTask = job.getTask(running.taskId()).orElseThrow(IllegalStateException::new);
+    Task toBeUpdatedTask = job.getTask(toBeUpdated)
+        .orElseThrow(IllegalStateException::new);
 
-    Communication communication = job.between(runningTask, spawnedTask)
+    Communication communication = job.between(runningTask, toBeUpdatedTask)
         .orElseThrow(IllegalStateException::new);
 
     final int port = job.providedPort(communication).port();
