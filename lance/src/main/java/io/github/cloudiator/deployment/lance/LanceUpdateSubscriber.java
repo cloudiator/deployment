@@ -64,6 +64,8 @@ public class LanceUpdateSubscriber implements Runnable {
 
             try {
 
+              LOGGER.debug(String.format("Receiving lance update request %s.", content));
+
               CloudiatorProcess spawnedProcess = PROCESS_MESSAGE_CONVERTER
                   .apply(content.getLanceUpdate().getProcessSpawned());
 
@@ -90,6 +92,14 @@ public class LanceUpdateSubscriber implements Runnable {
                       generateProvidedPortContext(job, spawnedProcess,
                           content.getLanceUpdate().getTaskToBeUpdated().getName()))
                   .build();
+
+              LOGGER.info(String
+                  .format("Updating for job %s. Task that spawned is %s, task to be updated is %s",
+                      job.id(), spawnedProcess.taskId(),
+                      content.getLanceUpdate().getTaskToBeUpdated().getName()));
+
+              LOGGER.debug(String
+                  .format("Injecting external context parameters %s", externalContextParameters));
 
               registryWrapper.injectExternalDeploymentContext(externalContextParameters);
 
