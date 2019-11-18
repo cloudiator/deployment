@@ -20,15 +20,16 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.messaging.TaskConverter;
+import java.util.concurrent.ExecutionException;
 import org.cloudiator.messages.Process.LanceUpdateRequest;
+import org.cloudiator.messages.Process.LanceUpdateResponse;
 import org.cloudiator.messages.entities.ProcessEntities.LanceUpdate;
-import org.cloudiator.messaging.ResponseException;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 
 public class LanceTaskUpdater implements TaskUpdater {
 
   private final ProcessService processService;
-  private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private static final TaskConverter TASK_CONVERTER = new TaskConverter();
 
   @Inject
@@ -57,10 +58,17 @@ public class LanceTaskUpdater implements TaskUpdater {
         .setUserId(schedule.userId())
         .setLanceUpdate(lanceUpdate).build();
 
+    SettableFutureResponseCallback<LanceUpdateResponse, LanceUpdateResponse> futureResponseCallback = SettableFutureResponseCallback
+        .create();
+
+    processService.updateLanceEnvironmentAsync(lanceUpdateRequest, futureResponseCallback);
+
     try {
-      processService.updateLanceEnvironment(lanceUpdateRequest);
-    } catch (ResponseException e) {
-      throw new IllegalStateException(e);
+      futureResponseCallback.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      throw new IllegalStateException(e.getCause());
     }
   }
 }
