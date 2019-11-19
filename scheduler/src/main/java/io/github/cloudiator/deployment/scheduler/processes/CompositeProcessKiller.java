@@ -76,8 +76,6 @@ public class CompositeProcessKiller implements ProcessKiller {
   private void notifyBeforeDeletion(Schedule schedule, Job job,
       CloudiatorProcess cloudiatorProcess) {
 
-
-
     for (CloudiatorProcess dependency : dependencies(schedule, job, cloudiatorProcess)) {
 
       final Task toBeNotifiedTask = job.getTask(dependency.taskId())

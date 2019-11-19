@@ -42,6 +42,7 @@ import io.github.cloudiator.deployment.scheduler.instantiation.ResourcePool;
 import io.github.cloudiator.deployment.scheduler.instantiation.TaskUpdaters;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.CompositeProcessSpawnerImpl;
+import io.github.cloudiator.deployment.scheduler.processes.FaaSProcessKiller;
 import io.github.cloudiator.deployment.scheduler.processes.FaasProcessSpawnerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.LanceProcessKillerImpl;
 import io.github.cloudiator.deployment.scheduler.processes.LanceProcessSpawnerImpl;
@@ -71,8 +72,6 @@ public class SchedulerModule extends AbstractModule {
 
   @Override
   protected void configure() {
-
-
 
     bind(ResourcePool.class).to(OnDemandResourcePool.class);
     bind(Init.class).asEagerSingleton();
@@ -123,7 +122,7 @@ public class SchedulerModule extends AbstractModule {
     processKillerMultibinder.addBinding().to(LanceProcessKillerImpl.class);
     processKillerMultibinder.addBinding().to(SparkProcessKillerImpl.class);
     processKillerMultibinder.addBinding().to(SimulationProcessKiller.class);
-    //todo: implement process killer for FaaS. Probably also no-op?
+    processKillerMultibinder.addBinding().to(FaaSProcessKiller.class);
     bind(ProcessKiller.class).to(CompositeProcessKiller.class);
 
     bind(TaskUpdater.class).to(TaskUpdaters.class);
