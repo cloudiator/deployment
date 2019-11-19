@@ -51,8 +51,8 @@ public class LanceTaskUpdater implements TaskUpdater {
 
     final LanceUpdate lanceUpdate = LanceUpdate.newBuilder().setScheduleId(schedule.id())
         .setJob(JobConverter.INSTANCE.applyBack(job))
-        .setTaskSpawned(TASK_CONVERTER.applyBack(spawnedTask))
-        .setTaskToBeUpdated(TASK_CONVERTER.applyBack(runningTask)).setProcessSpawned(
+        .setTaskSpawnedorDeleted(TASK_CONVERTER.applyBack(spawnedTask))
+        .setTaskToBeUpdated(TASK_CONVERTER.applyBack(runningTask)).setProcessSpawnedorDeleted(
             ProcessMessageConverter.INSTANCE.applyBack(newSpawned)).setUpdateType(
                 LanceUpdateType.INJECT).build();
 

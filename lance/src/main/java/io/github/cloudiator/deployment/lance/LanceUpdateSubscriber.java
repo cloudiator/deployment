@@ -69,7 +69,7 @@ public class LanceUpdateSubscriber implements Runnable {
               LOGGER.debug(String.format("Receiving lance update request %s.", content));
 
               CloudiatorProcess spawnedProcess = PROCESS_MESSAGE_CONVERTER
-                  .apply(content.getLanceUpdate().getProcessSpawned());
+                  .apply(content.getLanceUpdate().getProcessSpawnedorDeleted());
 
               Job job = JOB_CONVERTER.apply(content.getLanceUpdate().getJob());
 
@@ -80,7 +80,7 @@ public class LanceUpdateSubscriber implements Runnable {
                   .fromString(content.getLanceUpdate().getScheduleId());
 
               final ComponentId componentId = ComponentIdGenerator
-                  .generate(job.id(), content.getLanceUpdate().getTaskSpawned().getName());
+                  .generate(job.id(), content.getLanceUpdate().getTaskSpawnedorDeleted().getName());
 
               final ComponentInstanceId componentInstanceId = ComponentInstanceId
                   .fromString(spawnedProcess.id());
