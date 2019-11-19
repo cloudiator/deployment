@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableSet;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import io.github.cloudiator.deployment.graph.Graphs;
 import io.github.cloudiator.deployment.graph.JobGraph;
-import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.HashSet;
@@ -177,10 +176,6 @@ public class ScheduleImpl implements Schedule {
 
     checkArgument(hasProcess(cloudiatorProcess),
         String.format("Schedule %s does not have process %s.", this, cloudiatorProcess));
-
-    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(this, job);
-    final List<CloudiatorProcess> dependentProcesses = scheduleGraph
-        .getDependentProcesses(cloudiatorProcess);
 
     final JobGraph jobGraph = Graphs.jobGraph(job);
 

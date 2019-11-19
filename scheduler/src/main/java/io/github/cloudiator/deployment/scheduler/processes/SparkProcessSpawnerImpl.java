@@ -24,6 +24,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.SparkInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
@@ -129,7 +130,7 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorSingleProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Node node) throws ProcessSpawningException {
 
     checkState(supports(taskInterface), String
@@ -137,11 +138,12 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
             taskInterface.getClass().getName(), this));
 
     return (CloudiatorSingleProcess) executeRequest(userId,
-        builder(schedule, job, task, taskInterface).setNode(NODE_CONVERTER.apply(node)).build());
+        builder(schedule.id(), job, task, taskInterface).setNode(NODE_CONVERTER.apply(node))
+            .build());
   }
 
   @Override
-  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorClusterProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
 
     checkState(supports(taskInterface), String
@@ -149,7 +151,7 @@ public class SparkProcessSpawnerImpl implements ProcessSpawner {
             taskInterface.getClass().getName(), this));
 
     return (CloudiatorClusterProcess) executeRequest(userId,
-        builder(schedule, job, task, taskInterface).setNodes(Nodes.newBuilder()
+        builder(schedule.id(), job, task, taskInterface).setNodes(Nodes.newBuilder()
             .addAllNodes(nodes.stream().map(NODE_CONVERTER).collect(Collectors.toList())).build())
             .build());
   }

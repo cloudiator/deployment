@@ -111,7 +111,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
       final Future<Collection<CloudiatorProcess>> collectionFuture = automaticInstantiationStrategy
           .deployTask(task, taskInterface, schedule, allocateResources(),
-              DependencyGraph.noDependencies(job, task));
+              DependencyGraph.noDependencies(task));
 
     } catch (Exception e) {
       LOGGER.error(String.format("Unexpected exception while running %s.", this), e);

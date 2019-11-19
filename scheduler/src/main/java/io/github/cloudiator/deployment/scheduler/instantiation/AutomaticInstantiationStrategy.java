@@ -37,7 +37,6 @@ import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.ServiceBehaviour;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
-import io.github.cloudiator.deployment.domain.TaskUpdater;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
@@ -77,7 +76,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private static final ExecutorService EXECUTOR = new LoggingThreadPoolExecutor(0,
       2147483647, 60L, TimeUnit.SECONDS, new SynchronousQueue());
   private final MatchmakingEngine matchmakingEngine;
-  private final TaskUpdater taskUpdaters;
 
   static {
     MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
@@ -98,7 +96,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       ScheduleDomainRepository scheduleDomainRepository,
       PeriodicScheduler periodicScheduler) {
     this.matchmakingEngine = matchmakingEngine;
-    this.taskUpdaters = taskUpdaters;
     this.resourcePool = resourcePool;
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
@@ -286,7 +283,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             }, new Consumer<CloudiatorProcess>() {
               @Override
               public void accept(CloudiatorProcess cloudiatorProcess) {
-                dependencies.fulfill(refresh(schedule), cloudiatorProcess, taskUpdaters);
+                dependencies.fulfill();
               }
             }, onSuccessConsumer),
             EXECUTOR);
@@ -306,7 +303,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
                 public void accept(CloudiatorProcess cloudiatorProcess) {
                   countDownLatch.countDown();
                   if (countDownLatch.getCount() == 0) {
-                    dependencies.fulfill(refresh(schedule), cloudiatorProcess, taskUpdaters);
+                    dependencies.fulfill();
                   }
                 }
               }, onSuccessConsumer),

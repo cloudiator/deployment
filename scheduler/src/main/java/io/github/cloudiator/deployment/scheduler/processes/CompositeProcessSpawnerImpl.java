@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.security.VariableContextFactory;
@@ -86,7 +87,7 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorSingleProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Node node) throws ProcessSpawningException {
 
     return determineSpawner(taskInterface)
@@ -94,7 +95,7 @@ public class CompositeProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorClusterProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
 
     return determineSpawner(taskInterface)

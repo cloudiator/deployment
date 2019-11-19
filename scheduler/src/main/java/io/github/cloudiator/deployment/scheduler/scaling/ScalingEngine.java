@@ -409,7 +409,7 @@ public class ScalingEngine {
 
     final Future<Collection<CloudiatorProcess>> processFutures = automaticInstantiationStrategy
         .deployTask(task, taskInterface, schedule, nodes,
-            DependencyGraph.noDependencies(job, task));
+            DependencyGraph.noDependencies(task));
 
     try {
       final Collection<CloudiatorProcess> cloudiatorProcesses = processFutures.get();

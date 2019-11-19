@@ -18,12 +18,9 @@ package io.github.cloudiator.deployment.scheduler.instantiation;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
-import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
-import io.github.cloudiator.deployment.domain.TaskUpdater;
 import io.github.cloudiator.deployment.graph.JobGraph;
 import java.util.Collections;
 import java.util.HashMap;
@@ -83,8 +80,8 @@ public class DependencyGraph {
     }
   }
 
-  public static Dependencies noDependencies(Job job, Task task) {
-    return new Dependencies(job, task, Collections.emptySet(), new UpStream(null));
+  public static Dependencies noDependencies(Task task) {
+    return new Dependencies(task, Collections.emptySet(), new UpStream(null));
   }
 
   public Dependencies forTask(Job job, Task task) {
@@ -104,7 +101,7 @@ public class DependencyGraph {
 
     }
 
-    return new Dependencies(job, task, downStreams, new UpStream(locks.get(task)));
+    return new Dependencies(task, downStreams, new UpStream(locks.get(task)));
   }
 
   public interface Dependency {
@@ -171,14 +168,12 @@ public class DependencyGraph {
 
   public static class Dependencies {
 
-    private final Job job;
     private final Task task;
     private final Set<DownStream> dependencies;
     private final UpStream upStream;
 
-    private Dependencies(Job job, Task task, Set<DownStream> dependencies,
+    private Dependencies(Task task, Set<DownStream> dependencies,
         UpStream upStream) {
-      this.job = job;
       this.task = task;
       this.dependencies = dependencies;
       this.upStream = upStream;
@@ -199,13 +194,9 @@ public class DependencyGraph {
               Joiner.on(",").join(dependencies)));
     }
 
-    public void fulfill(Schedule schedule, @Nullable CloudiatorProcess cloudiatorProcess,
-        TaskUpdater taskUpdater) {
+    public void fulfill() {
       LOGGER.info(String.format("Task %s is now fulfilling it's dependencies.", task));
       upStream.fulfill();
-      if (cloudiatorProcess != null) {
-        schedule.notifyOfProcess(job, cloudiatorProcess, taskUpdater);
-      }
     }
 
   }
