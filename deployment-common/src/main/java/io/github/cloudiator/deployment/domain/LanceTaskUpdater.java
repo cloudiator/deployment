@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import org.cloudiator.messages.Process.LanceUpdateRequest;
 import org.cloudiator.messages.Process.LanceUpdateResponse;
 import org.cloudiator.messages.entities.ProcessEntities.LanceUpdate;
+import org.cloudiator.messages.entities.ProcessEntities.LanceUpdateType;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 
@@ -50,9 +51,10 @@ public class LanceTaskUpdater implements TaskUpdater {
 
     final LanceUpdate lanceUpdate = LanceUpdate.newBuilder().setScheduleId(schedule.id())
         .setJob(JobConverter.INSTANCE.applyBack(job))
-        .setTaskSpawned(TASK_CONVERTER.applyBack(spawnedTask))
-        .setTaskToBeUpdated(TASK_CONVERTER.applyBack(runningTask)).setProcessSpawned(
-            ProcessMessageConverter.INSTANCE.applyBack(newSpawned)).build();
+        .setTaskSpawnedorDeleted(TASK_CONVERTER.applyBack(spawnedTask))
+        .setTaskToBeUpdated(TASK_CONVERTER.applyBack(runningTask)).setProcessSpawnedorDeleted(
+            ProcessMessageConverter.INSTANCE.applyBack(newSpawned)).setUpdateType(
+                LanceUpdateType.INJECT).build();
 
     final LanceUpdateRequest lanceUpdateRequest = LanceUpdateRequest.newBuilder()
         .setUserId(schedule.userId())
