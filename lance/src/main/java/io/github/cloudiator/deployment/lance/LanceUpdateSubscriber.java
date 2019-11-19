@@ -25,7 +25,6 @@ import de.uniulm.omi.cloudiator.lance.container.standard.ExternalContextParamete
 import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerStatus;
-import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
 import de.uniulm.omi.cloudiator.lance.lifecycle.LifecycleHandlerType;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.Communication;
@@ -99,7 +98,7 @@ public class LanceUpdateSubscriber implements Runnable {
 
               if (updateType == LanceUpdateType.INJECT) {
                 final ExternalContextParameters externalContextParameters = externalContextParametersBuilder
-                    .contStatus(ContainerStatus.READY).compInstType( LifecycleHandlerType.START)
+                    .contStatus(ContainerStatus.READY).compInstType(LifecycleHandlerType.START)
                     .pubIp(spawnedProcess.endpoint().get()).providedPortContext(
                         generateProvidedPortContext(job, spawnedProcess,
                             content.getLanceUpdate().getTaskToBeUpdated().getName()))
@@ -125,7 +124,8 @@ public class LanceUpdateSubscriber implements Runnable {
         });
   }
 
-  private static final void injectExternalContext(ExternalContextParameters externalContextParameters,
+  private static final void injectExternalContext(
+      ExternalContextParameters externalContextParameters,
       LifecycleClientRegistryWrapper regWrapper) throws DeploymentException {
     LOGGER.debug(String
         .format("Injecting external context parameters %s", externalContextParameters));
@@ -133,7 +133,8 @@ public class LanceUpdateSubscriber implements Runnable {
     regWrapper.injectExternalDeploymentContext(externalContextParameters);
   }
 
-  private static final void removeExternalContext(ExternalContextParameters externalContextParameters,
+  private static final void removeExternalContext(
+      ExternalContextParameters externalContextParameters,
       LifecycleClientRegistryWrapper regWrapper) throws DeploymentException {
     // todo: adjust toString
     LOGGER.debug(String

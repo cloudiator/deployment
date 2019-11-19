@@ -23,6 +23,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import io.github.cloudiator.deployment.graph.Graphs;
+import io.github.cloudiator.deployment.graph.JobGraph;
 import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
@@ -181,12 +182,18 @@ public class ScheduleImpl implements Schedule {
     final List<CloudiatorProcess> dependentProcesses = scheduleGraph
         .getDependentProcesses(cloudiatorProcess);
 
-    for (CloudiatorProcess dependent : dependentProcesses) {
-      Task task = job.getTask(dependent.taskId()).orElseThrow(IllegalStateException::new);
-      final TaskInterface taskInterface = task.interfaceOfName(dependent.taskInterface());
+    final JobGraph jobGraph = Graphs.jobGraph(job);
 
-      if (taskUpdater.supports(taskInterface)) {
-        taskUpdater.notifyNew(this, job, taskInterface, task, cloudiatorProcess);
+    final List<Task> dependentTasks = jobGraph
+        .getDependentTasks(job.getTask(cloudiatorProcess.taskId())
+            .orElseThrow(() -> new IllegalStateException("Task does not exist in job")));
+
+    for (Task dependant : dependentTasks) {
+
+      for (TaskInterface taskInterface : dependant.interfaces()) {
+        if (taskUpdater.supports(taskInterface)) {
+          taskUpdater.notifyNew(this, job, taskInterface, dependant, cloudiatorProcess);
+        }
       }
     }
   }
