@@ -45,12 +45,22 @@ public class TaskUpdaters implements TaskUpdater {
   }
 
   @Override
-  public void update(Schedule schedule, Job job, TaskInterface runningTaskInterface,
+  public void notifyNew(Schedule schedule, Job job, TaskInterface runningTaskInterface,
       Task runningTask, CloudiatorProcess newSpawned) {
 
     for (TaskUpdater taskUpdater : taskUpdaters) {
       if (taskUpdater.supports(runningTaskInterface)) {
-        taskUpdater.update(schedule, job, runningTaskInterface, runningTask, newSpawned);
+        taskUpdater.notifyNew(schedule, job, runningTaskInterface, runningTask, newSpawned);
+      }
+    }
+  }
+
+  @Override
+  public void notifyDelete(Schedule schedule, Job job, TaskInterface runningTaskInterface,
+      Task runningTask, CloudiatorProcess deleted) {
+    for (TaskUpdater taskUpdater : taskUpdaters) {
+      if (taskUpdater.supports(runningTaskInterface)) {
+        taskUpdater.notifyDelete(schedule, job, runningTaskInterface, runningTask, deleted);
       }
     }
   }

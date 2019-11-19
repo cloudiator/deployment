@@ -22,6 +22,7 @@ import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import de.uniulm.omi.cloudiator.lance.container.standard.ExternalContextParameters;
 import de.uniulm.omi.cloudiator.lance.container.standard.ExternalContextParameters.Builder;
+import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.container.ContainerStatus;
 import de.uniulm.omi.cloudiator.lance.lifecycle.LifecycleHandlerType;
@@ -34,6 +35,7 @@ import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.LanceUpdateRequest;
 import org.cloudiator.messages.Process.LanceUpdateResponse;
+import org.cloudiator.messages.entities.ProcessEntities.LanceUpdateType;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.MessageInterface;
 import org.slf4j.Logger;
@@ -54,7 +56,6 @@ public class LanceUpdateSubscriber implements Runnable {
     this.lanceClientConnector = lanceClientConnector;
   }
 
-
   @Override
   public void run() {
     messageInterface.subscribe(LanceUpdateRequest.class, LanceUpdateRequest.parser(),
@@ -67,7 +68,7 @@ public class LanceUpdateSubscriber implements Runnable {
               LOGGER.debug(String.format("Receiving lance update request %s.", content));
 
               CloudiatorProcess spawnedProcess = PROCESS_MESSAGE_CONVERTER
-                  .apply(content.getLanceUpdate().getProcessSpawned());
+                  .apply(content.getLanceUpdate().getProcessSpawnedorDeleted());
 
               Job job = JOB_CONVERTER.apply(content.getLanceUpdate().getJob());
 
@@ -78,30 +79,38 @@ public class LanceUpdateSubscriber implements Runnable {
                   .fromString(content.getLanceUpdate().getScheduleId());
 
               final ComponentId componentId = ComponentIdGenerator
-                  .generate(job.id(), content.getLanceUpdate().getTaskSpawned().getName());
+                  .generate(job.id(), content.getLanceUpdate().getTaskSpawnedorDeleted().getName());
 
               final ComponentInstanceId componentInstanceId = ComponentInstanceId
                   .fromString(spawnedProcess.id());
-
-              final ExternalContextParameters externalContextParameters = new Builder()
-                  .appId(applicationInstanceId)
-                  .compId(componentId).contStatus(
-                      ContainerStatus.READY).compInstId(componentInstanceId).compInstType(
-                      LifecycleHandlerType.START).taskName(spawnedProcess.taskId())
-                  .pubIp(spawnedProcess.endpoint().get()).providedPortContext(
-                      generateProvidedPortContext(job, spawnedProcess,
-                          content.getLanceUpdate().getTaskToBeUpdated().getName()))
-                  .build();
 
               LOGGER.info(String
                   .format("Updating for job %s. Task that spawned is %s, task to be updated is %s",
                       job.id(), spawnedProcess.taskId(),
                       content.getLanceUpdate().getTaskToBeUpdated().getName()));
 
-              LOGGER.debug(String
-                  .format("Injecting external context parameters %s", externalContextParameters));
+              final LanceUpdateType updateType = content.getLanceUpdate().getUpdateType();
 
-              registryWrapper.injectExternalDeploymentContext(externalContextParameters);
+              final ExternalContextParameters.Builder externalContextParametersBuilder = new Builder()
+                  .appId(applicationInstanceId)
+                  .compId(componentId).compInstId(componentInstanceId)
+                  .taskName(spawnedProcess.taskId());
+
+              if (updateType == LanceUpdateType.INJECT) {
+                final ExternalContextParameters externalContextParameters = externalContextParametersBuilder
+                    .contStatus(ContainerStatus.READY).compInstType(LifecycleHandlerType.START)
+                    .pubIp(spawnedProcess.endpoint().get()).providedPortContext(
+                        generateProvidedPortContext(job, spawnedProcess,
+                            content.getLanceUpdate().getTaskToBeUpdated().getName()))
+                    .build();
+
+                injectExternalContext(externalContextParameters, registryWrapper);
+              } else {
+                final ExternalContextParameters externalContextParameters =
+                    externalContextParametersBuilder.build();
+
+                removeExternalContext(externalContextParameters, registryWrapper);
+              }
 
               messageInterface.reply(id, LanceUpdateResponse.newBuilder().build());
 
@@ -111,10 +120,27 @@ public class LanceUpdateSubscriber implements Runnable {
                   Error.newBuilder().setMessage("Error occurred " + e.getMessage()).setCode(500)
                       .build());
             }
-
-
           }
         });
+  }
+
+  private static final void injectExternalContext(
+      ExternalContextParameters externalContextParameters,
+      LifecycleClientRegistryWrapper regWrapper) throws DeploymentException {
+    LOGGER.debug(String
+        .format("Injecting external context parameters %s", externalContextParameters));
+
+    regWrapper.injectExternalDeploymentContext(externalContextParameters);
+  }
+
+  private static final void removeExternalContext(
+      ExternalContextParameters externalContextParameters,
+      LifecycleClientRegistryWrapper regWrapper) throws DeploymentException {
+    // todo: adjust toString
+    LOGGER.debug(String
+        .format("Removing external context parameters"));
+
+    regWrapper.removeExternalDeploymentContext(externalContextParameters);
   }
 
   private static final ExternalContextParameters.ProvidedPortContext generateProvidedPortContext(
