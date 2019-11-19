@@ -108,7 +108,7 @@ public class LanceUpdateSubscriber implements Runnable {
                 injectExternalContext(externalContextParameters, registryWrapper);
               } else {
                 final ExternalContextParameters externalContextParameters =
-                    externalContextParametersBuilder.build()
+                    externalContextParametersBuilder.build();
 
                 removeExternalContext(externalContextParameters, registryWrapper);
               }
