@@ -7,6 +7,8 @@ import io.github.cloudiator.deployment.faasagent.azure.AzureDeployer.AzureDeploy
 import io.github.cloudiator.deployment.faasagent.cloudformation.AwsDeployer.AwsDeployerFactory;
 import io.github.cloudiator.deployment.faasagent.deployment.CompositeFaasDeployerFactory;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
+import io.github.cloudiator.deployment.faasagent.helper.SaveFunctionHelper;
+import io.github.cloudiator.deployment.faasagent.helper.SaveFunctionSynchronizedHelper;
 
 public class FaasAgentModule extends AbstractModule {
 
@@ -19,5 +21,7 @@ public class FaasAgentModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), FaasDeployerFactory.class);
     faasDeployerMultibinder.addBinding().to(AwsDeployerFactory.class);
     faasDeployerMultibinder.addBinding().to(AzureDeployerFactory.class);
+
+    bind(SaveFunctionHelper.class).to(SaveFunctionSynchronizedHelper.class);
   }
 }

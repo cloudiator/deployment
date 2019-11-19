@@ -63,6 +63,7 @@ public class ScheduleRequestSubscriber implements Runnable {
     this.scheduleDomainRepository = scheduleDomainRepository;
   }
 
+  @SuppressWarnings("WeakerAccess")
   @Transactional
   void persistSchedule(Schedule schedule) {
     scheduleDomainRepository.save(schedule);

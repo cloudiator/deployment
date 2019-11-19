@@ -59,6 +59,8 @@ public class FailureHandler implements NodeFailureReportingInterface,
         .findByIdAndUser(scheduleId, userId);
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
   Job findJob(Schedule schedule) {
     final Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
 
@@ -86,10 +88,9 @@ public class FailureHandler implements NodeFailureReportingInterface,
         .format("Process %s failed, but schedule with id %s does not exist.", cloudiatorProcess,
             cloudiatorProcess.scheduleId()));
 
-    handleAffectedProcesses(schedule, findJob(schedule), cloudiatorProcess);
-
     //if the schedule is not in state running ignore it
     if (schedule.state().equals(ScheduleState.RUNNING)) {
+      handleAffectedProcesses(schedule, findJob(schedule), cloudiatorProcess);
       //wait for multiple processes to fail?
       scheduleStateMachine.fail(schedule, null,
           new IllegalStateException(String.format("Process %s failed.", cloudiatorProcess)));

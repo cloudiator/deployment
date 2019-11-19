@@ -43,7 +43,7 @@ public class LanceTaskInterfaceToLifecycleStore implements
     staticOs = new OperatingSystemImpl(
         OperatingSystemFamily.UBUNTU,
         OperatingSystemArchitecture.AMD64,
-        OperatingSystemVersions.of(1604,"16.04"));
+        OperatingSystemVersions.of(1404,"14.04"));
   }
 
   private Map<LifecycleHandlerType, String> buildCommandMap(LanceInterface lanceInterface) {

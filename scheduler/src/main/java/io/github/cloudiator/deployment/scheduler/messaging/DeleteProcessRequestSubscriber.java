@@ -19,7 +19,8 @@ package io.github.cloudiator.deployment.scheduler.messaging;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.scheduler.processes.ProcessKiller;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
+import io.github.cloudiator.deployment.scheduler.ProcessStateMachine;
 import io.github.cloudiator.persistance.ProcessDomainRepository;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.DeleteProcessRequest;
@@ -37,30 +38,24 @@ public class DeleteProcessRequestSubscriber implements Runnable {
   private final ProcessService processService;
   private final ProcessDomainRepository processDomainRepository;
   private final MessageInterface messageInterface;
-  private final ProcessKiller processKiller;
+  private final ProcessStateMachine processStateMachine;
 
   @Inject
   public DeleteProcessRequestSubscriber(
       ProcessService processService,
       ProcessDomainRepository processDomainRepository,
       MessageInterface messageInterface,
-      ProcessKiller processKiller) {
+      ProcessStateMachine processStateMachine) {
     this.processService = processService;
     this.processDomainRepository = processDomainRepository;
     this.messageInterface = messageInterface;
-    this.processKiller = processKiller;
+    this.processStateMachine = processStateMachine;
   }
 
   @SuppressWarnings("WeakerAccess")
   @Transactional
   CloudiatorProcess getProcess(String processId, String userId) {
     return processDomainRepository.getByIdAndUser(processId, userId);
-  }
-
-  @SuppressWarnings("WeakerAccess")
-  @Transactional
-  void deleteProcess(CloudiatorProcess cloudiatorProcess, String userId) {
-    processDomainRepository.delete(cloudiatorProcess.id(), userId);
   }
 
   @Override
@@ -88,18 +83,18 @@ public class DeleteProcessRequestSubscriber implements Runnable {
             return;
           }
 
-          if (!processKiller.supports(process)) {
-            messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(504)
-                .setMessage(String.format("Deleting process of type %s is currently not supported.",
-                    process.type())).build());
+          if (!process.state().isRemovable()) {
+            messageInterface.reply(ProcessDeletedResponse.class, id, Error.newBuilder().setCode(403)
+                .setMessage(String
+                    .format("Process with id %s is in state %s and can not be removed.", processId,
+                        process.state()))
+                .build());
             return;
           }
 
-          processKiller.kill(process);
+          processStateMachine.apply(process, ProcessState.DELETED, new Object[0]);
 
-          deleteProcess(process, userId);
-
-          LOGGER.info(String.format("Successfully delete process %s.", process));
+          LOGGER.info(String.format("Successfully deleted process %s.", process));
 
           messageInterface.reply(id, ProcessDeletedResponse.newBuilder().build());
 

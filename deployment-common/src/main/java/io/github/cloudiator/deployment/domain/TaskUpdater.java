@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.config;
+package io.github.cloudiator.deployment.domain;
 
-public class Constants {
+public interface TaskUpdater {
 
-  public static final String INSTALL_MELODIC_TOOLS = "deployment.install.melodic.tools";
-  public static final String IS_PROCESS_WATCHDOG_ENABLED = "scheduler.enableProcessWatchdog";
+  boolean supports(TaskInterface taskInterface);
+
+  void update(Schedule schedule, Job job, TaskInterface runningTaskInterface, Task runningTask, CloudiatorProcess newSpawned);
 
 }

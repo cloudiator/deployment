@@ -1,6 +1,7 @@
 package io.github.cloudiator.deployment.scheduler.messaging;
 
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
@@ -57,6 +58,12 @@ public class ScaleRequestSubscriber implements Runnable {
     this.nodeMessageRepository = nodeMessageRepository;
   }
 
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule retrieveSchedule(String scheduleId, String userId) {
+    return scheduleDomainRepository.findByIdAndUser(scheduleId, userId);
+  }
+
   @Override
   public void run() {
 
@@ -70,8 +77,7 @@ public class ScaleRequestSubscriber implements Runnable {
             final String userId = content.getUserId();
             final String scheduleId = content.getScheduleId();
             final String taskId = content.getTaskId();
-            Schedule schedule = scheduleDomainRepository
-                .findByIdAndUser(scheduleId, content.getUserId());
+            Schedule schedule = retrieveSchedule(scheduleId, content.getUserId());
 
             if (schedule == null) {
               messageInterface.reply(ScaleResponse.class, id, Error.newBuilder().setCode(404)

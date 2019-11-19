@@ -16,13 +16,18 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableSet;
+import de.uniulm.omi.cloudiator.domain.Identifiable;
+import io.github.cloudiator.deployment.graph.Graphs;
+import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.domain.Node;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -151,7 +156,39 @@ public class ScheduleImpl implements Schedule {
   @Override
   public Set<String> nodes() {
     return processes().stream().flatMap(
-        (Function<CloudiatorProcess, Stream<String>>) cloudiatorProcess -> cloudiatorProcess.nodes().stream()).collect(Collectors.toSet());
+        (Function<CloudiatorProcess, Stream<String>>) cloudiatorProcess -> cloudiatorProcess.nodes()
+            .stream()).collect(Collectors.toSet());
+  }
+
+  @Override
+  public boolean hasProcess(CloudiatorProcess cloudiatorProcess) {
+
+    checkArgument(cloudiatorProcess.scheduleId().equals(this.id()),
+        String.format("Process %s does not belong to this schedule.", cloudiatorProcess));
+
+    return processes().stream().map(Identifiable::id).collect(Collectors.toSet())
+        .contains(cloudiatorProcess.id());
+  }
+
+  @Override
+  public void notifyOfProcess(Job job, CloudiatorProcess cloudiatorProcess,
+      TaskUpdater taskUpdater) {
+
+    checkArgument(hasProcess(cloudiatorProcess),
+        String.format("Schedule %s does not have process %s.", this, cloudiatorProcess));
+
+    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(this, job);
+    final List<CloudiatorProcess> dependentProcesses = scheduleGraph
+        .getDependentProcesses(cloudiatorProcess);
+
+    for (CloudiatorProcess dependent : dependentProcesses) {
+      Task task = job.getTask(dependent.taskId()).orElseThrow(IllegalStateException::new);
+      final TaskInterface taskInterface = task.interfaceOfName(dependent.taskInterface());
+
+      if (taskUpdater.supports(taskInterface)) {
+        taskUpdater.update(this, job, taskInterface, task, cloudiatorProcess);
+      }
+    }
   }
 
   @Override

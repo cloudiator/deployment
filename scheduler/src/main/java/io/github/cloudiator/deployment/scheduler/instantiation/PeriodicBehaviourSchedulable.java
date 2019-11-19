@@ -20,6 +20,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
@@ -32,6 +33,7 @@ import io.github.cloudiator.deployment.graph.JobGraph;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeCandidate;
+import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +54,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
   private final Job job;
   private final Task task;
   private final Schedule schedule;
+  private final ScheduleDomainRepository scheduleDomainRepository;
 
   @Inject
   public PeriodicBehaviourSchedulable(AutomaticInstantiationStrategy automaticInstantiationStrategy,
@@ -59,17 +62,22 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
       MatchmakingEngine matchmakingEngine,
       @Assisted Job job,
       @Assisted Task task,
-      @Assisted Schedule schedule) {
+      @Assisted Schedule schedule,
+      ScheduleDomainRepository scheduleDomainRepository) {
     this.automaticInstantiationStrategy = automaticInstantiationStrategy;
     this.resourcePool = resourcePool;
     this.matchmakingEngine = matchmakingEngine;
     this.job = job;
     this.task = task;
     this.schedule = schedule;
+    this.scheduleDomainRepository = scheduleDomainRepository;
   }
 
-  private Schedule getSchedule() {
-    return automaticInstantiationStrategy.refresh(schedule);
+  @SuppressWarnings("WeakerAccess")
+  @Transactional
+  Schedule refreshSchedule() {
+    return scheduleDomainRepository
+        .findByIdAndUser(this.schedule.id(), this.schedule.userId());
   }
 
   @Override
@@ -103,7 +111,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
       final Future<Collection<CloudiatorProcess>> collectionFuture = automaticInstantiationStrategy
           .deployTask(task, taskInterface, schedule, allocateResources(),
-              DependencyGraph.noDependencies(task));
+              DependencyGraph.noDependencies(job, task));
 
     } catch (Exception e) {
       LOGGER.error(String.format("Unexpected exception while running %s.", this), e);
@@ -116,7 +124,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
   }
 
   private List<ListenableFuture<Node>> allocateResources() throws MatchmakingException {
-    return resourcePool.allocate(getSchedule(), performMatchmaking(), task.name());
+    return resourcePool.allocate(refreshSchedule(), performMatchmaking(), task.name());
   }
 
   private boolean canExecute() {
@@ -125,7 +133,7 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
     for (Task dependency : jobGraph.getDependencies(task, true)) {
 
-      final Set<CloudiatorProcess> cloudiatorProcesses = getSchedule().processesForTask(dependency);
+      final Set<CloudiatorProcess> cloudiatorProcesses = refreshSchedule().processesForTask(dependency);
 
       if (cloudiatorProcesses.isEmpty()) {
         LOGGER.warn(

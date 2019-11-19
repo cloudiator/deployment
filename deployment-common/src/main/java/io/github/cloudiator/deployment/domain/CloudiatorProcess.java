@@ -32,11 +32,23 @@ import java.util.Set;
 public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> {
 
   enum ProcessState implements State {
-    PENDING,
-    RUNNING,
-    FINISHED,
-    ERROR,
-    DELETED
+    PENDING(false),
+    RUNNING(true),
+    FINISHED(true),
+    ERROR(true),
+    DELETED(false);
+
+    private final boolean removable;
+
+    public boolean isRemovable() {
+      return removable;
+    }
+
+    ProcessState(boolean removable) {
+      this.removable = removable;
+    }
+
+
   }
 
   enum Type {

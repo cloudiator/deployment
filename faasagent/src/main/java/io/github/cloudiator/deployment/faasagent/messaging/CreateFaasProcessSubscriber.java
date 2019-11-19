@@ -3,21 +3,15 @@ package io.github.cloudiator.deployment.faasagent.messaging;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.persist.Transactional;
 import com.google.protobuf.util.Timestamps;
 import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
 import de.uniulm.omi.cloudiator.sword.domain.Cloud;
-import io.github.cloudiator.deployment.domain.FaasInterface;
-import io.github.cloudiator.deployment.domain.Function;
-import io.github.cloudiator.deployment.domain.FunctionBuilder;
-import io.github.cloudiator.deployment.domain.HttpTrigger;
-import io.github.cloudiator.deployment.domain.Job;
-import io.github.cloudiator.deployment.domain.Task;
-import io.github.cloudiator.deployment.domain.Trigger;
+import io.github.cloudiator.deployment.domain.*;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.ApplicationTemplate;
 import io.github.cloudiator.deployment.faasagent.cloudformation.models.LambdaTemplate;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer;
 import io.github.cloudiator.deployment.faasagent.deployment.FaasDeployer.FaasDeployerFactory;
+import io.github.cloudiator.deployment.faasagent.helper.SaveFunctionHelper;
 import io.github.cloudiator.deployment.messaging.FaasInterfaceConverter;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.domain.Node;
@@ -26,9 +20,6 @@ import io.github.cloudiator.messaging.CloudMessageRepository;
 import io.github.cloudiator.messaging.LocationMessageRepository;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.FunctionDomainRepository;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Map;
 import org.cloudiator.messages.General;
 import org.cloudiator.messages.Process.CreateFaasProcessRequest;
 import org.cloudiator.messages.Process.FaasProcessCreatedResponse;
@@ -39,6 +30,10 @@ import org.cloudiator.messaging.MessageInterface;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Map;
 
 public class CreateFaasProcessSubscriber implements Runnable {
 
@@ -53,6 +48,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
   private final FunctionDomainRepository functionDomainRepository;
   private final LocationMessageRepository locationMessageRepository;
   private final FaasDeployerFactory faasDeployerFactory;
+  private final SaveFunctionHelper saveFunctionHelper;
 
 
   @Inject
@@ -63,7 +59,8 @@ public class CreateFaasProcessSubscriber implements Runnable {
       LocationMessageRepository locationMessageRepository,
       NodeMessageRepository nodeMessageRepository,
       FunctionDomainRepository functionDomainRepository,
-      FaasDeployerFactory faasDeployerFactory) {
+      FaasDeployerFactory faasDeployerFactory,
+      SaveFunctionHelper saveFunctionHelper) {
     this.processService = processService;
     this.messageInterface = messageInterface;
     this.cloudMessageRepository = cloudMessageRepository;
@@ -71,6 +68,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
     this.nodeMessageRepository = nodeMessageRepository;
     this.functionDomainRepository = functionDomainRepository;
     this.faasDeployerFactory = faasDeployerFactory;
+    this.saveFunctionHelper = saveFunctionHelper;
   }
 
   @Override
@@ -102,7 +100,7 @@ public class CreateFaasProcessSubscriber implements Runnable {
             final Function newFunction = FunctionBuilder.newBuilder(function)
                 .stackId(appTemplate.name).build();
 
-            persistFunction(newFunction, userId);
+            saveFunctionHelper.persistFunction(newFunction, userId);
 
             final Map<String, String> apiEndpoints = faasDeployer.getApiEndpoints(appTemplate);
 
@@ -136,11 +134,6 @@ public class CreateFaasProcessSubscriber implements Runnable {
           }
         }
     );
-  }
-
-  @Transactional
-  void persistFunction(Function function, String userId) {
-    functionDomainRepository.save(function, userId);
   }
 
   private ApplicationTemplate convertToTemplate(CreateFaasProcessRequest request,

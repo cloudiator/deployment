@@ -140,7 +140,8 @@ public class ScheduleRestore {
 
     final Map<Task, TaskInterface> taskInterfaceSelection = new TaskInterfaceSelection()
         .select(job);
-    final DependencyGraph dependencyGraph = DependencyGraph.of(job, taskInterfaceSelection);
+    final DependencyGraph dependencyGraph = DependencyGraph
+        .of(job, taskInterfaceSelection);
 
     for (Task task : job.tasks()) {
 
@@ -170,7 +171,7 @@ public class ScheduleRestore {
       final Future<Collection<CloudiatorProcess>> collectionFuture = instantiationStrategySelector
           .get(schedule.instantiation())
           .deployTask(task, taskInterfaceSelection.get(task), schedule, allocate,
-              dependencyGraph.forTask(task));
+              dependencyGraph.forTask(job, task));
       futures.add(collectionFuture);
 
     }
@@ -261,13 +262,13 @@ public class ScheduleRestore {
 
       final Node node = nodeMessageRepository.getById(cloudiatorProcess.userId(), nodeId);
 
-      checkState(node != null, String
-          .format("Node %s referenced by process %s does not exist.", nodeId, cloudiatorProcess));
-
-      nodes.add(node);
-
+      if (node == null) {
+        LOGGER.warn(String
+            .format("Node %s referenced by process %s does not exist.", nodeId, cloudiatorProcess));
+      } else {
+        nodes.add(node);
+      }
     }
-
     return nodes;
   }
 
