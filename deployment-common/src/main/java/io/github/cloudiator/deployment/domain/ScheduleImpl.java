@@ -186,7 +186,7 @@ public class ScheduleImpl implements Schedule {
       final TaskInterface taskInterface = task.interfaceOfName(dependent.taskInterface());
 
       if (taskUpdater.supports(taskInterface)) {
-        taskUpdater.update(this, job, taskInterface, task, cloudiatorProcess);
+        taskUpdater.notifyNew(this, job, taskInterface, task, cloudiatorProcess);
       }
     }
   }

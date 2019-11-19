@@ -20,6 +20,10 @@ public interface TaskUpdater {
 
   boolean supports(TaskInterface taskInterface);
 
-  void update(Schedule schedule, Job job, TaskInterface runningTaskInterface, Task runningTask, CloudiatorProcess newSpawned);
+  void notifyNew(Schedule schedule, Job job, TaskInterface runningTaskInterface, Task runningTask,
+      CloudiatorProcess newSpawned);
+
+  void notifyDelete(Schedule schedule, Job job, TaskInterface runningTaskInterface,
+      Task runningTask, CloudiatorProcess deleted);
 
 }
