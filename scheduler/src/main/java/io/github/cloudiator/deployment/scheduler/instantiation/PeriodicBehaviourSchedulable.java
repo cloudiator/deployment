@@ -21,9 +21,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.persist.Transactional;
+import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
 import de.uniulm.omi.cloudiator.util.execution.Schedulable;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
+import io.github.cloudiator.deployment.domain.CollisionHandling;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.PeriodicBehaviour;
 import io.github.cloudiator.deployment.domain.Schedule;
@@ -40,6 +42,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
+import org.cloudiator.messages.General.Error;
+import org.cloudiator.messages.Node.NodeDeleteMessage;
+import org.cloudiator.messages.Node.NodeDeleteResponseMessage;
+import org.cloudiator.messages.Process.DeleteProcessRequest;
+import org.cloudiator.messaging.ResponseCallback;
+import org.cloudiator.messaging.ResponseException;
+import org.cloudiator.messaging.services.NodeService;
+import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +66,9 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
   private final Task task;
   private final Schedule schedule;
   private final ScheduleDomainRepository scheduleDomainRepository;
+  private final ProcessService processService;
+  private final NodeService nodeService;
+  private final ExecutionService executionService;
 
   @Inject
   public PeriodicBehaviourSchedulable(AutomaticInstantiationStrategy automaticInstantiationStrategy,
@@ -63,7 +77,9 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
       @Assisted Job job,
       @Assisted Task task,
       @Assisted Schedule schedule,
-      ScheduleDomainRepository scheduleDomainRepository) {
+      ScheduleDomainRepository scheduleDomainRepository,
+      ProcessService processService, NodeService nodeService,
+      @Assisted ExecutionService executionService) {
     this.automaticInstantiationStrategy = automaticInstantiationStrategy;
     this.resourcePool = resourcePool;
     this.matchmakingEngine = matchmakingEngine;
@@ -71,6 +87,9 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
     this.task = task;
     this.schedule = schedule;
     this.scheduleDomainRepository = scheduleDomainRepository;
+    this.processService = processService;
+    this.nodeService = nodeService;
+    this.executionService = executionService;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -99,6 +118,13 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
   public void run() {
 
     LOGGER.info(String.format("%s is starting a new execution.", this));
+
+    if (((PeriodicBehaviour) task.behaviour()).collisionHandling()
+        .equals(CollisionHandling.CANCEL)) {
+      LOGGER.info("Submitting job to cancel previous executions as collision handling is "
+          + CollisionHandling.CANCEL);
+      this.executionService.execute(new CleanupPreviousExecutions());
+    }
 
     if (!canExecute()) {
       LOGGER.warn(String.format("Skipping execution of %s.", this));
@@ -133,7 +159,8 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
     for (Task dependency : jobGraph.getDependencies(task, true)) {
 
-      final Set<CloudiatorProcess> cloudiatorProcesses = refreshSchedule().processesForTask(dependency);
+      final Set<CloudiatorProcess> cloudiatorProcesses = refreshSchedule()
+          .processesForTask(dependency);
 
       if (cloudiatorProcesses.isEmpty()) {
         LOGGER.warn(
@@ -166,5 +193,49 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
         .add("task", task)
         .add("schedule", schedule)
         .toString();
+  }
+
+  private class CleanupPreviousExecutions implements Runnable {
+
+    @Override
+    public void run() {
+      final Set<CloudiatorProcess> cloudiatorProcesses = refreshSchedule().processesForTask(task);
+
+      for (CloudiatorProcess cloudiatorProcess : cloudiatorProcesses) {
+
+        try {
+          processService.deleteProcess(
+              DeleteProcessRequest.newBuilder().setUserId(cloudiatorProcess.userId())
+                  .setProcessId(cloudiatorProcess.id()).build());
+
+          for (String node : cloudiatorProcess.nodes()) {
+
+            nodeService.deleteNodeAsync(NodeDeleteMessage.newBuilder().build(),
+                new ResponseCallback<NodeDeleteResponseMessage>() {
+                  @Override
+                  public void accept(@Nullable NodeDeleteResponseMessage nodeDeleteResponseMessage,
+                      @Nullable Error error) {
+                    if (error != null) {
+                      LOGGER.warn(
+                          String.format(
+                              "Could not delete node %s. Could lead to illegal state, but is maybe deleted later",
+                              node));
+                    }
+                  }
+                });
+
+          }
+
+        } catch (ResponseException e) {
+          LOGGER.warn(
+              String.format(
+                  "Could not delete previous executions of task %s. Trying again at the next iteration.",
+                  task));
+        }
+
+      }
+
+
+    }
   }
 }

@@ -59,7 +59,7 @@ public class PeriodicScheduler {
         String.format("Task %s does not provide a periodic behaviour", task));
 
     final PeriodicBehaviourSchedulable periodicBehaviourSchedulable = factory
-        .create(job, task, schedule);
+        .create(job, task, schedule, executionService);
 
     taskFutures.put(task, executionService.schedule(periodicBehaviourSchedulable));
   }
