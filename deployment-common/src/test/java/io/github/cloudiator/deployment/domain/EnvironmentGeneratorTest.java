@@ -28,7 +28,7 @@ public class EnvironmentGeneratorTest {
   public void generate() {
 
     final EnvironmentGenerator generator = EnvironmentGenerator
-        .of(MediaWikiJob.wikiJob(), MediaWikiSchedule.schedule(), new DeploymentContext());
+        .of(MediaWikiJob.wikiJob(), MediaWikiSchedule.schedule(), "http://localhost");
 
     final Environment wikiEnv = generator.generate(MediaWikiSchedule.wikiProcess());
     assertThat(wikiEnv, IsMapContaining
