@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 
 class CommunicationImpl implements Communication {
@@ -62,5 +63,13 @@ class CommunicationImpl implements Communication {
   public int hashCode() {
 
     return Objects.hash(portProvided, portRequired);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("portProvided", portProvided)
+        .add("portRequired", portRequired)
+        .toString();
   }
 }

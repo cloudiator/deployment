@@ -20,5 +20,6 @@ public class Constants {
 
   public static final String INSTALL_MELODIC_TOOLS = "deployment.install.melodic.tools";
   public static final String IS_PROCESS_WATCHDOG_ENABLED = "scheduler.enableProcessWatchdog";
+  public static final String API = "scheduler.api";
 
 }

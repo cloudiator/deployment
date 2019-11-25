@@ -23,6 +23,7 @@ import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import io.github.cloudiator.deployment.config.Constants;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
@@ -49,6 +50,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +63,7 @@ public class ProcessScheduler {
   private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
   private final TaskUpdaters taskUpdaters;
+  private final String apiEndpoint;
 
   @Inject
   public ProcessScheduler(
@@ -68,12 +71,13 @@ public class ProcessScheduler {
       JobMessageRepository jobMessageRepository,
       ProcessSpawner processSpawner,
       NodeMessageRepository nodeMessageRepository,
-      TaskUpdaters taskUpdaters) {
+      TaskUpdaters taskUpdaters, @Named(Constants.API) String apiEndpoint) {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.jobMessageRepository = jobMessageRepository;
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
     this.taskUpdaters = taskUpdaters;
+    this.apiEndpoint = apiEndpoint;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -130,7 +134,8 @@ public class ProcessScheduler {
         .select(optionalTask.get());
 
     //decorate the environment
-    final Environment environment = EnvironmentGenerator.of(job, refreshSchedule(schedule))
+    final Environment environment = EnvironmentGenerator
+        .of(job, refreshSchedule(schedule), apiEndpoint)
         .generate(cloudiatorProcess);
 
     LOGGER.debug(

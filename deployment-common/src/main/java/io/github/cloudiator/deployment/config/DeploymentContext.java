@@ -42,6 +42,10 @@ public class DeploymentContext {
     }
   }
 
+  public String api() {
+    return config.getString(Constants.API);
+  }
+
   public boolean isProcessWatchdogEnabled() {
     try {
       return config.getBoolean(Constants.IS_PROCESS_WATCHDOG_ENABLED);

@@ -18,6 +18,7 @@ package io.github.cloudiator.deployment.domain;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import io.github.cloudiator.deployment.config.DeploymentContext;
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.Test;
 
@@ -27,7 +28,7 @@ public class EnvironmentGeneratorTest {
   public void generate() {
 
     final EnvironmentGenerator generator = EnvironmentGenerator
-        .of(MediaWikiJob.wikiJob(), MediaWikiSchedule.schedule());
+        .of(MediaWikiJob.wikiJob(), MediaWikiSchedule.schedule(), new DeploymentContext());
 
     final Environment wikiEnv = generator.generate(MediaWikiSchedule.wikiProcess());
     assertThat(wikiEnv, IsMapContaining

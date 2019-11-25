@@ -37,6 +37,8 @@ public class DeploymentModule extends AbstractModule {
     bindConstant().annotatedWith(Names.named(Constants.INSTALL_MELODIC_TOOLS))
         .to(deploymentContext.installMelodicTools());
 
+    bindConstant().annotatedWith(Names.named(Constants.API)).to(deploymentContext.api());
+
     install(new FactoryModuleBuilder().implement(VariableContext.class, VariableContextImpl.class)
         .build(VariableContextFactory.class));
 
