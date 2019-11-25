@@ -122,6 +122,11 @@ public class FaasInterfaceImpl implements FaasInterface {
   }
 
   @Override
+  public boolean canFinish() {
+    return false;
+  }
+
+  @Override
   public TaskInterface decorateEnvironment(Environment environment) {
 
     Map<String, String> newEnvironment = new HashMap<>();

@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Joiner;
 import io.github.cloudiator.deployment.graph.Graphs;
 import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.deployment.graph.ScheduleGraph.CommunicationInstanceEdge;
@@ -26,6 +27,9 @@ import io.github.cloudiator.deployment.graph.ScheduleGraph.CommunicationInstance
 public class EnvironmentGenerator {
 
   private static final String PUBLIC_DOWNSTREAM = "PUBLIC_%s";
+  private static final String PROCESS_ID = "PROCESS_ID";
+  private static final String NODE_IDS = "NODE_IDS";
+  private static final String FINISH_ENDPOINT = "";
 
   private final Job job;
   private final Schedule schedule;
@@ -50,6 +54,9 @@ public class EnvironmentGenerator {
 
     checkArgument(schedule.hasProcess(cloudiatorProcess),
         String.format("Process %s does not belong to schedule %s.", cloudiatorProcess, schedule));
+
+    environment.put(PROCESS_ID, cloudiatorProcess.id());
+    environment.put(NODE_IDS, Joiner.on(",").join(cloudiatorProcess.nodes()));
 
     for (CloudiatorProcess dependency : scheduleGraph.getDependencies(cloudiatorProcess)) {
 

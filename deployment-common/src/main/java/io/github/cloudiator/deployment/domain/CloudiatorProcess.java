@@ -87,4 +87,6 @@ public interface CloudiatorProcess extends Identifiable, Stateful<ProcessState> 
 
   Optional<Date> stop();
 
+  Optional<String> secret();
+
 }

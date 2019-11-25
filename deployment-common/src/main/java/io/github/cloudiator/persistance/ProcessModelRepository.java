@@ -26,4 +26,6 @@ interface ProcessModelRepository extends ModelRepository<ProcessModel> {
 
   ProcessModel findByIdAndUser(String id, String user);
 
+  ProcessModel findByDomainId(String id);
+
 }

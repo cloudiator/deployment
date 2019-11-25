@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
+import de.uniulm.omi.cloudiator.util.Password;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import java.util.Collection;
 import java.util.Date;
@@ -42,6 +43,7 @@ public class CloudiatorSingleProcessBuilder {
   private String endpoint;
   private Date start;
   private Date stop;
+  private String secret;
 
 
   private CloudiatorSingleProcessBuilder() {
@@ -64,6 +66,7 @@ public class CloudiatorSingleProcessBuilder {
     this.ipAddresses = new HashSet<>(cloudiatorSingleProcess.ipAddresses());
     this.start = cloudiatorSingleProcess.start();
     this.stop = cloudiatorSingleProcess.stop().orElse(null);
+    this.secret = cloudiatorSingleProcess.secret().orElse(null);
   }
 
   public static CloudiatorSingleProcessBuilder create() {
@@ -161,11 +164,21 @@ public class CloudiatorSingleProcessBuilder {
     return this;
   }
 
+  public CloudiatorSingleProcessBuilder secret(String secret) {
+    this.secret = secret;
+    return this;
+  }
+
+  public CloudiatorSingleProcessBuilder generateSecret() {
+    this.secret = Password.getInstance().randomString(20).nextString();
+    return this;
+  }
+
   public CloudiatorSingleProcess build() {
     return new CloudiatorSingleProcessImpl(id, originId, userId, scheduleId, taskName,
         taskInterface, state, type,
         node,
-        diagnostic, reason, endpoint, ipAddresses, start, stop);
+        diagnostic, reason, endpoint, ipAddresses, start, stop, secret);
   }
 
 }

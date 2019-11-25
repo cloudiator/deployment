@@ -18,6 +18,6 @@ package io.github.cloudiator.deployment.domain;
 
 public interface Behaviour {
 
-  //marker interface
+  boolean canFinish();
 
 }

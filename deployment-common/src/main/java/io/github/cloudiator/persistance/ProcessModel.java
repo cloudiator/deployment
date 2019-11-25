@@ -86,6 +86,10 @@ abstract class ProcessModel extends Model {
   @Nullable
   private Date stop;
 
+  @Nullable
+  @Lob
+  private String secret;
+
 
   public ProcessModel setEndpoint(@Nullable String endpoint) {
     this.endpoint = endpoint;
@@ -115,7 +119,8 @@ abstract class ProcessModel extends Model {
       String taskInterface,
       CloudiatorProcess.ProcessState state, CloudiatorProcess.Type type,
       @Nullable String diagnostic, @Nullable String reason, @Nullable String endpoint,
-      @Nullable IpGroupModel ipGroupModel, Date start, @Nullable Date stop) {
+      @Nullable IpGroupModel ipGroupModel, Date start, @Nullable Date stop,
+      @Nullable String secret) {
 
     checkNotNull(domainId, "domainId is null");
     checkArgument(!domainId.isEmpty(), "domainId is empty");
@@ -141,6 +146,7 @@ abstract class ProcessModel extends Model {
     this.ipGroupModel = ipGroupModel;
     this.start = start;
     this.stop = stop;
+    this.secret = secret;
 
   }
 
@@ -254,5 +260,10 @@ abstract class ProcessModel extends Model {
   public ProcessModel setStop(@Nullable Date stop) {
     this.stop = stop;
     return this;
+  }
+
+  @Nullable
+  public String getSecret() {
+    return secret;
   }
 }

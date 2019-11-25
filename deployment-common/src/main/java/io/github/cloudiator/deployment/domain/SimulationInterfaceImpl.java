@@ -51,6 +51,11 @@ public class SimulationInterfaceImpl implements SimulationInterface {
   }
 
   @Override
+  public boolean canFinish() {
+    return false;
+  }
+
+  @Override
   public TaskInterface decorateEnvironment(Environment environment) {
     return this;
   }

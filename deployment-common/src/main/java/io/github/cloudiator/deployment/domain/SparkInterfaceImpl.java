@@ -87,6 +87,11 @@ public class SparkInterfaceImpl implements SparkInterface {
   }
 
   @Override
+  public boolean canFinish() {
+    return true;
+  }
+
+  @Override
   public TaskInterface decorateEnvironment(Environment environment) {
 
     final SparkInterfaceBuilder sparkInterfaceBuilder = SparkInterfaceBuilder.of(this);

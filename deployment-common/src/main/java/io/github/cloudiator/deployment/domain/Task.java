@@ -86,4 +86,11 @@ public interface Task {
 
   Behaviour behaviour();
 
+  default boolean canFinish(TaskInterface taskInterface) {
+    if (!behaviour().canFinish()) {
+      return false;
+    }
+    return taskInterface.canFinish();
+  }
+
 }

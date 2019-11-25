@@ -84,6 +84,18 @@ public class ProcessStateMachine implements
                 .to(ProcessState.DELETED)
                 .action(delete())
                 .build())
+        .addTransition(
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.FINISHED)
+                .to(ProcessState.DELETED)
+                .action(delete())
+                .build())
+        .addTransition(
+            Transitions.<CloudiatorProcess, ProcessState>transitionBuilder()
+                .from(ProcessState.RUNNING)
+                .to(ProcessState.FINISHED)
+                .action(finish())
+                .build())
         .addHook(new StateMachineHook<CloudiatorProcess, ProcessState>() {
           @Override
           public void pre(CloudiatorProcess process, ProcessState to) {
@@ -171,6 +183,17 @@ public class ProcessStateMachine implements
       } catch (ProcessSpawningException e) {
         throw new ExecutionException("Error while scheduling process.", e);
       }
+    };
+  }
+
+  private TransitionAction<CloudiatorProcess> finish() {
+
+    return (process, arguments) -> {
+
+      final CloudiatorProcess updated = updateProcess(process, ProcessState.FINISHED,
+          null);
+
+      return save(updated);
     };
   }
 

@@ -58,6 +58,10 @@ public class ProcessDomainRepository {
     processModelRepository.delete(processModel);
   }
 
+  public CloudiatorProcess getById(String id) {
+    return PROCESS_MODEL_CONVERTER.apply(processModelRepository.findByDomainId(id));
+  }
+
   public CloudiatorProcess getByIdAndUser(String id, String userId) {
     return PROCESS_MODEL_CONVERTER.apply(processModelRepository.findByIdAndUser(id, userId));
   }
@@ -158,7 +162,7 @@ public class ProcessDomainRepository {
           domain.type(), ((CloudiatorSingleProcess) domain).node(),
           domain.diagnostic().orElse(null), domain.reason().orElse(null),
           domain.endpoint().orElse(null), generateIpModel(domain), domain.start(),
-          domain.stop().orElse(null));
+          domain.stop().orElse(null), domain.secret().orElse(null));
 
     } else if (domain instanceof CloudiatorClusterProcess) {
 
@@ -167,7 +171,7 @@ public class ProcessDomainRepository {
           domain.type(), domain.nodes(),
           domain.diagnostic().orElse(null), domain.reason().orElse(null),
           domain.endpoint().orElse(null), generateIpModel(domain), domain.start(),
-          domain.stop().orElse(null));
+          domain.stop().orElse(null), domain.secret().orElse(null));
 
     } else {
       throw new AssertionError(

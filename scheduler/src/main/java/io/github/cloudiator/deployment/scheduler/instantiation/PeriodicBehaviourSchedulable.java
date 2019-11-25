@@ -201,7 +201,13 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
     public void run() {
       final Set<CloudiatorProcess> cloudiatorProcesses = refreshSchedule().processesForTask(task);
 
+      LOGGER.debug(String
+          .format("Cleaning up previous executions of task %s. Found the following processes: %s",
+              task, cloudiatorProcesses));
+
       for (CloudiatorProcess cloudiatorProcess : cloudiatorProcesses) {
+
+        LOGGER.debug(String.format("Cleaning up %s", cloudiatorProcess));
 
         try {
           processService.deleteProcess(
@@ -210,7 +216,12 @@ public class PeriodicBehaviourSchedulable implements Schedulable {
 
           for (String node : cloudiatorProcess.nodes()) {
 
-            nodeService.deleteNodeAsync(NodeDeleteMessage.newBuilder().build(),
+            LOGGER.debug(
+                String.format("Cleaning up node %s for process %s", node, cloudiatorProcess));
+
+            nodeService.deleteNodeAsync(
+                NodeDeleteMessage.newBuilder().setUserId(cloudiatorProcess.userId()).setNodeId(node)
+                    .build(),
                 new ResponseCallback<NodeDeleteResponseMessage>() {
                   @Override
                   public void accept(@Nullable NodeDeleteResponseMessage nodeDeleteResponseMessage,

@@ -233,6 +233,11 @@ class LanceInterfaceImpl implements LanceInterface {
   }
 
   @Override
+  public boolean canFinish() {
+    return true;
+  }
+
+  @Override
   public TaskInterface decorateEnvironment(Environment environment) {
     return this;
   }

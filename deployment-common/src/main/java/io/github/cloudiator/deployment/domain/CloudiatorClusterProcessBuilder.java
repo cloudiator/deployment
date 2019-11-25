@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import de.uniulm.omi.cloudiator.sword.domain.IpAddress;
+import de.uniulm.omi.cloudiator.util.Password;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import java.util.Collection;
 import java.util.Date;
@@ -42,6 +43,7 @@ public class CloudiatorClusterProcessBuilder {
   private String endpoint;
   private Date start;
   private Date stop;
+  private String secret;
 
   private CloudiatorClusterProcessBuilder() {
     this.nodes = new HashSet<>();
@@ -64,6 +66,7 @@ public class CloudiatorClusterProcessBuilder {
     this.ipAddresses = new HashSet<>(cloudiatorClusterProcess.ipAddresses());
     this.start = cloudiatorClusterProcess.start();
     this.stop = cloudiatorClusterProcess.stop().orElse(null);
+    this.secret = cloudiatorClusterProcess.secret().orElse(null);
   }
 
   public static CloudiatorClusterProcessBuilder create() {
@@ -177,10 +180,20 @@ public class CloudiatorClusterProcessBuilder {
     return this;
   }
 
+  public CloudiatorClusterProcessBuilder secret(String secret) {
+    this.secret = secret;
+    return this;
+  }
+
+  public CloudiatorClusterProcessBuilder generateSecret() {
+    this.secret = Password.getInstance().randomString(20).nextString();
+    return this;
+  }
+
   public CloudiatorClusterProcess build() {
     return new CloudiatorClusterProcessImpl(id, originId, userId, scheduleId, taskName,
         taskInterface, state, type,
-        nodes, diagnostic, reason, endpoint, ipAddresses, start, stop);
+        nodes, diagnostic, reason, endpoint, ipAddresses, start, stop, secret);
   }
 
 }
