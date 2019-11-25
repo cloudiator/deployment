@@ -24,6 +24,7 @@ import de.uniulm.omi.cloudiator.util.statistics.StatisticsContext;
 import de.uniulm.omi.cloudiator.util.statistics.StatisticsModule;
 import io.github.cloudiator.deployment.config.DeploymentContext;
 import io.github.cloudiator.deployment.config.DeploymentModule;
+import io.github.cloudiator.deployment.scheduler.config.SchedulerContext;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteScheduleRequestSubscriber;
@@ -53,7 +54,7 @@ public class ScheduleAgent {
   private final static Injector INJECTOR = Guice
       .createInjector(
           new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
-          new SchedulerModule(new DeploymentContext()),
+          new SchedulerModule(new DeploymentContext(), new SchedulerContext()),
           new DeploymentModule(new DeploymentContext()),
           new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
               Configuration.conf())),

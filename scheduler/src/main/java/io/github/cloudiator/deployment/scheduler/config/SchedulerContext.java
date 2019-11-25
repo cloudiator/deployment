@@ -14,29 +14,34 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.config;
+package io.github.cloudiator.deployment.scheduler.config;
 
 import com.google.common.base.MoreObjects;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
+import io.github.cloudiator.deployment.config.Constants;
 
-public class DeploymentContext {
+public class SchedulerContext {
 
   private final Config config;
 
-  public DeploymentContext() {
+  public SchedulerContext() {
     this(Configuration.conf());
   }
 
-  public DeploymentContext(Config config) {
+  public SchedulerContext(Config config) {
     this.config = config;
-    config.checkValid(ConfigFactory.defaultReference(), "deployment");
+    config.checkValid(ConfigFactory.defaultReference(), "scheduler");
   }
 
-  public boolean installMelodicTools() {
+  public String api() {
+    return config.getString(Constants.API);
+  }
+
+  public boolean isProcessWatchdogEnabled() {
     try {
-      return config.getBoolean(Constants.INSTALL_MELODIC_TOOLS);
+      return config.getBoolean(Constants.IS_PROCESS_WATCHDOG_ENABLED);
     } catch (Exception e) {
       return false;
     }
