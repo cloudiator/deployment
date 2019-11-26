@@ -33,6 +33,7 @@ public class ProcessStatistics {
       final MetricBuilder metricBuilder = MetricBuilder.create().name("process-start-time")
           .value(time)
           .now().addTag("id", cloudiatorProcess.id())
+          .addTag("schedule", cloudiatorProcess.scheduleId())
           .addTag("type", cloudiatorProcess.type().name())
           .addTag("user", cloudiatorProcess.userId()).addTag("task", cloudiatorProcess.taskId())
           .addTag("taskInterface", cloudiatorProcess.taskInterface());
