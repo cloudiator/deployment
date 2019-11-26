@@ -33,6 +33,8 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ScheduleImpl implements Schedule {
 
@@ -42,6 +44,7 @@ public class ScheduleImpl implements Schedule {
   private final Set<CloudiatorProcess> processes;
   private final Instantiation instantiation;
   private ScheduleState scheduleState;
+  private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleImpl.class);
 
   private ScheduleImpl(String id, String userId, String job,
       Instantiation instantiation, ScheduleState scheduleState) {
@@ -183,11 +186,25 @@ public class ScheduleImpl implements Schedule {
         .getDependentTasks(job.getTask(cloudiatorProcess.taskId())
             .orElseThrow(() -> new IllegalStateException("Task does not exist in job")));
 
+    //get the task interface of the running task
+    final Task running = job.getTask(cloudiatorProcess.taskId())
+        .orElseThrow(() -> new IllegalStateException(
+            "Process does not belong to job as job does not have the task mentioned in process."));
+
+    final TaskInterface runningTaskInterface = running
+        .interfaceOfName(cloudiatorProcess.taskInterface());
+
     for (Task dependant : dependentTasks) {
 
       for (TaskInterface taskInterface : dependant.interfaces()) {
         if (taskUpdater.supports(taskInterface)) {
-          taskUpdater.notifyNew(this, job, taskInterface, dependant, cloudiatorProcess);
+          if (runningTaskInterface.requiresManualWait(taskInterface)) {
+            taskUpdater.notifyNew(this, job, taskInterface, dependant, cloudiatorProcess);
+          } else {
+            LOGGER.debug(String.format(
+                "Skipping execution of task updater as as it is not required. Running TaskInterface: %s. Dependency TaskInterface: %s.",
+                runningTaskInterface, taskInterface));
+          }
         }
       }
     }
