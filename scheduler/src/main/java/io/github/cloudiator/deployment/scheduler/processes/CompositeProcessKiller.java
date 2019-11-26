@@ -74,19 +74,29 @@ public class CompositeProcessKiller implements ProcessKiller {
   }
 
   private void notifyBeforeDeletion(Schedule schedule, Job job,
-      CloudiatorProcess cloudiatorProcess) {
+      CloudiatorProcess toBeDeleted) {
 
-    for (CloudiatorProcess dependency : dependencies(schedule, job, cloudiatorProcess)) {
+    for (CloudiatorProcess dependency : dependencies(schedule, job, toBeDeleted)) {
+
+      final Task runningTask = job.getTask(toBeDeleted.taskId()).orElseThrow(
+          () -> new IllegalStateException("Task of running process is not known by job"));
+
+      final TaskInterface toBeDeletedTaskInterface = runningTask
+          .interfaceOfName(toBeDeleted.taskInterface());
 
       final Task toBeNotifiedTask = job.getTask(dependency.taskId())
-          .orElseThrow(() -> new IllegalStateException("Task of process is not known by job"));
+          .orElseThrow(
+              () -> new IllegalStateException("Task of dependency process is not known by job"));
 
       final TaskInterface toBeNotifiedTaskInterface = toBeNotifiedTask
           .interfaceOfName(dependency.taskInterface());
 
       if (taskUpdaters.supports(toBeNotifiedTaskInterface)) {
-        taskUpdaters.notifyDelete(schedule, job, toBeNotifiedTaskInterface, toBeNotifiedTask,
-            cloudiatorProcess);
+
+        if (toBeNotifiedTaskInterface.requiresManualWait(toBeDeletedTaskInterface)) {
+          taskUpdaters.notifyDelete(schedule, job, toBeNotifiedTaskInterface, toBeNotifiedTask,
+              toBeDeleted);
+        }
       }
     }
   }
