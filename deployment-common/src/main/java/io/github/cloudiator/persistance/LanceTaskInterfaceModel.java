@@ -25,6 +25,7 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Lob;
+import javax.persistence.OneToOne;
 
 /**
  * Created by daniel on 15.12.14.
@@ -37,6 +38,7 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
   private LanceContainerType lanceContainerType;
 
   @Column(nullable = false)
+  @OneToOne(optional = false, orphanRemoval = true)
   private OperatingSystemModel operatingSystemModel;
 
   @Nullable
