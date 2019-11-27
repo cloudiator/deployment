@@ -63,7 +63,7 @@ public class CreateLanceProcessStrategy {
     staticOsImpl = new OperatingSystemImpl(
         OperatingSystemFamily.UBUNTU,
         OperatingSystemArchitecture.AMD64,
-        OperatingSystemVersions.of(1404,"14.04"));
+        OperatingSystemVersions.of(1404, "14.04"));
   }
 
   @Inject
@@ -140,16 +140,14 @@ public class CreateLanceProcessStrategy {
         applicationInstanceId, applicationId, lifecycleClient));
 
     try {
-      final boolean couldRegister = lifecycleClient
-          .registerApplicationInstance(applicationInstanceId, applicationId);
 
       //if the instance could still be registered we need to register its subparts
       //if (couldRegister) {
-        registerApplicationComponentsForApplicationInstance(lifecycleClient,
-            applicationInstanceId, job);
-       // LOGGER.debug(String.format(
-       //     "Could register applicationInstance %s, therefore registering all components of the job",
-       //     applicationInstanceId));
+      registerApplicationComponentsForApplicationInstance(lifecycleClient,
+          applicationInstanceId, job, applicationId);
+      // LOGGER.debug(String.format(
+      //     "Could register applicationInstance %s, therefore registering all components of the job",
+      //     applicationInstanceId));
       //} else {
       //  LOGGER.debug(String.format(
       //      "Could not register applicationInstance %s, assuming it was already registered.",
@@ -157,7 +155,7 @@ public class CreateLanceProcessStrategy {
       //}
 
     } catch (RegistrationException e) {
-      throw new IllegalStateException("Could not register application instance", e);
+      throw new IllegalStateException("Could not register components", e);
     }
 
     final DeploymentContext deploymentContext =
@@ -340,25 +338,28 @@ public class CreateLanceProcessStrategy {
   }
 
   private void registerApplicationComponentsForApplicationInstance(
-      LifecycleClient lifecycleClient, ApplicationInstanceId applicationInstanceId, Job job) {
+      LifecycleClient lifecycleClient, ApplicationInstanceId applicationInstanceId, Job job,
+      ApplicationId applicationId) throws RegistrationException {
 
-    LOGGER.debug(String
-        .format("Starting registration of application components for applicationInstance %s.",
-            applicationInstanceId));
+    synchronized (CreateLanceProcessStrategy.class) {
 
-    for (Task task : job.tasks()) {
-      final ComponentId componentId = ComponentIdGenerator.generate(job.id(), task.name());
+      LOGGER.debug(String
+          .format("Starting registration of application components for applicationInstance %s.",
+              applicationInstanceId));
 
-      try {
+      lifecycleClient
+          .registerApplicationInstance(applicationInstanceId, applicationId);
+
+      for (Task task : job.tasks()) {
+
+        final ComponentId componentId = ComponentIdGenerator.generate(job.id(), task.name());
+
         lifecycleClient
             .registerComponentForApplicationInstance(applicationInstanceId, componentId,
                 task.name());
         LOGGER.debug(String.format(
             "Registered task %s as component with id %s for applicationInstance %s.",
             task, componentId, applicationInstanceId));
-      } catch (RegistrationException e) {
-        throw new IllegalStateException("Could not register component for application instance.",
-            e);
       }
     }
   }
