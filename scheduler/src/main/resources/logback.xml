@@ -27,6 +27,7 @@
   </appender>
 
   <logger name="io.github.cloudiator.deployment" level="DEBUG"/>
+  <logger name="io.github.cloudiator.deployment.domain" level="DEBUG"/>
   <logger name="org.cloudiator.messaging" level="DEBUG"/>
   <logger name="de.uniulm.omi.cloudiator.util.CloudiatorFutures" level="DEBUG"/>
 

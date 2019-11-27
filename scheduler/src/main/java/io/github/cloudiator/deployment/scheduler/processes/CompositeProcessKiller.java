@@ -84,17 +84,17 @@ public class CompositeProcessKiller implements ProcessKiller {
       final TaskInterface toBeDeletedTaskInterface = runningTask
           .interfaceOfName(toBeDeleted.taskInterface());
 
-      final Task toBeNotifiedTask = job.getTask(dependency.taskId())
+      final Task dependentTask = job.getTask(dependency.taskId())
           .orElseThrow(
               () -> new IllegalStateException("Task of dependency process is not known by job"));
 
-      final TaskInterface toBeNotifiedTaskInterface = toBeNotifiedTask
+      final TaskInterface dependentTaskInterface = dependentTask
           .interfaceOfName(dependency.taskInterface());
 
-      if (taskUpdaters.supports(toBeNotifiedTaskInterface)) {
+      if (taskUpdaters.supports(dependentTaskInterface)) {
 
-        if (toBeNotifiedTaskInterface.requiresManualWait(toBeDeletedTaskInterface)) {
-          taskUpdaters.notifyDelete(schedule, job, toBeNotifiedTaskInterface, toBeNotifiedTask,
+        if (dependentTaskInterface.requiresManualWait(toBeDeletedTaskInterface)) {
+          taskUpdaters.notifyDelete(schedule, job, dependentTaskInterface, dependentTask,
               toBeDeleted);
         }
       }
