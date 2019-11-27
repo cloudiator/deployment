@@ -17,10 +17,6 @@
 package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemArchitecture;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemFamily;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemImpl;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemVersions;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationId;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationInstanceId;
 import de.uniulm.omi.cloudiator.lance.application.DeploymentContext;
@@ -57,14 +53,6 @@ public class CreateLanceProcessStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
   private final LanceInstallationStrategy lanceInstallationStrategy;
   private final LanceClientConnector lanceClientConnector;
-  private static final OperatingSystemImpl staticOsImpl;
-
-  static {
-    staticOsImpl = new OperatingSystemImpl(
-        OperatingSystemFamily.UBUNTU,
-        OperatingSystemArchitecture.AMD64,
-        OperatingSystemVersions.of(1404, "14.04"));
-  }
 
   @Inject
   CreateLanceProcessStrategy(
@@ -198,7 +186,8 @@ public class CreateLanceProcessStrategy {
       @Override
       public ComponentInstanceId call() throws Exception {
         return lifecycleClient
-            .deploy(deployInfo.deploymentContext, deployableComponent, staticOsImpl,
+            .deploy(deployInfo.deploymentContext, deployableComponent,
+                ((LanceInterface) deployInfo.taskInterface).operatingSystem(),
                 containerType);
       }
     });
