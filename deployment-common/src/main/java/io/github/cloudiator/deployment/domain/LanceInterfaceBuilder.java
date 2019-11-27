@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import de.uniulm.omi.cloudiator.domain.OperatingSystem;
 import io.github.cloudiator.deployment.security.VariableContext;
 
 public class LanceInterfaceBuilder {
@@ -35,6 +36,7 @@ public class LanceInterfaceBuilder {
   private String shutdown;
   private String portUpdateAction;
   private LanceContainerType containerType;
+  private OperatingSystem operatingSystem;
 
   private LanceInterfaceBuilder() {
   }
@@ -55,6 +57,7 @@ public class LanceInterfaceBuilder {
     shutdown = lanceInterface.shutdown().orElse(null);
     portUpdateAction = lanceInterface.portUpdateAction().orElse(null);
     containerType = lanceInterface.containerType();
+    operatingSystem = lanceInterface.operatingSystem();
   }
 
   public static LanceInterfaceBuilder newBuilder() {
@@ -140,6 +143,11 @@ public class LanceInterfaceBuilder {
     return this;
   }
 
+  public LanceInterfaceBuilder os(OperatingSystem os) {
+    this.operatingSystem = os;
+    return this;
+  }
+
   public LanceInterfaceBuilder decorate(VariableContext variableContext) {
     init = variableContext.parse(init);
     preInstall = variableContext.parse(preInstall);
@@ -159,7 +167,8 @@ public class LanceInterfaceBuilder {
   }
 
   public LanceInterface build() {
-    return new LanceInterfaceImpl(containerType, init, preInstall, install, postInstall, preStart,
+    return new LanceInterfaceImpl(containerType, operatingSystem, init, preInstall, install,
+        postInstall, preStart,
         start,
         startDetection, stopDetection, postStart, preStop, stop, postStop, shutdown,
         portUpdateAction);

@@ -64,6 +64,7 @@ class TaskInterfaceModelConverter implements
   private LanceInterface lanceInterface(LanceTaskInterfaceModel lanceTaskInterfaceModel) {
     return LanceInterfaceBuilder.newBuilder()
         .containerType(lanceTaskInterfaceModel.getLanceContainerType())
+        .os(lanceTaskInterfaceModel.getOperatingSystemModel())
         .init(lanceTaskInterfaceModel.getInit())
         .install(lanceTaskInterfaceModel.getInstall())
         .postInstall(lanceTaskInterfaceModel.getPostInstall())

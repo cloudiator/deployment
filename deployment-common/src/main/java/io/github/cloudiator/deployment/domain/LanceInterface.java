@@ -16,12 +16,15 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import de.uniulm.omi.cloudiator.domain.OperatingSystem;
 import java.util.Optional;
 
 /**
  * Created by daniel on 13.02.17.
  */
 public interface LanceInterface extends TaskInterface {
+
+  OperatingSystem operatingSystem();
 
   LanceContainerType containerType();
 

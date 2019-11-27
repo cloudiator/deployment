@@ -30,15 +30,18 @@ public class TaskInterfaceDomainRepository {
   private final TaskInterfaceModelRepository taskInterfaceModelRepository;
   private final TriggerDomainRepository triggerDomainRepository;
   private final DistributionDomainRepository distributionDomainRepository;
+  private final OperatingSystemModelRepository operatingSystemModelRepository;
 
   @Inject
   public TaskInterfaceDomainRepository(
       TaskInterfaceModelRepository taskInterfaceModelRepository,
       TriggerDomainRepository triggerDomainRepository,
-      DistributionDomainRepository distributionDomainRepository) {
+      DistributionDomainRepository distributionDomainRepository,
+      OperatingSystemModelRepository operatingSystemModelRepository) {
     this.taskInterfaceModelRepository = taskInterfaceModelRepository;
     this.triggerDomainRepository = triggerDomainRepository;
     this.distributionDomainRepository = distributionDomainRepository;
+    this.operatingSystemModelRepository = operatingSystemModelRepository;
   }
 
   TaskInterfaceModel saveAndGet(TaskInterface domain, TaskModel taskModel) {
@@ -69,7 +72,13 @@ public class TaskInterfaceDomainRepository {
   private LanceTaskInterfaceModel createLanceInterfaceModel(LanceInterface domain,
       TaskModel taskModel) {
 
-    return new LanceTaskInterfaceModel(taskModel, domain.containerType(),
+    //persist the os
+    final OperatingSystemModel operatingSystemModel = new OperatingSystemModel(
+        domain.operatingSystem());
+
+    operatingSystemModelRepository.save(operatingSystemModel);
+
+    return new LanceTaskInterfaceModel(taskModel, domain.containerType(), operatingSystemModel,
         domain.init().orElse(null),
         domain.preInstall().orElse(null), domain.install().orElse(null),
         domain.postInstall().orElse(null), domain.preStart().orElse(null),

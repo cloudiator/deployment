@@ -16,12 +16,19 @@
 
 package io.github.cloudiator.deployment.domain;
 
+import de.uniulm.omi.cloudiator.domain.OperatingSystem;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemArchitecture;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemFamily;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemImpl;
+import de.uniulm.omi.cloudiator.domain.OperatingSystemVersions;
 import java.util.UUID;
 import org.cloudiator.matchmaking.domain.OclRequirement;
 
 public class MediaWikiJob {
 
   private static final String JOB_ID = UUID.randomUUID().toString();
+  public static final OperatingSystem OS = new OperatingSystemImpl(OperatingSystemFamily.UBUNTU,
+      OperatingSystemArchitecture.AMD64, OperatingSystemVersions.of(1404, "14.04"));
 
   private MediaWikiJob() {
     throw new AssertionError("Do not instantiate");
@@ -41,7 +48,7 @@ public class MediaWikiJob {
   public static Task wikiTask() {
 
     final LanceInterface wikiInterface = LanceInterfaceBuilder.newBuilder()
-        .containerType(LanceContainerType.DOCKER).preInstall("./preInstall")
+        .containerType(LanceContainerType.DOCKER).os(OS).preInstall("./preInstall")
         .install("./install").postInstall("./postInstall").start("./start").build();
 
     final OclRequirement wikiRequirementCores = OclRequirement
@@ -67,7 +74,7 @@ public class MediaWikiJob {
   public static Task databaseTask() {
 
     final LanceInterface databaseInterface = LanceInterfaceBuilder.newBuilder()
-        .containerType(LanceContainerType.DOCKER)
+        .containerType(LanceContainerType.DOCKER).os(OS)
         .preInstall("./preInstall").install("/.install")
         .postInstall("./postInstall").start("./start").build();
 
@@ -97,7 +104,7 @@ public class MediaWikiJob {
   public static Task loadBalancerTask() {
 
     final LanceInterface lbInterface = LanceInterfaceBuilder.newBuilder()
-        .containerType(LanceContainerType.DOCKER).preInstall("./preInstall")
+        .containerType(LanceContainerType.DOCKER).os(OS).preInstall("./preInstall")
         .install("./install").start("./start").portUpdateAction("./updateAction").build();
 
     final OclRequirement lbRequirementCores = OclRequirement

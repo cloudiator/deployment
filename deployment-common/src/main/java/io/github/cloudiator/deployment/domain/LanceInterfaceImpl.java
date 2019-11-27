@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
+import de.uniulm.omi.cloudiator.domain.OperatingSystem;
 import io.github.cloudiator.deployment.security.VariableContext;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import javax.annotation.Nullable;
 class LanceInterfaceImpl implements LanceInterface {
 
   private final LanceContainerType lanceContainerType;
+  private final OperatingSystem os;
   @Nullable
   private final String init;
   @Nullable
@@ -55,7 +57,7 @@ class LanceInterfaceImpl implements LanceInterface {
   @Nullable
   private final String portUpdateAction;
 
-  LanceInterfaceImpl(LanceContainerType containerType, @Nullable String init,
+  LanceInterfaceImpl(LanceContainerType containerType, OperatingSystem os, @Nullable String init,
       @Nullable String preInstall,
       @Nullable String install,
       @Nullable String postInstall, @Nullable String preStart, String start,
@@ -66,6 +68,9 @@ class LanceInterfaceImpl implements LanceInterface {
 
     checkNotNull(containerType, "containerType is null");
     this.lanceContainerType = containerType;
+
+    checkNotNull(os, "os is null");
+    this.os = os;
 
     this.init = init;
     this.preInstall = preInstall;
@@ -84,6 +89,13 @@ class LanceInterfaceImpl implements LanceInterface {
     this.postStop = postStop;
     this.shutdown = shutdown;
     this.portUpdateAction = portUpdateAction;
+
+
+  }
+
+  @Override
+  public OperatingSystem operatingSystem() {
+    return os;
   }
 
   @Override
