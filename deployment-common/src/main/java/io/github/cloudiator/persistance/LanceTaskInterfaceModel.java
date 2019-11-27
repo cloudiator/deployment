@@ -37,7 +37,6 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
   @Enumerated(EnumType.STRING)
   private LanceContainerType lanceContainerType;
 
-  @Column(nullable = false)
   @OneToOne(optional = false, orphanRemoval = true)
   private OperatingSystemModel operatingSystemModel;
 
