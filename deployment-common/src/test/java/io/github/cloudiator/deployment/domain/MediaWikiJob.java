@@ -28,7 +28,7 @@ public class MediaWikiJob {
 
   private static final String JOB_ID = UUID.randomUUID().toString();
   public static final OperatingSystem OS = new OperatingSystemImpl(OperatingSystemFamily.UBUNTU,
-      OperatingSystemArchitecture.AMD64, OperatingSystemVersions.of(1404, "14.04"));
+      OperatingSystemArchitecture.AMD64, OperatingSystemVersions.ofNameAndVersion(1404, "14.04"));
 
   private MediaWikiJob() {
     throw new AssertionError("Do not instantiate");
