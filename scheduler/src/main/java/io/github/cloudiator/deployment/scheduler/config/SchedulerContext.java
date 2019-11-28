@@ -47,6 +47,14 @@ public class SchedulerContext {
     }
   }
 
+  public boolean isRestoreEnabled() {
+    try {
+      return config.getBoolean(Constants.IS_RESTORE_ENABLED);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("config", config).toString();

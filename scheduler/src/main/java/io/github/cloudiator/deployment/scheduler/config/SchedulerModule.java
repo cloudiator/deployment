@@ -95,7 +95,8 @@ public class SchedulerModule extends AbstractModule {
     }
 
     bindConstant().annotatedWith(Names.named(Constants.API)).to(schedulerContext.api());
-
+    bindConstant().annotatedWith(Names.named(Constants.IS_RESTORE_ENABLED))
+        .to(schedulerContext.isRestoreEnabled());
 
     final ScheduledThreadPoolExecutorExecutionService scheduledThreadPoolExecutorExecutionService = new ScheduledThreadPoolExecutorExecutionService(
         new LoggingScheduledThreadPoolExecutor(5));
