@@ -1,10 +1,5 @@
 package io.github.cloudiator.deployment.lance;
 
-import de.uniulm.omi.cloudiator.domain.OperatingSystem;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemArchitecture;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemFamily;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemImpl;
-import de.uniulm.omi.cloudiator.domain.OperatingSystemVersions;
 import de.uniulm.omi.cloudiator.lance.application.component.OutPort;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties.PortType;
@@ -17,15 +12,6 @@ import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.PortRequired;
 
 public class ComponentSupplierUtils {
-
-  private static final OperatingSystem staticOs;
-
-  static {
-    staticOs = new OperatingSystemImpl(
-        OperatingSystemFamily.UBUNTU,
-        OperatingSystemArchitecture.AMD64,
-        OperatingSystemVersions.ofNameAndVersion(1404,"14.04"));
-  }
 
   private ComponentSupplierUtils() {
   }
@@ -56,7 +42,7 @@ public class ComponentSupplierUtils {
     //todo this is inconsistent. multiple PortUpdateHandler should be allowed here so
     //todo it is possible to set one per operating system!
     BashBasedHandlerBuilder portUpdateBuilder = new BashBasedHandlerBuilder();
-    portUpdateBuilder.setOperatingSystem(staticOs);
+    portUpdateBuilder.setOperatingSystem(lanceInterface.operatingSystem());
     portUpdateBuilder.addCommand(lanceInterface.portUpdateAction().get());
     return portUpdateBuilder.buildPortUpdateHandler();
   }
