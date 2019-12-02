@@ -283,6 +283,9 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             }, new Consumer<CloudiatorProcess>() {
               @Override
               public void accept(CloudiatorProcess cloudiatorProcess) {
+                if (cloudiatorProcess != null) {
+                  countDownLatch.countDown();
+                }
                 dependencies.fulfill();
               }
             }, onSuccessConsumer),
@@ -301,10 +304,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
               }, new Consumer<CloudiatorProcess>() {
                 @Override
                 public void accept(CloudiatorProcess cloudiatorProcess) {
-                  countDownLatch.countDown();
-                  if (countDownLatch.getCount() == 0) {
-                    dependencies.fulfill();
+                  if (cloudiatorProcess != null) {
+                    countDownLatch.countDown();
                   }
+                  dependencies.fulfill();
                 }
               }, onSuccessConsumer),
               EXECUTOR);

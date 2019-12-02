@@ -138,7 +138,7 @@ public class ScheduleDeletionStrategy {
     @Override
     public void onFailure(Throwable t) {
       LOGGER.error(String.format("Error while deleting process %s. Will be tried again later.",
-          cloudiatorProcess));
+          cloudiatorProcess), t);
       countDownLatch.countDown();
     }
   }
