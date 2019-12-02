@@ -21,21 +21,20 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import de.uniulm.omi.cloudiator.util.execution.LoggingScheduledThreadPoolExecutor;
-import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
-import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
-import io.github.cloudiator.domain.Node;
-import io.github.cloudiator.messaging.NodeMessageRepository;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import io.github.cloudiator.persistance.ScheduleDomainRepository;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -53,13 +52,13 @@ public class ScheduleDeletionStrategy {
 
   private final ProcessService processService;
   private final NodeService nodeService;
-  private final NodeMessageRepository nodeMessageRepository;
   private static final LoggingScheduledThreadPoolExecutor EXECUTOR = new LoggingScheduledThreadPoolExecutor(
       5);
   private static final Logger LOGGER = LoggerFactory
       .getLogger(ScheduleDeletionStrategy.class);
   private final JobMessageRepository jobMessageRepository;
   private final PeriodicScheduler periodicScheduler;
+  private final ScheduleDomainRepository scheduleDomainRepository;
 
   static {
     MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
@@ -68,16 +67,106 @@ public class ScheduleDeletionStrategy {
   @Inject
   public ScheduleDeletionStrategy(ProcessService processService,
       NodeService nodeService,
-      NodeMessageRepository nodeMessageRepository,
       JobMessageRepository jobMessageRepository,
-      PeriodicScheduler periodicScheduler) {
+      PeriodicScheduler periodicScheduler,
+      ScheduleDomainRepository scheduleDomainRepository) {
     this.processService = processService;
     this.nodeService = nodeService;
-    this.nodeMessageRepository = nodeMessageRepository;
     this.jobMessageRepository = jobMessageRepository;
     this.periodicScheduler = periodicScheduler;
+    this.scheduleDomainRepository = scheduleDomainRepository;
   }
 
+  @Transactional
+  protected Schedule refresh(Schedule schedule) {
+    return scheduleDomainRepository.findByIdAndUser(schedule.id(), schedule.userId());
+  }
+
+  private final class DeleteNodesOnProcessDelete implements FutureCallback<ProcessDeletedResponse> {
+
+    private final CloudiatorProcess cloudiatorProcess;
+
+    private DeleteNodesOnProcessDelete(
+        CloudiatorProcess cloudiatorProcess) {
+      this.cloudiatorProcess = cloudiatorProcess;
+    }
+
+    @Override
+    public void onSuccess(@Nullable ProcessDeletedResponse deleted) {
+
+      List<SettableFuture<NodeDeleteResponseMessage>> futures = new LinkedList<>();
+
+      LOGGER.info(String
+          .format("Deleting nodes for process %s. Deleted nodes will be %s.", cloudiatorProcess,
+              cloudiatorProcess.nodes()));
+
+      for (String node : cloudiatorProcess.nodes()) {
+        final NodeDeleteMessage nodeDeleteMessage = NodeDeleteMessage.newBuilder()
+            .setNodeId(node).setUserId(cloudiatorProcess.userId())
+            .build();
+
+        SettableFutureResponseCallback<NodeDeleteResponseMessage, NodeDeleteResponseMessage> nodeFuture = SettableFutureResponseCallback
+            .create();
+
+        nodeService.deleteNodeAsync(nodeDeleteMessage, nodeFuture);
+      }
+
+      final ListenableFuture<List<NodeDeleteResponseMessage>> nodesFuture = Futures
+          .successfulAsList(futures);
+
+      try {
+        nodesFuture.get();
+      } catch (InterruptedException e) {
+        LOGGER.warn("Interrupted while waiting for node deletion. This may cause illegal state.");
+        Thread.currentThread().interrupt();
+      } catch (ExecutionException e) {
+        LOGGER.error(String
+                .format("Error while waiting for nodes of process %s to be deleted", cloudiatorProcess),
+            e.getCause());
+        throw new IllegalStateException(String
+            .format("Error while waiting for nodes of process %s to be deleted",
+                cloudiatorProcess));
+      }
+
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+      LOGGER.error(String.format("Error while deleting process %s. Will be tried again later.",
+          cloudiatorProcess));
+    }
+  }
+
+  private void cancelPeriodic(Schedule schedule, CloudiatorProcess cloudiatorProcess) {
+
+    //stop the periodic scheduler for any processes of this schedule
+    Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
+    checkState(job != null, "job is null");
+    Task task = job.getTask(cloudiatorProcess.taskId())
+        .orElseThrow(() -> new IllegalStateException("Task not present in job"));
+
+    periodicScheduler.cancel(task, true);
+  }
+
+
+  private void deleteProcess(Schedule schedule, CloudiatorProcess cloudiatorProcess) {
+
+    cancelPeriodic(schedule, cloudiatorProcess);
+
+    final DeleteProcessRequest deleteProcessRequest = DeleteProcessRequest.newBuilder()
+        .setProcessId(cloudiatorProcess.id())
+        .setUserId(cloudiatorProcess.userId()).build();
+
+    SettableFutureResponseCallback<ProcessDeletedResponse, ProcessDeletedResponse> processFuture = SettableFutureResponseCallback
+        .create();
+
+    LOGGER.info("Issuing request to delete process " + cloudiatorProcess);
+
+    processService.deleteProcessAsync(deleteProcessRequest, processFuture);
+
+    Futures.addCallback(processFuture, new DeleteNodesOnProcessDelete(cloudiatorProcess), EXECUTOR);
+
+  }
 
   public void delete(Schedule schedule, String userId) {
 
@@ -88,119 +177,20 @@ public class ScheduleDeletionStrategy {
 
     LOGGER.debug(String.format("Deleting a total amount of %s processes for schedule %s.",
         schedule.processes().size(), schedule));
-    final CountDownLatch countDownLatch = new CountDownLatch(schedule.processes().size());
 
     //delete all processes
-    for (CloudiatorProcess cloudiatorProcess : schedule.processes()) {
+    int totalAttempts = 3;
+    int currentAttempt = 1;
 
-      //stop the periodic scheduler for any processes of this schedule
-      Job job = jobMessageRepository.getById(schedule.userId(), schedule.job());
-      checkState(job != null, "job is null");
-      Task task = job.getTask(cloudiatorProcess.taskId())
-          .orElseThrow(() -> new IllegalStateException("Task not present in job"));
-
-      periodicScheduler.cancel(task, true);
-
-      //all nodes that are orphaned by deleting the process
-      Set<String> orphanedNodeIds = new HashSet<>();
-
-      if (cloudiatorProcess instanceof CloudiatorSingleProcess) {
-        orphanedNodeIds.add(((CloudiatorSingleProcess) cloudiatorProcess).node());
-      } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
-        orphanedNodeIds.addAll(((CloudiatorClusterProcess) cloudiatorProcess).nodes());
-      } else {
-        throw new IllegalStateException(
-            "Unknown process type" + cloudiatorProcess.getClass().getSimpleName());
+    while (!schedule.processes().isEmpty() && currentAttempt <= totalAttempts) {
+      for (CloudiatorProcess cloudiatorProcess : schedule.processes()) {
+        deleteProcess(schedule, cloudiatorProcess);
       }
-
-      Set<Node> orphanedNodes = new HashSet<>(orphanedNodeIds.size());
-
-      for (String orphanedNodeId : orphanedNodeIds) {
-        Node node = nodeMessageRepository
-            .getById(userId, orphanedNodeId);
-        checkState(node != null, String
-            .format("Process reference to node is invalid. Node with id %s does not exist.",
-                orphanedNodeId));
-        orphanedNodes.add(node);
-      }
-
-      //issue the process delete request
-      final DeleteProcessRequest deleteProcessRequest = DeleteProcessRequest.newBuilder()
-          .setProcessId(cloudiatorProcess.id())
-          .setUserId(userId).build();
-
-      SettableFutureResponseCallback<ProcessDeletedResponse, ProcessDeletedResponse> processFuture = SettableFutureResponseCallback
-          .create();
-
-      LOGGER.info("Deleting the process " + cloudiatorProcess);
-
-      processService.deleteProcessAsync(deleteProcessRequest, processFuture);
-
-      Futures.addCallback(processFuture, new FutureCallback<ProcessDeletedResponse>() {
-        @Override
-        public void onSuccess(@Nullable ProcessDeletedResponse result) {
-          //delete the node
-          LOGGER.info(String.format(
-              "Successfully deleted the process %s. Starting the deletion of the corresponding nodes %s.",
-              cloudiatorProcess.id(), orphanedNodes));
-
-          for (Node node : orphanedNodes) {
-
-            final NodeDeleteMessage nodeDeleteMessage = NodeDeleteMessage.newBuilder()
-                .setNodeId(node.id()).setUserId(userId)
-                .build();
-
-            SettableFutureResponseCallback<NodeDeleteResponseMessage, NodeDeleteResponseMessage> nodeFuture = SettableFutureResponseCallback
-                .create();
-
-            nodeService.deleteNodeAsync(nodeDeleteMessage, nodeFuture);
-
-            try {
-              nodeFuture.get();
-            } catch (InterruptedException e) {
-              throw new IllegalStateException(String
-                  .format("Interrupted while deleting node with id %s.",
-                      node),
-                  e);
-            } catch (ExecutionException e) {
-              throw new IllegalStateException(String
-                  .format("Error while deleting node %s of process %s.",
-                      node,
-                      cloudiatorProcess), e);
-            }
-
-          }
-
-          countDownLatch.countDown();
-
-          LOGGER.debug(String
-              .format("Deleted process %s. %s processes remaining.", cloudiatorProcess,
-                  countDownLatch.getCount()));
-        }
-
-
-        @Override
-        public void onFailure(Throwable t) {
-          LOGGER.error(String.format("Error while deleting process %s.", cloudiatorProcess), t);
-          countDownLatch.countDown();
-          throw new IllegalStateException(
-              String.format("Error while deleting process %s.", cloudiatorProcess), t);
-        }
-      }, EXECUTOR);
-
-
+      schedule = refresh(schedule);
+      currentAttempt++;
     }
 
-    LOGGER.debug("Waiting for all processes and corresponding nodes to be delete.");
-    try {
-      countDownLatch.await();
 
-      LOGGER.info(String.format("Deleted schedule %s successfully", schedule));
-
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(
-          "Interrupted while waiting for termination of all processes.");
-    }
   }
 
 }
