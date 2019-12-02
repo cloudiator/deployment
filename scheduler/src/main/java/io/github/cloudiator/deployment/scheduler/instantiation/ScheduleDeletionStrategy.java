@@ -35,6 +35,7 @@ import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -85,10 +86,12 @@ public class ScheduleDeletionStrategy {
   private final class DeleteNodesOnProcessDelete implements FutureCallback<ProcessDeletedResponse> {
 
     private final CloudiatorProcess cloudiatorProcess;
+    private final CountDownLatch countDownLatch;
 
     private DeleteNodesOnProcessDelete(
-        CloudiatorProcess cloudiatorProcess) {
+        CloudiatorProcess cloudiatorProcess, CountDownLatch countDownLatch) {
       this.cloudiatorProcess = cloudiatorProcess;
+      this.countDownLatch = countDownLatch;
     }
 
     @Override
@@ -126,6 +129,8 @@ public class ScheduleDeletionStrategy {
         throw new IllegalStateException(String
             .format("Error while waiting for nodes of process %s to be deleted",
                 cloudiatorProcess));
+      } finally {
+        countDownLatch.countDown();
       }
 
     }
@@ -134,6 +139,7 @@ public class ScheduleDeletionStrategy {
     public void onFailure(Throwable t) {
       LOGGER.error(String.format("Error while deleting process %s. Will be tried again later.",
           cloudiatorProcess));
+      countDownLatch.countDown();
     }
   }
 
@@ -163,8 +169,18 @@ public class ScheduleDeletionStrategy {
     LOGGER.info("Issuing request to delete process " + cloudiatorProcess);
 
     processService.deleteProcessAsync(deleteProcessRequest, processFuture);
+    CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    Futures.addCallback(processFuture, new DeleteNodesOnProcessDelete(cloudiatorProcess), EXECUTOR);
+    Futures.addCallback(processFuture, new DeleteNodesOnProcessDelete(cloudiatorProcess,
+        countDownLatch), EXECUTOR);
+
+    try {
+      countDownLatch.await();
+    } catch (InterruptedException e) {
+      LOGGER.warn(
+          "Interrupted while waiting for process and node deletion. This may cause illegal state.");
+      Thread.currentThread().interrupt();
+    }
 
   }
 
@@ -175,14 +191,15 @@ public class ScheduleDeletionStrategy {
 
     LOGGER.info("Starting the deletion of schedule " + schedule);
 
-    LOGGER.debug(String.format("Deleting a total amount of %s processes for schedule %s.",
-        schedule.processes().size(), schedule));
-
     //delete all processes
     int totalAttempts = 3;
     int currentAttempt = 1;
 
     while (!schedule.processes().isEmpty() && currentAttempt <= totalAttempts) {
+
+      LOGGER.debug(String.format("Deleting a total amount of %s processes for schedule %s.",
+          schedule.processes().size(), schedule));
+
       for (CloudiatorProcess cloudiatorProcess : schedule.processes()) {
         deleteProcess(schedule, cloudiatorProcess);
       }
