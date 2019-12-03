@@ -142,18 +142,22 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
     @Override
     public final void onSuccess(T result) {
+      boolean afterExecuteCalled = false;
       try {
         beforeExecute.run();
         final CloudiatorProcess cloudiatorProcess = doSuccess(result).get();
         onSuccess.accept(cloudiatorProcess);
         afterExecute.accept(cloudiatorProcess);
+        afterExecuteCalled = true;
       } catch (InterruptedException e) {
         throw new IllegalStateException("Interrupted while waiting for result.", e);
       } catch (ExecutionException e) {
         throw new IllegalStateException("Unexpected exception while waiting for result",
             e.getCause());
       } finally {
-        afterExecute.accept(null);
+        if (!afterExecuteCalled) {
+          afterExecute.accept(null);
+        }
       }
     }
 
@@ -283,10 +287,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             }, new Consumer<CloudiatorProcess>() {
               @Override
               public void accept(CloudiatorProcess cloudiatorProcess) {
-                if (cloudiatorProcess != null) {
-                  countDownLatch.countDown();
+                countDownLatch.countDown();
+                if (countDownLatch.getCount() == 0) {
+                  dependencies.fulfill();
                 }
-                dependencies.fulfill();
               }
             }, onSuccessConsumer),
             EXECUTOR);
@@ -304,10 +308,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
               }, new Consumer<CloudiatorProcess>() {
                 @Override
                 public void accept(CloudiatorProcess cloudiatorProcess) {
-                  if (cloudiatorProcess != null) {
-                    countDownLatch.countDown();
+                  countDownLatch.countDown();
+                  if (countDownLatch.getCount() == 0) {
+                    dependencies.fulfill();
                   }
-                  dependencies.fulfill();
                 }
               }, onSuccessConsumer),
               EXECUTOR);
