@@ -51,13 +51,15 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   private final Date start;
   @Nullable
   private final Date stop;
+  @Nullable
+  private final String secret;
 
 
   CloudiatorProcessImpl(String id, @Nullable String originId, String userId, String scheduleId,
       String taskName, String taskInterface,
       ProcessState state, Type type, @Nullable String diagnostic,
       @Nullable String reason, @Nullable String endpoint,
-      Set<IpAddress> ipAddresses, Date start, @Nullable Date stop) {
+      Set<IpAddress> ipAddresses, Date start, @Nullable Date stop, @Nullable String secret) {
 
     checkNotNull(id, "id is null");
     checkArgument(!id.isEmpty(), "id is empty");
@@ -98,6 +100,8 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
     this.start = start;
 
     this.stop = stop;
+
+    this.secret = secret;
   }
 
   @Override
@@ -191,6 +195,11 @@ abstract class CloudiatorProcessImpl implements CloudiatorProcess {
   @Override
   public Optional<Date> stop() {
     return Optional.ofNullable(stop);
+  }
+
+  @Override
+  public Optional<String> secret() {
+    return Optional.ofNullable(secret);
   }
 
   protected MoreObjects.ToStringHelper stringHelper() {

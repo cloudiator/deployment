@@ -37,7 +37,6 @@ import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.ServiceBehaviour;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
-import io.github.cloudiator.deployment.domain.TaskUpdater;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
@@ -77,7 +76,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
   private static final ExecutorService EXECUTOR = new LoggingThreadPoolExecutor(0,
       2147483647, 60L, TimeUnit.SECONDS, new SynchronousQueue());
   private final MatchmakingEngine matchmakingEngine;
-  private final TaskUpdater taskUpdaters;
 
   static {
     MoreExecutors.addDelayedShutdownHook(EXECUTOR, 5, TimeUnit.MINUTES);
@@ -98,7 +96,6 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
       ScheduleDomainRepository scheduleDomainRepository,
       PeriodicScheduler periodicScheduler) {
     this.matchmakingEngine = matchmakingEngine;
-    this.taskUpdaters = taskUpdaters;
     this.resourcePool = resourcePool;
     this.processService = processService;
     this.jobMessageRepository = jobMessageRepository;
@@ -145,18 +142,22 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
 
     @Override
     public final void onSuccess(T result) {
+      boolean afterExecuteCalled = false;
       try {
         beforeExecute.run();
         final CloudiatorProcess cloudiatorProcess = doSuccess(result).get();
         onSuccess.accept(cloudiatorProcess);
         afterExecute.accept(cloudiatorProcess);
+        afterExecuteCalled = true;
       } catch (InterruptedException e) {
         throw new IllegalStateException("Interrupted while waiting for result.", e);
       } catch (ExecutionException e) {
         throw new IllegalStateException("Unexpected exception while waiting for result",
             e.getCause());
       } finally {
-        afterExecute.accept(null);
+        if (!afterExecuteCalled) {
+          afterExecute.accept(null);
+        }
       }
     }
 
@@ -286,7 +287,10 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
             }, new Consumer<CloudiatorProcess>() {
               @Override
               public void accept(CloudiatorProcess cloudiatorProcess) {
-                dependencies.fulfill(refresh(schedule), cloudiatorProcess, taskUpdaters);
+                countDownLatch.countDown();
+                if (countDownLatch.getCount() == 0) {
+                  dependencies.fulfill();
+                }
               }
             }, onSuccessConsumer),
             EXECUTOR);
@@ -306,7 +310,7 @@ public class AutomaticInstantiationStrategy implements InstantiationStrategy {
                 public void accept(CloudiatorProcess cloudiatorProcess) {
                   countDownLatch.countDown();
                   if (countDownLatch.getCount() == 0) {
-                    dependencies.fulfill(refresh(schedule), cloudiatorProcess, taskUpdaters);
+                    dependencies.fulfill();
                   }
                 }
               }, onSuccessConsumer),

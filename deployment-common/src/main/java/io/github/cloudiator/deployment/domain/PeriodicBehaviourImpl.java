@@ -67,4 +67,9 @@ public class PeriodicBehaviourImpl implements PeriodicBehaviour {
   public int hashCode() {
     return Objects.hash(interval, collisionHandling);
   }
+
+  @Override
+  public boolean canFinish() {
+    return true;
+  }
 }

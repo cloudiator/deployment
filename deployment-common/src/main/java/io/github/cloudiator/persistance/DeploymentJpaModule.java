@@ -58,6 +58,7 @@ public class DeploymentJpaModule extends AbstractModule {
     bind(IpAddressModelRepository.class).to(IpAddressModelRepositoryJpa.class);
     bind(IpGroupModelRepository.class).to(IpGroupModelRepositoryJpa.class);
     bind(DistributionModelRepository.class).to(DistributionModelRepositoryJpa.class);
+    bind(OperatingSystemModelRepository.class).to(OperatingSystemModelRepositoryJpa.class);
 
   }
 

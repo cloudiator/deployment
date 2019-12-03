@@ -23,9 +23,9 @@ public class CloudiatorClusterProcessImpl extends CloudiatorProcessImpl implemen
       String scheduleId, String taskName, String lifecycleInterface,
       CloudiatorProcess.ProcessState state, Type type, Set<String> nodes,
       @Nullable String diagnostic, @Nullable String reason, @Nullable String endpoint,
-      Set<IpAddress> ipAddresses, Date start, @Nullable Date stop) {
+      Set<IpAddress> ipAddresses, Date start, @Nullable Date stop, @Nullable String secret) {
     super(id, originId, userId, scheduleId, taskName, lifecycleInterface, state, type, diagnostic,
-        reason, endpoint, ipAddresses, start, stop);
+        reason, endpoint, ipAddresses, start, stop, secret);
 
     checkNotNull(nodes, "nodes is null");
     this.nodes = new HashSet<>(nodes);

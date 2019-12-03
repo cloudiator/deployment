@@ -30,7 +30,7 @@ public class TaskImplTest {
   public void interfaceOfType() {
 
     LanceInterface lanceInterface = LanceInterfaceBuilder.newBuilder()
-        .containerType(LanceContainerType.BOTH).start("./start.sh").build();
+        .containerType(LanceContainerType.BOTH).os(MediaWikiJob.OS).start("./start.sh").build();
 
     Task task = TaskBuilder.newBuilder().addInterface(lanceInterface).name("test")
         .behaviour(Behaviours.service(true)).build();
@@ -48,7 +48,7 @@ public class TaskImplTest {
   @Test
   public void providedAndRequiredPorts() {
     LanceInterface lanceInterface = LanceInterfaceBuilder.newBuilder()
-        .containerType(LanceContainerType.BOTH).start("./start.sh").build();
+        .containerType(LanceContainerType.BOTH).os(MediaWikiJob.OS).start("./start.sh").build();
 
     PortProvided provided = PortProvidedBuilder.newBuilder().name("PortProvided").port(1234)
         .build();
@@ -72,7 +72,7 @@ public class TaskImplTest {
   public void equals() {
 
     LanceInterface lanceInterface = LanceInterfaceBuilder.newBuilder()
-        .containerType(LanceContainerType.BOTH).start("./start.sh").build();
+        .containerType(LanceContainerType.BOTH).os(MediaWikiJob.OS).start("./start.sh").build();
 
     PortProvided provided = PortProvidedBuilder.newBuilder().name("PortProvided").port(1234)
         .build();

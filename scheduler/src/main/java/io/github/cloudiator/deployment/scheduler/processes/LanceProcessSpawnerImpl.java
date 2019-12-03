@@ -25,6 +25,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.DockerInterface;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.DockerInterfaceConverter;
@@ -64,7 +65,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorClusterProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Set<Node> nodes) {
     throw new UnsupportedOperationException(
         String.format("%s does not support running processes on clusters.", this));
@@ -72,7 +73,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
 
 
   @Override
-  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorSingleProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface,
       Node node) throws ProcessSpawningException {
 
@@ -84,7 +85,7 @@ public class LanceProcessSpawnerImpl implements ProcessSpawner {
             userId, schedule, task, node));
 
     final Builder builder = LanceProcess.newBuilder()
-        .setSchedule(schedule)
+        .setSchedule(schedule.id())
         .setTask(task.name())
         .setJob(JOB_CONVERTER.applyBack(job))
         .setNode(NODE_TO_NODE_MESSAGE_CONVERTER.apply(node));

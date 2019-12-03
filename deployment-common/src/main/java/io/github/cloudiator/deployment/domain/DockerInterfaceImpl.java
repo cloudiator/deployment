@@ -77,6 +77,11 @@ public class DockerInterfaceImpl implements DockerInterface {
   }
 
   @Override
+  public boolean canFinish() {
+    return true;
+  }
+
+  @Override
   public TaskInterface decorateEnvironment(Environment environment) {
     return this;
   }

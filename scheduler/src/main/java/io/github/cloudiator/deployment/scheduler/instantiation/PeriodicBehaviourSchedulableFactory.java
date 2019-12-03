@@ -16,12 +16,14 @@
 
 package io.github.cloudiator.deployment.scheduler.instantiation;
 
+import de.uniulm.omi.cloudiator.util.execution.ExecutionService;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 
 public interface PeriodicBehaviourSchedulableFactory {
 
-  PeriodicBehaviourSchedulable create(Job job, Task task, Schedule schedule);
+  PeriodicBehaviourSchedulable create(Job job, Task task, Schedule schedule,
+      ExecutionService executionService);
 
 }

@@ -20,18 +20,38 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import com.google.inject.persist.Transactional;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.domain.TaskUpdater;
+import io.github.cloudiator.deployment.graph.Graphs;
+import io.github.cloudiator.deployment.graph.ScheduleGraph;
+import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.scheduler.exceptions.ProcessDeletionException;
+import io.github.cloudiator.persistance.ScheduleDomainRepository;
+import java.util.List;
 import java.util.Set;
 
 public class CompositeProcessKiller implements ProcessKiller {
 
   private final Set<ProcessKiller> processKillers;
+  private final ScheduleDomainRepository scheduleDomainRepository;
+  private final JobMessageRepository jobMessageRepository;
+  private final TaskUpdater taskUpdaters;
 
   @Inject
   public CompositeProcessKiller(
-      Set<ProcessKiller> processKillers) {
+      Set<ProcessKiller> processKillers,
+      ScheduleDomainRepository scheduleDomainRepository,
+      JobMessageRepository jobMessageRepository,
+      TaskUpdater taskUpdaters) {
     this.processKillers = processKillers;
+    this.scheduleDomainRepository = scheduleDomainRepository;
+    this.jobMessageRepository = jobMessageRepository;
+    this.taskUpdaters = taskUpdaters;
   }
 
   @Override
@@ -45,8 +65,59 @@ public class CompositeProcessKiller implements ProcessKiller {
     return false;
   }
 
+  protected List<CloudiatorProcess> dependencies(Schedule schedule, Job job,
+      CloudiatorProcess cloudiatorProcess) {
+
+    final ScheduleGraph scheduleGraph = Graphs.scheduleGraph(schedule, job);
+
+    return scheduleGraph.getDependentProcesses(cloudiatorProcess);
+  }
+
+  private void notifyBeforeDeletion(Schedule schedule, Job job,
+      CloudiatorProcess toBeDeleted) {
+
+    for (CloudiatorProcess dependency : dependencies(schedule, job, toBeDeleted)) {
+
+      final Task runningTask = job.getTask(toBeDeleted.taskId()).orElseThrow(
+          () -> new IllegalStateException("Task of running process is not known by job"));
+
+      final TaskInterface toBeDeletedTaskInterface = runningTask
+          .interfaceOfName(toBeDeleted.taskInterface());
+
+      final Task dependentTask = job.getTask(dependency.taskId())
+          .orElseThrow(
+              () -> new IllegalStateException("Task of dependency process is not known by job"));
+
+      final TaskInterface dependentTaskInterface = dependentTask
+          .interfaceOfName(dependency.taskInterface());
+
+      if (taskUpdaters.supports(dependentTaskInterface)) {
+
+        if (dependentTaskInterface.requiresManualWait(toBeDeletedTaskInterface)) {
+          taskUpdaters.notifyDelete(schedule, job, dependentTaskInterface, dependentTask,
+              toBeDeleted);
+        }
+      }
+    }
+  }
+
   @Override
+  @Transactional
   public void kill(CloudiatorProcess cloudiatorProcess) throws ProcessDeletionException {
+
+    final Schedule schedule = scheduleDomainRepository.findByProcess(cloudiatorProcess);
+
+    if (schedule == null) {
+      throw new IllegalStateException(
+          String.format("Schedule for process %s no longer exists.", cloudiatorProcess));
+    }
+
+    final Job job = jobMessageRepository.getById(cloudiatorProcess.userId(), schedule.job());
+
+    if (job == null) {
+      throw new IllegalStateException(
+          String.format("Job for schedule %s does not longer exists.", schedule));
+    }
 
     checkState(supports(cloudiatorProcess),
         String.format("%s does not support killing the process %s.", this, cloudiatorProcess));
@@ -56,6 +127,7 @@ public class CompositeProcessKiller implements ProcessKiller {
 
     for (ProcessKiller processKiller : processKillers) {
       if (processKiller.supports(cloudiatorProcess)) {
+        notifyBeforeDeletion(schedule, job, cloudiatorProcess);
         processKiller.kill(cloudiatorProcess);
       }
     }

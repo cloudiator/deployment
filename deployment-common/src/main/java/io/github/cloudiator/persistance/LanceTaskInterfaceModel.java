@@ -25,6 +25,7 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Lob;
+import javax.persistence.OneToOne;
 
 /**
  * Created by daniel on 15.12.14.
@@ -35,6 +36,10 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private LanceContainerType lanceContainerType;
+
+  @OneToOne(optional = false, orphanRemoval = true)
+  private OperatingSystemModel operatingSystemModel;
+
   @Nullable
   @Lob
   private String init;
@@ -85,6 +90,7 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
   }
 
   public LanceTaskInterfaceModel(TaskModel task, LanceContainerType lanceContainerType,
+      OperatingSystemModel operatingSystemModel,
       @Nullable String init,
       @Nullable String preInstall,
       @Nullable String install, @Nullable String postInstall, @Nullable String preStart,
@@ -95,8 +101,10 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
 
     checkNotNull(start, "start is null");
     checkNotNull(lanceContainerType, "lanceContainerType is null");
+    checkNotNull(operatingSystemModel, "operatingSystemModel is null");
 
     this.lanceContainerType = lanceContainerType;
+    this.operatingSystemModel = operatingSystemModel;
     this.init = init;
     this.preInstall = preInstall;
     this.install = install;
@@ -236,5 +244,9 @@ class LanceTaskInterfaceModel extends TaskInterfaceModel {
   @Nullable
   public String getPortUpdateAction() {
     return portUpdateAction;
+  }
+
+  public OperatingSystemModel getOperatingSystemModel() {
+    return operatingSystemModel;
   }
 }

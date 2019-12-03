@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Joiner;
 import io.github.cloudiator.deployment.graph.Graphs;
 import io.github.cloudiator.deployment.graph.ScheduleGraph;
 import io.github.cloudiator.deployment.graph.ScheduleGraph.CommunicationInstanceEdge;
@@ -26,20 +27,28 @@ import io.github.cloudiator.deployment.graph.ScheduleGraph.CommunicationInstance
 public class EnvironmentGenerator {
 
   private static final String PUBLIC_DOWNSTREAM = "PUBLIC_%s";
+  private static final String PROCESS_ID = "PROCESS_ID";
+  private static final String NODE_IDS = "NODE_IDS";
+  private static final String FINISH_ENDPOINT = "FINISH_ENDPOINT";
+  private static final String FINISH_ENDPOINT_TEMPLATE = "%s/process/%s/%s";
 
   private final Job job;
   private final Schedule schedule;
+  private final String apiEndpoint;
 
-  private EnvironmentGenerator(Job job, Schedule schedule) {
+  private EnvironmentGenerator(Job job, Schedule schedule, String apiEndpoint) {
     this.job = job;
     this.schedule = schedule;
+    this.apiEndpoint = apiEndpoint;
   }
 
-  public static EnvironmentGenerator of(Job job, Schedule schedule) {
+  public static EnvironmentGenerator of(Job job, Schedule schedule,
+      String apiEndpoint) {
     checkNotNull(job, "job is null");
     checkNotNull(schedule, "schedule is null");
+    checkNotNull(apiEndpoint, "apiEndpoint is null");
 
-    return new EnvironmentGenerator(job, schedule);
+    return new EnvironmentGenerator(job, schedule, apiEndpoint);
   }
 
 
@@ -50,6 +59,13 @@ public class EnvironmentGenerator {
 
     checkArgument(schedule.hasProcess(cloudiatorProcess),
         String.format("Process %s does not belong to schedule %s.", cloudiatorProcess, schedule));
+
+    environment.put(PROCESS_ID, cloudiatorProcess.id());
+    environment.put(NODE_IDS, Joiner.on(",").join(cloudiatorProcess.nodes()));
+
+    environment.put(FINISH_ENDPOINT, String
+        .format(FINISH_ENDPOINT_TEMPLATE, apiEndpoint, cloudiatorProcess.id(),
+            cloudiatorProcess.secret().orElse(null)));
 
     for (CloudiatorProcess dependency : scheduleGraph.getDependencies(cloudiatorProcess)) {
 

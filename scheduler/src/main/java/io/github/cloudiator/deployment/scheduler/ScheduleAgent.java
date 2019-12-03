@@ -20,13 +20,17 @@ import com.google.common.base.MoreObjects;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import de.uniulm.omi.cloudiator.util.configuration.Configuration;
+import de.uniulm.omi.cloudiator.util.statistics.StatisticsContext;
+import de.uniulm.omi.cloudiator.util.statistics.StatisticsModule;
 import io.github.cloudiator.deployment.config.DeploymentContext;
 import io.github.cloudiator.deployment.config.DeploymentModule;
+import io.github.cloudiator.deployment.scheduler.config.SchedulerContext;
 import io.github.cloudiator.deployment.scheduler.config.SchedulerModule;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.DeleteScheduleRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.NodeEventSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessEventSubscriber;
+import io.github.cloudiator.deployment.scheduler.messaging.ProcessFinishSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessQuerySubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
 import io.github.cloudiator.deployment.scheduler.messaging.ScaleRequestSubscriber;
@@ -50,9 +54,11 @@ public class ScheduleAgent {
   private final static Injector INJECTOR = Guice
       .createInjector(
           new KafkaMessagingModule(new KafkaContext()), new MessageServiceModule(),
-          new SchedulerModule(), new DeploymentModule(new DeploymentContext()),
+          new SchedulerModule(new DeploymentContext(), new SchedulerContext()),
+          new DeploymentModule(new DeploymentContext()),
           new DeploymentJpaModule("defaultPersistenceUnit", new JpaContext(
-              Configuration.conf())));
+              Configuration.conf())),
+          new StatisticsModule(new StatisticsContext()));
 
   public static void main(String[] args) {
 
@@ -88,6 +94,9 @@ public class ScheduleAgent {
 
     LOGGER.info(String.format("Starting %s.", ScaleRequestSubscriber.class));
     INJECTOR.getInstance(ScaleRequestSubscriber.class).run();
+
+    LOGGER.info(String.format("Starting %s.", ProcessFinishSubscriber.class));
+    INJECTOR.getInstance(ProcessFinishSubscriber.class).run();
 
 
   }

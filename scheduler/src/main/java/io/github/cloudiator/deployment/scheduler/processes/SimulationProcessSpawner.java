@@ -25,6 +25,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcessBuilder;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.SimulationInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
@@ -54,14 +55,14 @@ public class SimulationProcessSpawner implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorSingleProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Node node) throws ProcessSpawningException {
 
     final String id = UUID.randomUUID().toString();
 
     final CloudiatorSingleProcess process = CloudiatorSingleProcessBuilder.create().startNow()
         .node(node.id()).userId(userId)
-        .scheduleId(schedule).state(
+        .scheduleId(schedule.id()).state(
             ProcessState.RUNNING).taskName(task.name()).id(id).type(Type.SIMULATION)
         .taskInterface(taskInterface.getClass().getCanonicalName()).originId(id)
         .endpoint(generateEndpoint(id)).build();
@@ -72,7 +73,7 @@ public class SimulationProcessSpawner implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorClusterProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
 
     final String id = UUID.randomUUID().toString();
@@ -80,7 +81,7 @@ public class SimulationProcessSpawner implements ProcessSpawner {
     final CloudiatorClusterProcess process = CloudiatorClusterProcessBuilder.create().startNow()
         .addAllNodes(nodes.stream().map(Identifiable::id).collect(
             Collectors.toSet())).userId(userId)
-        .scheduleId(schedule).state(
+        .scheduleId(schedule.id()).state(
             ProcessState.RUNNING).taskName(task.name()).id(id).type(Type.SIMULATION)
         .taskInterface(taskInterface.getClass().getCanonicalName()).originId(id)
         .endpoint(generateEndpoint(id)).build();

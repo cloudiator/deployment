@@ -40,7 +40,8 @@ abstract class DockerComponentSupplier {
 
   public DockerComponentSupplier(Job job, Task task, DockerInterface dockerInterface) {
     checkNotNull(task, "task is null");
-    checkArgument(job.tasks().contains(task), "Task %s is not member of job %s.", task, job);
+    checkArgument(job.tasks().contains(task),
+        String.format("Task %s is not member of job %s.", task, job));
     this.job = job;
     this.task = task;
     this.dockerInterface = dockerInterface;
@@ -275,7 +276,8 @@ abstract class DockerComponentSupplier {
     createOptionMap.put(Option.RESTART, new ArrayList<>(Arrays.asList("no")));
     createOptionMap.put(Option.INTERACTIVE, new ArrayList<>(Arrays.asList("")));
     // make colocated apps accessible over the "cloud_nw"
-    createOptionMap.put(Option.ADD_HOST, new ArrayList<>(Arrays.asList("host.cloudiator.com:$CLOUD_IP")));
+    createOptionMap
+        .put(Option.ADD_HOST, new ArrayList<>(Arrays.asList("host.cloudiator.com:$CLOUD_IP")));
 
     List<String> mappedPorts = getMappedPorts();
     if (mappedPorts.size() > 0) {

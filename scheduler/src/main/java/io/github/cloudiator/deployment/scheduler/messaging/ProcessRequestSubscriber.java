@@ -106,7 +106,7 @@ public class ProcessRequestSubscriber implements Runnable {
             .taskInterface(process.getTaskInterface()).taskName(process.getTask())
             .addAllNodes(process.getCluster().getNodesList()).state(
                 ProcessState.PENDING).type(
-                Type.UNKNOWN).startNow().build();
+                Type.UNKNOWN).startNow().generateSecret().build();
 
       case NODE:
 
@@ -115,7 +115,7 @@ public class ProcessRequestSubscriber implements Runnable {
             .taskInterface(process.getTaskInterface()).taskName(process.getTask())
             .node(process.getNode()).state(
                 ProcessState.PENDING).type(
-                Type.UNKNOWN).startNow().build();
+                Type.UNKNOWN).startNow().generateSecret().build();
 
       case RUNSON_NOT_SET:
       default:

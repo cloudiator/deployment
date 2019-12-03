@@ -20,16 +20,22 @@ import com.google.inject.Inject;
 import io.github.cloudiator.deployment.messaging.JobConverter;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.messaging.TaskConverter;
+import java.util.concurrent.ExecutionException;
 import org.cloudiator.messages.Process.LanceUpdateRequest;
+import org.cloudiator.messages.Process.LanceUpdateResponse;
 import org.cloudiator.messages.entities.ProcessEntities.LanceUpdate;
-import org.cloudiator.messaging.ResponseException;
+import org.cloudiator.messages.entities.ProcessEntities.LanceUpdateType;
+import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LanceTaskUpdater implements TaskUpdater {
 
   private final ProcessService processService;
-  private static final JobConverter JOB_CONVERTER = JobConverter.INSTANCE;
   private static final TaskConverter TASK_CONVERTER = new TaskConverter();
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(LanceTaskUpdater.class);
 
   @Inject
   public LanceTaskUpdater(ProcessService processService) {
@@ -41,26 +47,64 @@ public class LanceTaskUpdater implements TaskUpdater {
     return taskInterface instanceof LanceInterface;
   }
 
+  private void submit(String userId, LanceUpdate lanceUpdate) {
+    final LanceUpdateRequest lanceUpdateRequest = LanceUpdateRequest.newBuilder()
+        .setUserId(userId)
+        .setLanceUpdate(lanceUpdate).build();
+
+    SettableFutureResponseCallback<LanceUpdateResponse, LanceUpdateResponse> futureResponseCallback = SettableFutureResponseCallback
+        .create();
+
+    processService.updateLanceEnvironmentAsync(lanceUpdateRequest, futureResponseCallback);
+
+    try {
+      futureResponseCallback.get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException e) {
+      throw new IllegalStateException(e.getCause());
+    }
+  }
+
   @Override
-  public void update(Schedule schedule, Job job, TaskInterface runningTaskInterface,
+  public void notifyNew(Schedule schedule, Job job, TaskInterface runningTaskInterface,
       Task runningTask, CloudiatorProcess newSpawned) {
     final Task spawnedTask = job.getTask(newSpawned.taskId())
         .orElseThrow(IllegalStateException::new);
 
     final LanceUpdate lanceUpdate = LanceUpdate.newBuilder().setScheduleId(schedule.id())
         .setJob(JobConverter.INSTANCE.applyBack(job))
-        .setTaskSpawned(TASK_CONVERTER.applyBack(spawnedTask))
-        .setTaskToBeUpdated(TASK_CONVERTER.applyBack(runningTask)).setProcessSpawned(
-            ProcessMessageConverter.INSTANCE.applyBack(newSpawned)).build();
+        .setTaskSpawnedorDeleted(TASK_CONVERTER.applyBack(spawnedTask))
+        .setTaskToBeUpdated(TASK_CONVERTER.applyBack(runningTask)).setProcessSpawnedorDeleted(
+            ProcessMessageConverter.INSTANCE.applyBack(newSpawned)).setUpdateType(
+            LanceUpdateType.INJECT).build();
 
-    final LanceUpdateRequest lanceUpdateRequest = LanceUpdateRequest.newBuilder()
-        .setUserId(schedule.userId())
-        .setLanceUpdate(lanceUpdate).build();
+    LOGGER.info(String.format(
+        "Notify for new process for schedule %s, job %s, taskInterface %s, runningTask %s and newly spawned process %s.",
+        schedule.id(), job.id(), runningTaskInterface, runningTask, newSpawned));
 
-    try {
-      processService.updateLanceEnvironment(lanceUpdateRequest);
-    } catch (ResponseException e) {
-      throw new IllegalStateException(e);
-    }
+    submit(schedule.userId(), lanceUpdate);
+
+  }
+
+  @Override
+  public void notifyDelete(Schedule schedule, Job job, TaskInterface toBeNotifiedTaskInterface,
+      Task toBeNotifiedTask, CloudiatorProcess deleted) {
+
+    final Task deletedTask = job.getTask(deleted.taskId())
+        .orElseThrow(IllegalStateException::new);
+
+    final LanceUpdate lanceUpdate = LanceUpdate.newBuilder().setScheduleId(schedule.id())
+        .setJob(JobConverter.INSTANCE.applyBack(job))
+        .setTaskSpawnedorDeleted(TASK_CONVERTER.applyBack(deletedTask))
+        .setTaskToBeUpdated(TASK_CONVERTER.applyBack(toBeNotifiedTask)).setProcessSpawnedorDeleted(
+            ProcessMessageConverter.INSTANCE.applyBack(deleted)).setUpdateType(
+            LanceUpdateType.REMOVE).build();
+
+    LOGGER.info(String.format(
+        "Notify before deleting process for schedule %s, job %s, taskInterface %s, runningTask %s and deleted process %s.",
+        schedule.id(), job.id(), toBeNotifiedTaskInterface, toBeNotifiedTask, deleted));
+
+    submit(schedule.userId(), lanceUpdate);
   }
 }

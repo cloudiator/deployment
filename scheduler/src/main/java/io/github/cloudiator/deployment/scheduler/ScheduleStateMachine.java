@@ -32,6 +32,7 @@ import io.github.cloudiator.deployment.messaging.ScheduleConverter;
 import io.github.cloudiator.deployment.scheduler.failure.ScheduleRestore;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationStrategySelector;
+import io.github.cloudiator.deployment.scheduler.statistics.ScheduleStatistics;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.concurrent.ExecutionException;
 import org.cloudiator.messages.Process.ScheduleEvent;
@@ -48,13 +49,15 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
   private final ScheduleDomainRepository scheduleDomainRepository;
   private final InstantiationStrategySelector instantiationStrategySelector;
   private final ScheduleRestore scheduleRestore;
+  private final ScheduleStatistics scheduleStatistics;
 
   @Inject
   public ScheduleStateMachine(
       ScheduleDomainRepository scheduleDomainRepository,
       InstantiationStrategySelector instantiationStrategySelector,
       ProcessService processService,
-      ScheduleRestore scheduleRestore) {
+      ScheduleRestore scheduleRestore,
+      ScheduleStatistics scheduleStatistics) {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.instantiationStrategySelector = instantiationStrategySelector;
     //noinspection unchecked
@@ -120,6 +123,7 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
         })
         .build();
     this.scheduleRestore = scheduleRestore;
+    this.scheduleStatistics = scheduleStatistics;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -165,8 +169,17 @@ public class ScheduleStateMachine implements ErrorAwareStateMachine<Schedule, Sc
           throw new IllegalStateException("Expected schedule to have automatic instantiation");
         }
 
+        final long start = System.currentTimeMillis();
+
         try {
-          return save(instantiationStrategySelector.get(Instantiation.AUTOMATIC).instantiate(o));
+          final Schedule save = save(
+              instantiationStrategySelector.get(Instantiation.AUTOMATIC).instantiate(o));
+
+          scheduleStatistics.initialStartTime(save, System.currentTimeMillis() - start);
+
+          return save;
+
+
         } catch (InstantiationException e) {
           throw new ExecutionException(
               "Exception while instantiating the schedule: " + e.getMessage(),

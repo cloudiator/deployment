@@ -262,13 +262,13 @@ public class ScheduleRestore {
 
       final Node node = nodeMessageRepository.getById(cloudiatorProcess.userId(), nodeId);
 
-      checkState(node != null, String
-          .format("Node %s referenced by process %s does not exist.", nodeId, cloudiatorProcess));
-
-      nodes.add(node);
-
+      if (node == null) {
+        LOGGER.warn(String
+            .format("Node %s referenced by process %s does not exist.", nodeId, cloudiatorProcess));
+      } else {
+        nodes.add(node);
+      }
     }
-
     return nodes;
   }
 

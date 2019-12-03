@@ -1,6 +1,5 @@
 package io.github.cloudiator.deployment.domain;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,6 +13,19 @@ public class FaasInterfaceBuilder {
   private Map<String, String> functionEnvironment;
 
   private FaasInterfaceBuilder() {
+  }
+
+  private FaasInterfaceBuilder(FaasInterface faasInterface) {
+    functionName = faasInterface.functionName();
+    sourceCodeUrl = faasInterface.sourceCodeUrl();
+    handler = faasInterface.handler();
+    triggers = faasInterface.triggers();
+    timeout = faasInterface.timeout();
+    functionEnvironment = faasInterface.functionEnvironment();
+  }
+
+  public static FaasInterfaceBuilder of(FaasInterface faasInterface) {
+    return new FaasInterfaceBuilder(faasInterface);
   }
 
   public static FaasInterfaceBuilder newBuilder() {

@@ -19,6 +19,7 @@ package io.github.cloudiator.deployment.scheduler.processes;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.domain.Node;
@@ -29,9 +30,9 @@ public interface ProcessSpawner {
 
   boolean supports(TaskInterface taskInterface);
 
-  CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+  CloudiatorSingleProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Node node) throws ProcessSpawningException;
 
-  CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+  CloudiatorClusterProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException;
 }

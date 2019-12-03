@@ -23,6 +23,7 @@ import com.github.rholder.retry.StopStrategies;
 import com.github.rholder.retry.WaitStrategies;
 import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import io.github.cloudiator.deployment.config.Constants;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcessBuilder;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
@@ -37,6 +38,7 @@ import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.JobMessageRepository;
 import io.github.cloudiator.deployment.scheduler.instantiation.TaskInterfaceSelection;
+import io.github.cloudiator.deployment.scheduler.instantiation.TaskUpdaters;
 import io.github.cloudiator.deployment.scheduler.messaging.ProcessRequestSubscriber;
 import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.domain.NodeState;
@@ -48,6 +50,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,17 +62,22 @@ public class ProcessScheduler {
   private final JobMessageRepository jobMessageRepository;
   private final ProcessSpawner processSpawner;
   private final NodeMessageRepository nodeMessageRepository;
+  private final TaskUpdaters taskUpdaters;
+  private final String apiEndpoint;
 
   @Inject
   public ProcessScheduler(
       ScheduleDomainRepository scheduleDomainRepository,
       JobMessageRepository jobMessageRepository,
       ProcessSpawner processSpawner,
-      NodeMessageRepository nodeMessageRepository) {
+      NodeMessageRepository nodeMessageRepository,
+      TaskUpdaters taskUpdaters, @Named(Constants.API) String apiEndpoint) {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.jobMessageRepository = jobMessageRepository;
     this.processSpawner = processSpawner;
     this.nodeMessageRepository = nodeMessageRepository;
+    this.taskUpdaters = taskUpdaters;
+    this.apiEndpoint = apiEndpoint;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -82,6 +90,10 @@ public class ProcessScheduler {
   @Transactional
   Schedule refreshSchedule(Schedule schedule) {
     return scheduleDomainRepository.findByIdAndUser(schedule.id(), schedule.userId());
+  }
+
+  private void postSpawn(Job job, Schedule schedule, CloudiatorProcess cloudiatorProcess) {
+    schedule.notifyOfProcess(job, cloudiatorProcess, taskUpdaters);
   }
 
   public CloudiatorProcess schedule(CloudiatorProcess cloudiatorProcess)
@@ -122,7 +134,8 @@ public class ProcessScheduler {
         .select(optionalTask.get());
 
     //decorate the environment
-    final Environment environment = EnvironmentGenerator.of(job, refreshSchedule(schedule))
+    final Environment environment = EnvironmentGenerator
+        .of(job, refreshSchedule(schedule), apiEndpoint)
         .generate(cloudiatorProcess);
 
     LOGGER.debug(
@@ -139,17 +152,21 @@ public class ProcessScheduler {
       }
 
       final CloudiatorSingleProcess spawned = processSpawner
-          .spawn(cloudiatorProcess.userId(), schedule.id(), job, optionalTask.get(),
+          .spawn(cloudiatorProcess.userId(), schedule, job, optionalTask.get(),
               taskInterface.decorateEnvironment(environment),
               node);
 
-      return CloudiatorSingleProcessBuilder.of((CloudiatorSingleProcess) cloudiatorProcess)
+      final CloudiatorSingleProcess result = CloudiatorSingleProcessBuilder
+          .of((CloudiatorSingleProcess) cloudiatorProcess)
           .state(spawned.state())
           .originId(spawned.originId().orElse(null)).type(spawned.type())
           .endpoint(spawned.endpoint().orElse(null))
           .addAllIpAddresses(node.ipAddresses())
           .build();
 
+      postSpawn(job, refreshSchedule(schedule), result);
+
+      return result;
 
     } else if (cloudiatorProcess instanceof CloudiatorClusterProcess) {
 
@@ -164,15 +181,21 @@ public class ProcessScheduler {
       }
 
       final CloudiatorClusterProcess spawned = processSpawner
-          .spawn(cloudiatorProcess.userId(), schedule.id(), job, optionalTask.get(),
+          .spawn(cloudiatorProcess.userId(), schedule, job, optionalTask.get(),
               taskInterface.decorateEnvironment(environment),
               nodeSet);
 
-      return CloudiatorClusterProcessBuilder.of((CloudiatorClusterProcess) cloudiatorProcess)
+      final CloudiatorClusterProcess result = CloudiatorClusterProcessBuilder
+          .of((CloudiatorClusterProcess) cloudiatorProcess)
           .state(spawned.state())
           .originId(spawned.originId().orElse(null)).type(spawned.type())
           .endpoint(spawned.endpoint().orElse(null))
           .build();
+
+      postSpawn(job, refreshSchedule(schedule), result);
+
+      return result;
+
 
     } else {
       throw new AssertionError(

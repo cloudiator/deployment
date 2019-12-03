@@ -65,4 +65,16 @@ class ProcessModelRepositoryJpa extends BaseModelRepositoryJpa<ProcessModel> imp
         .getSingleResultOrNull(
             em().createQuery(query).setParameter("id", id).setParameter("userId", userId));
   }
+
+  @Override
+  public ProcessModel findByDomainId(String id) {
+    String query = String.format(
+        "select process from %s as process where process.domainId = :id",
+        type.getName());
+
+    //noinspection unchecked
+    return (ProcessModel) JpaResultHelper
+        .getSingleResultOrNull(
+            em().createQuery(query).setParameter("id", id));
+  }
 }

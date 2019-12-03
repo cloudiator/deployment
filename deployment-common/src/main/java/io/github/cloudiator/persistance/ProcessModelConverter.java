@@ -58,6 +58,7 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
                   Collectors.toSet()))
           .start(processModel.getStart())
           .stop(processModel.getStop())
+          .secret(processModel.getSecret())
           .build();
     } else if (processModel instanceof ProcessClusterModel) {
 
@@ -79,6 +80,7 @@ class ProcessModelConverter implements OneWayConverter<ProcessModel, CloudiatorP
                   Collectors.toSet()))
           .start(processModel.getStart())
           .stop(processModel.getStop())
+          .secret(processModel.getSecret())
           .build();
     } else {
       throw new AssertionError(

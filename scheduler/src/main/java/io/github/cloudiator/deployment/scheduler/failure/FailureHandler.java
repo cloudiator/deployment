@@ -6,6 +6,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.persist.Transactional;
+import io.github.cloudiator.deployment.config.Constants;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.Job;
@@ -22,6 +23,7 @@ import io.github.cloudiator.domain.Node;
 import io.github.cloudiator.messaging.NodeMessageRepository;
 import io.github.cloudiator.persistance.ScheduleDomainRepository;
 import java.util.List;
+import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,7 @@ public class FailureHandler implements NodeFailureReportingInterface,
   private final JobMessageRepository jobMessageRepository;
   private final NodeMessageRepository nodeMessageRepository;
   private final ProcessStateMachine processStateMachine;
+  private final boolean isRestoreEnabled;
 
   @Inject
   public FailureHandler(
@@ -44,12 +47,14 @@ public class FailureHandler implements NodeFailureReportingInterface,
       ScheduleStateMachine scheduleStateMachine,
       JobMessageRepository jobMessageRepository,
       NodeMessageRepository nodeMessageRepository,
-      ProcessStateMachine processStateMachine) {
+      ProcessStateMachine processStateMachine,
+      @Named(Constants.IS_RESTORE_ENABLED) boolean isRestoredEnabled) {
     this.scheduleDomainRepository = scheduleDomainRepository;
     this.scheduleStateMachine = scheduleStateMachine;
     this.jobMessageRepository = jobMessageRepository;
     this.nodeMessageRepository = nodeMessageRepository;
     this.processStateMachine = processStateMachine;
+    this.isRestoreEnabled = isRestoredEnabled;
   }
 
   @SuppressWarnings("WeakerAccess")
@@ -133,8 +138,14 @@ public class FailureHandler implements NodeFailureReportingInterface,
         }
         break;
       case ERROR:
-        LOGGER.warn(String.format("Schedule %s has failed. Triggering restore.", schedule));
-        triggerRestore(schedule);
+        if (isRestoreEnabled) {
+          LOGGER.warn(String.format("Schedule %s has failed. Triggering restore.", schedule));
+          triggerRestore(schedule);
+        } else {
+          LOGGER.info(
+              String.format("Schedule %s has failed. However restore is disabled. Ignoring.",
+                  schedule));
+        }
         break;
       case RESTORING:
         scheduleStateMachine.apply(schedule, ScheduleState.RUNNING, null);

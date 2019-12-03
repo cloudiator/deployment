@@ -53,4 +53,9 @@ public class ServiceBehaviourImpl implements ServiceBehaviour {
   public int hashCode() {
     return Objects.hash(restart);
   }
+
+  @Override
+  public boolean canFinish() {
+    return false;
+  }
 }

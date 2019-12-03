@@ -36,7 +36,6 @@ import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.scheduler.exceptions.MatchmakingException;
-import io.github.cloudiator.deployment.scheduler.exceptions.ProcessDeletionException;
 import io.github.cloudiator.deployment.scheduler.instantiation.AutomaticInstantiationStrategy;
 import io.github.cloudiator.deployment.scheduler.instantiation.DependencyGraph;
 import io.github.cloudiator.deployment.scheduler.instantiation.InstantiationException;
@@ -62,8 +61,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.cloudiator.messages.Process.CreateSparkClusterRequest;
+import org.cloudiator.messages.Process.DeleteProcessRequest;
 import org.cloudiator.messages.Process.SparkClusterCreatedResponse;
 import org.cloudiator.messages.entities.ProcessEntities.Nodes;
+import org.cloudiator.messaging.ResponseException;
 import org.cloudiator.messaging.SettableFutureResponseCallback;
 import org.cloudiator.messaging.services.ProcessService;
 import org.slf4j.Logger;
@@ -173,9 +174,6 @@ public class ScalingEngine {
   private void scaleInWithNodes(Schedule schedule, Task task,
       Collection<? extends Node> nodes) {
 
-    checkState(schedule.instantiation().equals(Instantiation.MANUAL),
-        "Scaling with nodes attached is only allowed for MANUAL instantiation.");
-
     scaleInInternally(schedule, task, nodes);
 
   }
@@ -264,18 +262,18 @@ public class ScalingEngine {
   private void deleteNode(String userId, String nodeId) {
     try {
       nodeMessageRepository.delete(userId, nodeId).get();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    } catch (ExecutionException e) {
-      throw new RuntimeException(e.getCause());
+    } catch (InterruptedException | ExecutionException e) {
+      throw new IllegalStateException("Error while deleting node.", e);
     }
   }
 
   private void deleteProcess(CloudiatorProcess cloudiatorProcess) {
     try {
-      processKiller.kill(cloudiatorProcess);
-    } catch (ProcessDeletionException e) {
-      throw new RuntimeException(e);
+      processService.deleteProcess(
+          DeleteProcessRequest.newBuilder().setProcessId(cloudiatorProcess.id())
+              .setUserId(cloudiatorProcess.userId()).build());
+    } catch (ResponseException e) {
+      throw new IllegalStateException("Error while deleting process.", e);
     }
   }
 
@@ -412,7 +410,7 @@ public class ScalingEngine {
 
     final Future<Collection<CloudiatorProcess>> processFutures = automaticInstantiationStrategy
         .deployTask(task, taskInterface, schedule, nodes,
-            DependencyGraph.noDependencies(job, task));
+            DependencyGraph.noDependencies(task));
 
     try {
       final Collection<CloudiatorProcess> cloudiatorProcesses = processFutures.get();

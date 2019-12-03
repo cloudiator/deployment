@@ -29,6 +29,8 @@ public interface TaskInterface {
 
   boolean requiresManualWait(TaskInterface dependency);
 
+  boolean canFinish();
+
   TaskInterface decorateEnvironment(Environment environment);
 
   TaskInterface decorateVariables(VariableContext variableContext);

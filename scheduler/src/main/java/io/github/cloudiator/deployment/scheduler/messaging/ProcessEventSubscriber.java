@@ -6,6 +6,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.messaging.ProcessMessageConverter;
 import io.github.cloudiator.deployment.scheduler.failure.ProcessFailureReportingInterface;
+import io.github.cloudiator.deployment.scheduler.processes.ProcessCleanup;
 import org.cloudiator.messages.Process.ProcessEvent;
 import org.cloudiator.messaging.MessageCallback;
 import org.cloudiator.messaging.services.ProcessService;
@@ -14,12 +15,15 @@ public class ProcessEventSubscriber implements Runnable {
 
   private final ProcessService processService;
   private final ProcessFailureReportingInterface processFailureReportingInterface;
+  private final ProcessCleanup processCleanup;
 
   @Inject
   public ProcessEventSubscriber(ProcessService processService,
-      ProcessFailureReportingInterface processFailureReportingInterface) {
+      ProcessFailureReportingInterface processFailureReportingInterface,
+      ProcessCleanup processCleanup) {
     this.processService = processService;
     this.processFailureReportingInterface = processFailureReportingInterface;
+    this.processCleanup = processCleanup;
   }
 
   @Override
@@ -34,6 +38,10 @@ public class ProcessEventSubscriber implements Runnable {
 
         if (cloudiatorProcess.state().equals(ProcessState.ERROR)) {
           processFailureReportingInterface.addProcessFailure(cloudiatorProcess);
+        }
+
+        if (cloudiatorProcess.state().equals(ProcessState.FINISHED)) {
+          processCleanup.finishProcess(cloudiatorProcess);
         }
 
       }

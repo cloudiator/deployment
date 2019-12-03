@@ -22,6 +22,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorSingleProcess;
 import io.github.cloudiator.deployment.domain.FaasInterface;
 import io.github.cloudiator.deployment.domain.Job;
+import io.github.cloudiator.deployment.domain.Schedule;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
 import io.github.cloudiator.deployment.messaging.FaasInterfaceConverter;
@@ -59,11 +60,11 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorSingleProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorSingleProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Node node) throws ProcessSpawningException {
 
     final FaasProcess faasProcess = FaasProcess.newBuilder()
-        .setSchedule(schedule)
+        .setSchedule(schedule.id())
         .setJob(JOB_CONVERTER.applyBack(job))
         .setNode(NODE_MESSAGE_CONVERTER.apply(node)).setTask(task.name())
         .setFaasInterface(FaasInterfaceConverter.INSTANCE.applyBack((FaasInterface) taskInterface))
@@ -90,7 +91,7 @@ public class FaasProcessSpawnerImpl implements ProcessSpawner {
   }
 
   @Override
-  public CloudiatorClusterProcess spawn(String userId, String schedule, Job job, Task task,
+  public CloudiatorClusterProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Set<Node> nodes) throws ProcessSpawningException {
     throw new UnsupportedOperationException(
         String.format("%s does not support running processes on clusters.", this));

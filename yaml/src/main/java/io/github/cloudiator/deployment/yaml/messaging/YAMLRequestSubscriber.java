@@ -63,8 +63,13 @@ public class YAMLRequestSubscriber implements Runnable {
           try {
 
             final YAMLModel parse = yamlParser.parse(content.getYaml());
+
+            LOGGER.info(String.format("Parsed the following yaml file: %s", parse));
+
             final Job instantiate = yamlModelInstantiationFactory.create(parse, userId)
                 .instantiate();
+
+            LOGGER.info(String.format("Instantiated the following job: %s", instantiate));
 
             messageInterface.reply(id, YAMLResponse.newBuilder()
                 .setJob(JobConverter.INSTANCE.applyBack(instantiate)).build());

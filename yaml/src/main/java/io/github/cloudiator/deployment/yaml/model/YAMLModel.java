@@ -16,6 +16,7 @@
 
 package io.github.cloudiator.deployment.yaml.model;
 
+import com.google.common.base.MoreObjects;
 import io.github.cloudiator.rest.model.JobNew;
 
 public class YAMLModel {
@@ -29,5 +30,12 @@ public class YAMLModel {
   public YAMLModel setJob(JobNew job) {
     this.job = job;
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("job", job)
+        .toString();
   }
 }

@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.deployment.scheduler.processes;
 
-public interface Behaviour {
+import io.github.cloudiator.deployment.domain.CloudiatorProcess;
+import io.github.cloudiator.deployment.domain.CloudiatorProcess.Type;
 
-  boolean canFinish();
+public class FaaSProcessKiller extends NoOpProcessKiller {
 
+  @Override
+  public boolean supports(CloudiatorProcess cloudiatorProcess) {
+    return cloudiatorProcess.type().equals(Type.FAAS);
+  }
 }
