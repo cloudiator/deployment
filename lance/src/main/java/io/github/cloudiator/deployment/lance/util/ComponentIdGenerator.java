@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.lance;
+package io.github.cloudiator.deployment.lance.util;
 
 import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 

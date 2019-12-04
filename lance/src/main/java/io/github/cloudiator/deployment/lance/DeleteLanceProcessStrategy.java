@@ -23,6 +23,7 @@ import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
+import io.github.cloudiator.deployment.lance.util.ComponentIdGenerator;
 import io.github.cloudiator.domain.Node;
 import java.io.IOException;
 import org.slf4j.Logger;

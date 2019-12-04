@@ -17,6 +17,7 @@
 package io.github.cloudiator.deployment.lance;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationId;
 import de.uniulm.omi.cloudiator.lance.application.ApplicationInstanceId;
 import de.uniulm.omi.cloudiator.lance.application.DeploymentContext;
@@ -37,10 +38,19 @@ import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
+import io.github.cloudiator.deployment.lance.config.LanceAgentConstants;
+import io.github.cloudiator.deployment.lance.util.ComponentIdGenerator;
+import io.github.cloudiator.deployment.lance.util.DockerComponentSupplier;
+import io.github.cloudiator.deployment.lance.util.PrivateDockerComponentSupplier;
+import io.github.cloudiator.deployment.lance.util.PublicDockerComponentSupplier;
+import io.github.cloudiator.deployment.lance.util.RegisterTaskDeploymentContextVisitor;
 import io.github.cloudiator.domain.Node;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +63,10 @@ public class CreateLanceProcessStrategy {
   private static final Logger LOGGER = LoggerFactory.getLogger(CreateLanceProcessStrategy.class);
   private final LanceInstallationStrategy lanceInstallationStrategy;
   private final LanceClientConnector lanceClientConnector;
+
+  @Inject(optional = true)
+  @Named(LanceAgentConstants.WAIT_TIMEOUT)
+  private Duration duration = null;
 
   @Inject
   CreateLanceProcessStrategy(
@@ -277,8 +291,13 @@ public class CreateLanceProcessStrategy {
     });
   }
 
-  private void waitForDeployment(LifecycleClient client, ComponentInstanceId componentInstanceId) {
-    client.waitForDeployment(componentInstanceId);
+  private void waitForDeployment(LifecycleClient client, ComponentInstanceId componentInstanceId)
+      throws TimeoutException {
+    if (duration != null) {
+      client.waitForDeployment(componentInstanceId, duration.getSeconds(), TimeUnit.SECONDS);
+    } else {
+      client.waitForDeployment(componentInstanceId);
+    }
   }
 
   private CloudiatorProcess convertToProcess(ComponentInstanceId cId,

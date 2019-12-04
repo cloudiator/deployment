@@ -27,6 +27,8 @@ import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.PortRequired;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.lance.util.ComponentSupplierUtils;
+import io.github.cloudiator.deployment.lance.util.LanceTaskInterfaceToLifecycleStore;
 import java.util.function.Supplier;
 
 public class DeployableComponentSupplier implements Supplier<DeployableComponent> {
