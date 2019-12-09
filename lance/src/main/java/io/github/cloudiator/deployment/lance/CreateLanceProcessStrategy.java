@@ -331,7 +331,7 @@ public class CreateLanceProcessStrategy {
 
     LOGGER.error(String
         .format(
-            "Exception occurred while deployment the task %s. InstanceId is %s. Exception was %s.",
+            "Exception occurred during deployment of task %s. InstanceId is %s. Exception was %s.",
             deploymentInfo.getTask(), id, e.getMessage()), e);
 
     return CloudiatorSingleProcessBuilder.create().id(id).originId(id)

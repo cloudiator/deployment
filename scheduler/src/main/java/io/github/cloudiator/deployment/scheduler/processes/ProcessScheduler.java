@@ -156,6 +156,8 @@ public class ProcessScheduler {
               taskInterface.decorateEnvironment(environment),
               node);
 
+      LOGGER.info(String.format("%s has spawned the process %s", this, spawned));
+
       final CloudiatorSingleProcess result = CloudiatorSingleProcessBuilder
           .of((CloudiatorSingleProcess) cloudiatorProcess)
           .state(spawned.state())
@@ -184,6 +186,8 @@ public class ProcessScheduler {
           .spawn(cloudiatorProcess.userId(), schedule, job, optionalTask.get(),
               taskInterface.decorateEnvironment(environment),
               nodeSet);
+
+      LOGGER.info(String.format("%s has spawned the process %s", this, spawned));
 
       final CloudiatorClusterProcess result = CloudiatorClusterProcessBuilder
           .of((CloudiatorClusterProcess) cloudiatorProcess)
