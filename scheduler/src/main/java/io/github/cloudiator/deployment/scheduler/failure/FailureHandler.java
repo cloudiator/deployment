@@ -11,6 +11,7 @@ import io.github.cloudiator.deployment.domain.CloudiatorProcess;
 import io.github.cloudiator.deployment.domain.CloudiatorProcess.ProcessState;
 import io.github.cloudiator.deployment.domain.Job;
 import io.github.cloudiator.deployment.domain.Schedule;
+import io.github.cloudiator.deployment.domain.Schedule.Instantiation;
 import io.github.cloudiator.deployment.domain.Schedule.ScheduleState;
 import io.github.cloudiator.deployment.domain.Task;
 import io.github.cloudiator.deployment.domain.TaskInterface;
@@ -138,12 +139,13 @@ public class FailureHandler implements NodeFailureReportingInterface,
         }
         break;
       case ERROR:
-        if (isRestoreEnabled) {
+        if (canRestore(schedule)) {
           LOGGER.warn(String.format("Schedule %s has failed. Triggering restore.", schedule));
           triggerRestore(schedule);
         } else {
           LOGGER.info(
-              String.format("Schedule %s has failed. However restore is disabled. Ignoring.",
+              String.format(
+                  "Schedule %s has failed. However restore is not possible or disabled. Ignoring.",
                   schedule));
         }
         break;
@@ -168,8 +170,14 @@ public class FailureHandler implements NodeFailureReportingInterface,
     return true;
   }
 
-  private void canRestore(Schedule schedule) {
-
+  private boolean canRestore(Schedule schedule) {
+    if (!isRestoreEnabled) {
+      return false;
+    }
+    if (!schedule.instantiation().equals(Instantiation.AUTOMATIC)) {
+      return false;
+    }
+    return true;
   }
 
   private void triggerRestore(Schedule schedule) {
