@@ -258,3 +258,4 @@ public class AwsDeployer implements FaasDeployer {
     return stackStatus + " (" + stackReason + ")";
   }
 }
+
