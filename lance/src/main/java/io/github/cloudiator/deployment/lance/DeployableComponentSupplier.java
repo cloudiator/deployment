@@ -19,7 +19,6 @@ package io.github.cloudiator.deployment.lance;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 import de.uniulm.omi.cloudiator.lance.application.component.DeployableComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties;
 import io.github.cloudiator.deployment.domain.Job;
@@ -27,6 +26,7 @@ import io.github.cloudiator.deployment.domain.LanceInterface;
 import io.github.cloudiator.deployment.domain.PortProvided;
 import io.github.cloudiator.deployment.domain.PortRequired;
 import io.github.cloudiator.deployment.domain.Task;
+import io.github.cloudiator.deployment.lance.util.ComponentIdGenerator;
 import io.github.cloudiator.deployment.lance.util.ComponentSupplierUtils;
 import io.github.cloudiator.deployment.lance.util.LanceTaskInterfaceToLifecycleStore;
 import java.util.function.Supplier;
@@ -54,7 +54,7 @@ public class DeployableComponentSupplier implements Supplier<DeployableComponent
   public DeployableComponent get() {
 
     final DeployableComponent.Builder builder = DeployableComponent.Builder
-        .createBuilder(task.name(), ComponentId.fromString(job.id() + "/" + task.name()));
+        .createBuilder(task.name(), ComponentIdGenerator.generate(job.id(), task.name()));
 
     // add all ingoing ports / provided ports
     for (PortProvided provided : task.providedPorts()) {
