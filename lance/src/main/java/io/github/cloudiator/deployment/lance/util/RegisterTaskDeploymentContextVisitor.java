@@ -70,8 +70,8 @@ public class RegisterTaskDeploymentContextVisitor {
 
       final PortProvided providingPort = job.getProvidingPort(portRequired);
 
-      final ComponentId providingComponent = ComponentId
-          .fromString(job.id() + "/" + job.providingTask(communication).name());
+      final ComponentId providingComponent = ComponentIdGenerator
+          .generate(job.id(), job.providingTask(communication).name());
 
       deploymentContext.setProperty(portRequired.name(),
           new PortReference(providingComponent, providingPort.name(),
