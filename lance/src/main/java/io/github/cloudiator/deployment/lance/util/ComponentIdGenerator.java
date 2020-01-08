@@ -20,7 +20,7 @@ import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
 
 public class ComponentIdGenerator {
 
-  private static final String DELIMITER = "-";
+  private static final String DELIMITER = "/";
 
   private ComponentIdGenerator() {
     throw new AssertionError("Do not instantiate");
