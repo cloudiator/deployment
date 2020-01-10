@@ -35,4 +35,9 @@ public class NormalDistributionImpl implements NormalDistribution {
   public double stdDev() {
     return stdDev;
   }
+
+  @Override
+  public double next() {
+    throw new UnsupportedOperationException("not yet implemented");
+  }
 }

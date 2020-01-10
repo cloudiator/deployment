@@ -24,4 +24,6 @@ public interface StartTime {
 
   TimeUnit timeUnit();
 
+  void sleep() throws InterruptedException;
+
 }

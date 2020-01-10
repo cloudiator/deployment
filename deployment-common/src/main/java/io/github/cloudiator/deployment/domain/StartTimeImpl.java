@@ -37,4 +37,9 @@ public class StartTimeImpl implements StartTime {
   public TimeUnit timeUnit() {
     return timeUnit;
   }
+
+  @Override
+  public void sleep() throws InterruptedException {
+    Thread.sleep(TimeUnit.MILLISECONDS.convert((long) distribution.next(), timeUnit()));
+  }
 }

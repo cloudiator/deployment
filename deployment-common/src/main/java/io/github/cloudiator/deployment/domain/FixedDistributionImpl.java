@@ -28,4 +28,9 @@ public class FixedDistributionImpl implements FixedDistribution {
   public double value() {
     return value;
   }
+
+  @Override
+  public double next() {
+    return value();
+  }
 }

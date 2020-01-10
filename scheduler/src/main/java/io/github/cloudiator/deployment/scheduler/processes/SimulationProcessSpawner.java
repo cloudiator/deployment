@@ -16,6 +16,8 @@
 
 package io.github.cloudiator.deployment.scheduler.processes;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.inject.Inject;
 import de.uniulm.omi.cloudiator.domain.Identifiable;
 import io.github.cloudiator.deployment.domain.CloudiatorClusterProcess;
@@ -58,6 +60,14 @@ public class SimulationProcessSpawner implements ProcessSpawner {
   public CloudiatorSingleProcess spawn(String userId, Schedule schedule, Job job, Task task,
       TaskInterface taskInterface, Node node) throws ProcessSpawningException {
 
+    checkState(taskInterface instanceof SimulationInterface);
+
+    try {
+      ((SimulationInterface) taskInterface).startTime().sleep();
+    } catch (InterruptedException e) {
+      throw new ProcessSpawningException(e);
+    }
+
     final String id = UUID.randomUUID().toString();
 
     final CloudiatorSingleProcess process = CloudiatorSingleProcessBuilder.create().startNow()
@@ -78,6 +88,14 @@ public class SimulationProcessSpawner implements ProcessSpawner {
 
     final String id = UUID.randomUUID().toString();
 
+    checkState(taskInterface instanceof SimulationInterface);
+
+    try {
+      ((SimulationInterface) taskInterface).startTime().sleep();
+    } catch (InterruptedException e) {
+      throw new ProcessSpawningException(e);
+    }
+
     final CloudiatorClusterProcess process = CloudiatorClusterProcessBuilder.create().startNow()
         .addAllNodes(nodes.stream().map(Identifiable::id).collect(
             Collectors.toSet())).userId(userId)
@@ -90,5 +108,5 @@ public class SimulationProcessSpawner implements ProcessSpawner {
 
     return process;
   }
-  
+
 }
