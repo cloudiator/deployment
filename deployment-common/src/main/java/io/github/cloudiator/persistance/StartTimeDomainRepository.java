@@ -46,8 +46,10 @@ public class StartTimeDomainRepository {
 
     if (domain instanceof NormalDistribution) {
       return createNormalDistribution((NormalDistribution) domain);
+    } else if (domain instanceof FixedDistribution) {
+      return createFixedDistribution((FixedDistribution) domain);
     } else {
-      throw new AssertionError("TaskBehaviour is of unknown type " + domain.getClass().getName());
+      throw new AssertionError("distribution is of unknown type " + domain.getClass().getName());
     }
   }
 
