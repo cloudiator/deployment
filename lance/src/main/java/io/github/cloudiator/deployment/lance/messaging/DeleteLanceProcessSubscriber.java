@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2018 University of Ulm
+ * Copyright 2014-2019 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.lance;
+package io.github.cloudiator.deployment.lance.messaging;
 
 import com.google.inject.Inject;
+import io.github.cloudiator.deployment.lance.DeleteLanceProcessStrategy;
 import io.github.cloudiator.messaging.NodeToNodeMessageConverter;
 import org.cloudiator.messages.General.Error;
 import org.cloudiator.messages.Process.DeleteLanceProcessRequest;

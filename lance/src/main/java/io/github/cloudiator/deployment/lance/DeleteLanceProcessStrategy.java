@@ -23,6 +23,7 @@ import de.uniulm.omi.cloudiator.lance.client.LifecycleClientRegistryWrapper;
 import de.uniulm.omi.cloudiator.lance.lca.DeploymentException;
 import de.uniulm.omi.cloudiator.lance.lca.container.ComponentInstanceId;
 import de.uniulm.omi.cloudiator.lance.lca.registry.RegistrationException;
+import io.github.cloudiator.deployment.lance.util.ComponentIdGenerator;
 import io.github.cloudiator.domain.Node;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public class DeleteLanceProcessStrategy {
 
     try {
       final LifecycleClient lifecycleClient = lanceClientConnector
-          .getLifecycleClient(node.connectTo().ip());
+          .getLifecycleClient(node.connectTo().ip(), 5000, false);
       lifecycleClient.undeploy(ComponentInstanceId.fromString(processId), false);
     } catch (DeploymentException | IOException e) {
 

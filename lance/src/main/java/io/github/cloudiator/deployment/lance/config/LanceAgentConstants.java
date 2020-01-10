@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.lance;
+package io.github.cloudiator.deployment.lance.config;
 
-import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
+public class LanceAgentConstants {
 
-public class ComponentIdGenerator {
+  public static final String WAIT_TIMEOUT = "lance.waitTimeout";
 
-  private static final String DELIMITER = "/";
-
-  private ComponentIdGenerator() {
-    throw new AssertionError("Do not instantiate");
-  }
-
-  public static ComponentId generate(String jobId, String taskId) {
-    return ComponentId.fromString(jobId + DELIMITER + taskId);
+  private LanceAgentConstants() {
+    throw new AssertionError("Do not instantiate.");
   }
 
 }

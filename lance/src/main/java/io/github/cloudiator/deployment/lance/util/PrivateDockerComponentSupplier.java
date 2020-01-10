@@ -1,6 +1,21 @@
-package io.github.cloudiator.deployment.lance;
+/*
+ * Copyright 2014-2019 University of Ulm
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import de.uniulm.omi.cloudiator.lance.application.component.ComponentId;
+package io.github.cloudiator.deployment.lance.util;
+
 import de.uniulm.omi.cloudiator.lance.application.component.DockerComponent;
 import de.uniulm.omi.cloudiator.lance.application.component.PortProperties;
 import de.uniulm.omi.cloudiator.lance.application.component.RemoteDockerComponent;
@@ -16,7 +31,7 @@ import java.util.function.Supplier;
 public class PrivateDockerComponentSupplier extends DockerComponentSupplier implements
     Supplier<RemoteDockerComponent> {
 
-  PrivateDockerComponentSupplier(Job job, Task task, DockerInterface dockerInterface) {
+  public PrivateDockerComponentSupplier(Job job, Task task, DockerInterface dockerInterface) {
     super(job, task, dockerInterface);
   }
 
@@ -25,7 +40,7 @@ public class PrivateDockerComponentSupplier extends DockerComponentSupplier impl
     DockerComponent.Builder builder = new DockerComponent.Builder(deriveEntireCommands(),
         getActualImageName());
     builder.name(task.name());
-    builder.myId(ComponentId.fromString(job.id() + "/" + task.name()));
+    builder.myId(ComponentIdGenerator.generate(job.id(), task.name()));
     builder.imageFolder(getImageNameSpace());
     builder.tag(getTagName());
 

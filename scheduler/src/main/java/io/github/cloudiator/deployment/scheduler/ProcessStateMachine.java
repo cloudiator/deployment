@@ -173,8 +173,10 @@ public class ProcessStateMachine implements
 
         final long start = System.currentTimeMillis();
 
-        final CloudiatorProcess running = updateProcess(processScheduler.schedule(o),
-            ProcessState.RUNNING, null);
+        final CloudiatorProcess scheduled = processScheduler.schedule(o);
+
+        final CloudiatorProcess running = updateProcess(scheduled,
+            scheduled.state(), null);
 
         processStatistics.processStartupTime(running, System.currentTimeMillis() - start);
 
