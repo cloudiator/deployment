@@ -18,24 +18,28 @@ package io.github.cloudiator.persistance;
 
 import com.google.inject.Inject;
 import io.github.cloudiator.deployment.domain.Distribution;
+import io.github.cloudiator.deployment.domain.FixedDistribution;
 import io.github.cloudiator.deployment.domain.NormalDistribution;
+import io.github.cloudiator.deployment.domain.StartTime;
 
-public class DistributionDomainRepository {
+public class StartTimeDomainRepository {
 
-  private final DistributionModelRepository distributionModelRepository;
+  private final StartTimeModelRepository startTimeModelRepository;
 
   @Inject
-  public DistributionDomainRepository(
-      DistributionModelRepository distributionModelRepository) {
-    this.distributionModelRepository = distributionModelRepository;
+  public StartTimeDomainRepository(
+      StartTimeModelRepository startTimeModelRepository) {
+    this.startTimeModelRepository = startTimeModelRepository;
   }
 
-  DistributionModel saveAndGet(Distribution domain) {
+  StartTimeModel saveAndGet(StartTime domain) {
 
-    final DistributionModel distributionModel = createDistributionModel(domain);
-    distributionModelRepository.save(distributionModel);
-    return distributionModel;
+    final DistributionModel distributionModel = createDistributionModel(domain.distribution());
+    final StartTimeModel startTimeModel = new StartTimeModel(
+        createDistributionModel(domain.distribution()), domain.timeUnit());
 
+    startTimeModelRepository.save(startTimeModel);
+    return startTimeModel;
   }
 
   private DistributionModel createDistributionModel(Distribution domain) {
@@ -49,5 +53,9 @@ public class DistributionDomainRepository {
 
   private DistributionModel createNormalDistribution(NormalDistribution domain) {
     return new NormalDistributionModel(domain.mean(), domain.stdDev());
+  }
+
+  private FixedDistributionModel createFixedDistribution(FixedDistribution domain) {
+    return new FixedDistributionModel(domain.value());
   }
 }

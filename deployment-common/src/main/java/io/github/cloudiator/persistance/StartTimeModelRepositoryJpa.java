@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.persistance;
 
-public interface SimulationInterface extends TaskInterface {
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
+import javax.persistence.EntityManager;
 
-  StartTime startTime();
+class StartTimeModelRepositoryJpa extends
+    BaseModelRepositoryJpa<StartTimeModel> implements StartTimeModelRepository {
 
+  @Inject
+  protected StartTimeModelRepositoryJpa(
+      Provider<EntityManager> entityManager,
+      TypeLiteral<StartTimeModel> type) {
+    super(entityManager, type);
+  }
 }

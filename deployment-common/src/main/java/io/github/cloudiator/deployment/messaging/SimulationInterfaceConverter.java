@@ -25,7 +25,7 @@ public class SimulationInterfaceConverter implements
     TwoWayConverter<TaskEntities.SimulationInterface, SimulationInterface> {
 
   public static final SimulationInterfaceConverter INSTANCE = new SimulationInterfaceConverter();
-  private static final DistributionConverter DISTRIBUTION_CONVERTER = DistributionConverter.INSTANCE;
+  private static final StartTimeConverter DISTRIBUTION_CONVERTER = StartTimeConverter.INSTANCE;
 
   @Override
   public TaskEntities.SimulationInterface applyBack(SimulationInterface simulationInterface) {

@@ -16,6 +16,6 @@
 
 package io.github.cloudiator.persistance;
 
-interface DistributionModelRepository extends ModelRepository<DistributionModel> {
+interface StartTimeModelRepository extends ModelRepository<StartTimeModel> {
 
 }

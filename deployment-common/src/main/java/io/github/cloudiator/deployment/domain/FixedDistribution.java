@@ -16,8 +16,7 @@
 
 package io.github.cloudiator.deployment.domain;
 
-public interface SimulationInterface extends TaskInterface {
+public interface FixedDistribution extends Distribution {
 
-  StartTime startTime();
-
+  double value();
 }

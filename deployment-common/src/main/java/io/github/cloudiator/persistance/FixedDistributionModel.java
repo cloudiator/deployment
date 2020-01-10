@@ -16,36 +16,29 @@
 
 package io.github.cloudiator.persistance;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.OneToOne;
 
 @Entity
-class SimulationTaskInterfaceModel extends TaskInterfaceModel {
+class FixedDistributionModel extends DistributionModel {
 
-  @OneToOne(optional = false)
-  private StartTimeModel startTime;
+  @Column(nullable = false)
+  private double value;
 
-  protected SimulationTaskInterfaceModel() {
+  protected FixedDistributionModel() {
 
   }
 
-  public SimulationTaskInterfaceModel(TaskModel taskModel, StartTimeModel startTime) {
-    super(taskModel);
-
-    checkNotNull(startTime, "startTime is null");
-
-    this.startTime = startTime;
+  protected FixedDistributionModel(double value) {
+    this.value = value;
   }
 
-  public StartTimeModel getStartTime() {
-    return startTime;
+  public double getValue() {
+    return value;
   }
 
-  public SimulationTaskInterfaceModel setStartTime(
-      StartTimeModel startTime) {
-    this.startTime = startTime;
+  public FixedDistributionModel setValue(double value) {
+    this.value = value;
     return this;
   }
 }

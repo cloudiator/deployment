@@ -19,19 +19,18 @@ package io.github.cloudiator.deployment.domain;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.github.cloudiator.deployment.security.VariableContext;
-import java.util.Optional;
 
 public class SimulationInterfaceImpl implements SimulationInterface {
 
-  private final Distribution startTime;
+  private final StartTime startTime;
 
-  public SimulationInterfaceImpl(Distribution startTime) {
+  public SimulationInterfaceImpl(StartTime startTime) {
     checkNotNull(startTime, "startTime is null");
     this.startTime = startTime;
   }
 
   @Override
-  public Distribution startTime() {
+  public StartTime startTime() {
     return startTime;
   }
 

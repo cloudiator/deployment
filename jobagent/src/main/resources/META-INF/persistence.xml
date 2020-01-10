@@ -34,6 +34,8 @@
     <class>io.github.cloudiator.persistance.SimulationTaskInterfaceModel</class>
     <class>io.github.cloudiator.persistance.DistributionModel</class>
     <class>io.github.cloudiator.persistance.NormalDistributionModel</class>
+    <class>io.github.cloudiator.persistance.FixedDistributionModel</class>
+    <class>io.github.cloudiator.persistance.StartTimeModel</class>
     <class>io.github.cloudiator.persistance.OperatingSystemModel</class>
 
     <exclude-unlisted-classes>true</exclude-unlisted-classes>

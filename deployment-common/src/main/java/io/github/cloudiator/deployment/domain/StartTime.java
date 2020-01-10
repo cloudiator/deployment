@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 University of Ulm
+ * Copyright 2014-2020 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.persistance;
+package io.github.cloudiator.deployment.domain;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.TypeLiteral;
-import javax.persistence.EntityManager;
+import java.util.concurrent.TimeUnit;
 
-class DistributionModelRepositoryJpa extends
-    BaseModelRepositoryJpa<DistributionModel> implements DistributionModelRepository {
+public interface StartTime {
 
-  @Inject
-  protected DistributionModelRepositoryJpa(
-      Provider<EntityManager> entityManager,
-      TypeLiteral<DistributionModel> type) {
-    super(entityManager, type);
-  }
+  Distribution distribution();
+
+  TimeUnit timeUnit();
+
 }

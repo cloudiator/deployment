@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 University of Ulm
+ * Copyright 2014-2020 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,25 @@
 
 package io.github.cloudiator.deployment.domain;
 
-public interface SimulationInterface extends TaskInterface {
+import java.util.concurrent.TimeUnit;
 
-  StartTime startTime();
+public class StartTimeImpl implements StartTime {
 
+  private final Distribution distribution;
+  private final TimeUnit timeUnit;
+
+  public StartTimeImpl(Distribution distribution, TimeUnit timeUnit) {
+    this.distribution = distribution;
+    this.timeUnit = timeUnit;
+  }
+
+  @Override
+  public Distribution distribution() {
+    return distribution;
+  }
+
+  @Override
+  public TimeUnit timeUnit() {
+    return timeUnit;
+  }
 }
