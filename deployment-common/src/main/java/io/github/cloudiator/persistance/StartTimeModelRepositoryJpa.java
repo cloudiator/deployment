@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.persistance;
 
-public class NormalDistributionImpl implements NormalDistribution {
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.TypeLiteral;
+import javax.persistence.EntityManager;
 
-  private final double mean;
-  private final double stdDev;
+class StartTimeModelRepositoryJpa extends
+    BaseModelRepositoryJpa<StartTimeModel> implements StartTimeModelRepository {
 
-  public NormalDistributionImpl(double mean, double stdDev) {
-    this.mean = mean;
-    this.stdDev = stdDev;
-  }
-
-  @Override
-  public double mean() {
-    return mean;
-  }
-
-  @Override
-  public double stdDev() {
-    return stdDev;
-  }
-
-  @Override
-  public double next() {
-    throw new UnsupportedOperationException("not yet implemented");
+  @Inject
+  protected StartTimeModelRepositoryJpa(
+      Provider<EntityManager> entityManager,
+      TypeLiteral<StartTimeModel> type) {
+    super(entityManager, type);
   }
 }

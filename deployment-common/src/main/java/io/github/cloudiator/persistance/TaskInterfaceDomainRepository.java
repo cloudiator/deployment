@@ -29,18 +29,18 @@ public class TaskInterfaceDomainRepository {
 
   private final TaskInterfaceModelRepository taskInterfaceModelRepository;
   private final TriggerDomainRepository triggerDomainRepository;
-  private final DistributionDomainRepository distributionDomainRepository;
+  private final StartTimeDomainRepository startTimeDomainRepository;
   private final OperatingSystemModelRepository operatingSystemModelRepository;
 
   @Inject
   public TaskInterfaceDomainRepository(
       TaskInterfaceModelRepository taskInterfaceModelRepository,
       TriggerDomainRepository triggerDomainRepository,
-      DistributionDomainRepository distributionDomainRepository,
+      StartTimeDomainRepository startTimeDomainRepository,
       OperatingSystemModelRepository operatingSystemModelRepository) {
     this.taskInterfaceModelRepository = taskInterfaceModelRepository;
     this.triggerDomainRepository = triggerDomainRepository;
-    this.distributionDomainRepository = distributionDomainRepository;
+    this.startTimeDomainRepository = startTimeDomainRepository;
     this.operatingSystemModelRepository = operatingSystemModelRepository;
   }
 
@@ -120,7 +120,8 @@ public class TaskInterfaceDomainRepository {
 
   private SimulationTaskInterfaceModel createSimulationTaskInterfaceModel(
       SimulationInterface domain, TaskModel taskModel) {
-    final DistributionModel startTime = distributionDomainRepository
+    
+    final StartTimeModel startTime = startTimeDomainRepository
         .saveAndGet(domain.startTime());
     return new SimulationTaskInterfaceModel(taskModel, startTime);
   }

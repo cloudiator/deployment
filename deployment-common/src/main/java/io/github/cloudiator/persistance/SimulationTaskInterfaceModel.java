@@ -25,13 +25,13 @@ import javax.persistence.OneToOne;
 class SimulationTaskInterfaceModel extends TaskInterfaceModel {
 
   @OneToOne(optional = false)
-  private DistributionModel startTime;
+  private StartTimeModel startTime;
 
   protected SimulationTaskInterfaceModel() {
-    
+
   }
 
-  public SimulationTaskInterfaceModel(TaskModel taskModel, DistributionModel startTime) {
+  public SimulationTaskInterfaceModel(TaskModel taskModel, StartTimeModel startTime) {
     super(taskModel);
 
     checkNotNull(startTime, "startTime is null");
@@ -39,12 +39,12 @@ class SimulationTaskInterfaceModel extends TaskInterfaceModel {
     this.startTime = startTime;
   }
 
-  public DistributionModel getStartTime() {
+  public StartTimeModel getStartTime() {
     return startTime;
   }
 
   public SimulationTaskInterfaceModel setStartTime(
-      DistributionModel startTime) {
+      StartTimeModel startTime) {
     this.startTime = startTime;
     return this;
   }

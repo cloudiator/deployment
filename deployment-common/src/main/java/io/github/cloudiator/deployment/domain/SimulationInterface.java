@@ -18,6 +18,6 @@ package io.github.cloudiator.deployment.domain;
 
 public interface SimulationInterface extends TaskInterface {
 
-  Distribution startTime();
+  StartTime startTime();
 
 }

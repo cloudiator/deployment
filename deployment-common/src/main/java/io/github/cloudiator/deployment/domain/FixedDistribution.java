@@ -16,28 +16,7 @@
 
 package io.github.cloudiator.deployment.domain;
 
-public class NormalDistributionImpl implements NormalDistribution {
+public interface FixedDistribution extends Distribution {
 
-  private final double mean;
-  private final double stdDev;
-
-  public NormalDistributionImpl(double mean, double stdDev) {
-    this.mean = mean;
-    this.stdDev = stdDev;
-  }
-
-  @Override
-  public double mean() {
-    return mean;
-  }
-
-  @Override
-  public double stdDev() {
-    return stdDev;
-  }
-
-  @Override
-  public double next() {
-    throw new UnsupportedOperationException("not yet implemented");
-  }
+  double value();
 }

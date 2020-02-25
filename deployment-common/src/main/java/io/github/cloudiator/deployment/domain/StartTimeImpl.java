@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2019 University of Ulm
+ * Copyright 2014-2020 University of Ulm
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,30 @@
 
 package io.github.cloudiator.deployment.domain;
 
-public class NormalDistributionImpl implements NormalDistribution {
+import java.util.concurrent.TimeUnit;
 
-  private final double mean;
-  private final double stdDev;
+public class StartTimeImpl implements StartTime {
 
-  public NormalDistributionImpl(double mean, double stdDev) {
-    this.mean = mean;
-    this.stdDev = stdDev;
+  private final Distribution distribution;
+  private final TimeUnit timeUnit;
+
+  public StartTimeImpl(Distribution distribution, TimeUnit timeUnit) {
+    this.distribution = distribution;
+    this.timeUnit = timeUnit;
   }
 
   @Override
-  public double mean() {
-    return mean;
+  public Distribution distribution() {
+    return distribution;
   }
 
   @Override
-  public double stdDev() {
-    return stdDev;
+  public TimeUnit timeUnit() {
+    return timeUnit;
   }
 
   @Override
-  public double next() {
-    throw new UnsupportedOperationException("not yet implemented");
+  public void sleep() throws InterruptedException {
+    Thread.sleep(TimeUnit.MILLISECONDS.convert((long) distribution.next(), timeUnit()));
   }
 }

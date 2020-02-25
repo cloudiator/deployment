@@ -35,7 +35,7 @@ class TaskInterfaceModelConverter implements
     OneWayConverter<TaskInterfaceModel, TaskInterface> {
 
   private static final TriggerModelConverter TRIGGER_MODEL_CONVERTER = new TriggerModelConverter();
-  private static final DistributionModelConverter DISTRIBUTION_MODEL_CONVERTER = new DistributionModelConverter();
+  private static final StartTimeModelConverter START_TIME_MODEL_CONVERTER = new StartTimeModelConverter();
 
   @Nullable
   @Override
@@ -114,6 +114,6 @@ class TaskInterfaceModelConverter implements
   private SimulationInterface simulationInterface(
       SimulationTaskInterfaceModel simulationTaskInterfaceModel) {
     return new SimulationInterfaceImpl(
-        DISTRIBUTION_MODEL_CONVERTER.apply(simulationTaskInterfaceModel.getStartTime()));
+        START_TIME_MODEL_CONVERTER.apply(simulationTaskInterfaceModel.getStartTime()));
   }
 }

@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-package io.github.cloudiator.deployment.domain;
+package io.github.cloudiator.persistance;
 
-public class NormalDistributionImpl implements NormalDistribution {
+import javax.persistence.Column;
+import javax.persistence.Entity;
 
-  private final double mean;
-  private final double stdDev;
+@Entity
+class FixedDistributionModel extends DistributionModel {
 
-  public NormalDistributionImpl(double mean, double stdDev) {
-    this.mean = mean;
-    this.stdDev = stdDev;
+  @Column(nullable = false)
+  private double value;
+
+  protected FixedDistributionModel() {
+
   }
 
-  @Override
-  public double mean() {
-    return mean;
+  protected FixedDistributionModel(double value) {
+    this.value = value;
   }
 
-  @Override
-  public double stdDev() {
-    return stdDev;
+  public double getValue() {
+    return value;
   }
 
-  @Override
-  public double next() {
-    throw new UnsupportedOperationException("not yet implemented");
+  public FixedDistributionModel setValue(double value) {
+    this.value = value;
+    return this;
   }
 }
