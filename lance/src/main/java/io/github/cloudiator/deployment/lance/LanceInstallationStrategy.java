@@ -59,8 +59,7 @@ public class LanceInstallationStrategy {
     //install Melodic specific tools
     if(installMelodicTools){
       builder
-          .addTool(Tool.ALLUXIO_CLIENT)
-          .addTool(Tool.DLMS_AGENT);
+          .addTool(Tool.ALLUXIO_CLIENT);
     }
 
     doExecute(builder, userId);

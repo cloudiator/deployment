@@ -98,8 +98,7 @@ public class CreateSparkProcessStrategy {
 
       if (installMelodicTools) {
         builder
-            .addTool(Tool.ALLUXIO_CLIENT)
-            .addTool(Tool.DLMS_AGENT);
+            .addTool(Tool.ALLUXIO_CLIENT);
       }
 
       final InstallationRequest installationRequest = InstallationRequest.newBuilder()
